@@ -30,7 +30,7 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      'pdfjs-dist': 'pdfjs-dist/legacy/build/pdf',
+      'pdfjs-dist': require.resolve('pdfjs-dist'),
     }
     return config
   },
