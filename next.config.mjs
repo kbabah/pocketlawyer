@@ -11,7 +11,7 @@ try {
   }
 }
 
-import pdfjsDist from 'pdfjs-dist';
+import * as pdfjsDist from 'pdfjs-dist';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
