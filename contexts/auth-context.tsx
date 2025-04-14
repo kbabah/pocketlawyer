@@ -55,6 +55,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       if (callbackUrl) {
         router.push(callbackUrl);
       } else {
+        // Redirect to the main chat interface instead of root
         router.push("/");
       }
     }
