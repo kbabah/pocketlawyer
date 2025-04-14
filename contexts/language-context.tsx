@@ -102,9 +102,6 @@ const translations = {
     "chat.search": "Search",
 
     // Document analysis
-    "document.upload.title": "Upload a Document",
-    "document.upload.subtitle":
-      "Upload a legal document to analyze. We support PDF, TXT, DOC, and DOCX files up to 5MB.",
     "document.select": "Select Document",
     "document.signin.prompt": "Sign in for enhanced document analysis and to save your results",
     "document.preview": "Document Preview",
@@ -113,7 +110,6 @@ const translations = {
       "E.g., What are the key legal points in this document? Or, Can you summarize this document?",
     "document.analyze": "Analyze Document",
     "document.analyzing": "Analyzing...",
-    "document.uploaded": "Document uploaded successfully",
 
     // Sidebar
     "sidebar.new.chat": "New Chat",
@@ -242,9 +238,6 @@ const translations = {
     "chat.search": "Rechercher",
 
     // Document analysis
-    "document.upload.title": "Télécharger un document",
-    "document.upload.subtitle":
-      "Téléchargez un document juridique à analyser. Nous prenons en charge les fichiers PDF, TXT, DOC et DOCX jusqu'à 5 Mo.",
     "document.select": "Sélectionner un document",
     "document.signin.prompt": "Connectez-vous pour une analyse de document améliorée et pour sauvegarder vos résultats",
     "document.preview": "Aperçu du document",
@@ -253,7 +246,6 @@ const translations = {
       "Par exemple, quels sont les points juridiques clés de ce document? Ou, pouvez-vous résumer ce document?",
     "document.analyze": "Analyser le document",
     "document.analyzing": "Analyse en cours...",
-    "document.uploaded": "Document téléchargé avec succès",
 
     // Sidebar
     "sidebar.new.chat": "Nouvelle conversation",
