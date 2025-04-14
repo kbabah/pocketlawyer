@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn })
     
     // Set the cookie
-    cookies().set('firebase-session', sessionCookie, {
+    const cookieStore = await cookies()
+    await cookieStore.set('firebase-session', sessionCookie, {
       maxAge: expiresIn,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -33,7 +34,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  cookies().delete('firebase-session')
+  const cookieStore = await cookies()
+  await cookieStore.delete('firebase-session')
   return new Response(JSON.stringify({ status: 'success' }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },

@@ -1,49 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
-import pdfParse from 'pdf-parse'
+import { getDocument, PDFDocumentProxy, TextContent } from 'pdfjs-dist'
+import { GlobalWorkerOptions } from 'pdfjs-dist'
+
+// Configure PDF.js for server-side usage
+if (typeof window === 'undefined') {
+  GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
+}
+
+// Add a type guard to filter TextItem objects
+function isTextItem(item: any): item is { str: string } {
+  return 'str' in item;
+}
 
 export async function POST(request: NextRequest) {
-  console.log('Processing document request...');
+  console.log('Processing document request...')
   try {
     const formData = await request.formData()
-    console.log('Form data received');
-    
     const file = formData.get('file') as File | null
-    console.log('File from form:', file?.name, file?.type);
 
     if (!file) {
-      console.log('No file provided');
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
     const arrayBuffer = await file.arrayBuffer()
-    console.log('File converted to ArrayBuffer, size:', arrayBuffer.byteLength);
-    
-    const buffer = Buffer.from(arrayBuffer)
+    const uint8Array = new Uint8Array(arrayBuffer)
     
     try {
-      console.log('Starting PDF parsing...');
-      const data = await pdfParse(buffer)
-      console.log('PDF parsed successfully, text length:', data.text.length);
-      
-      const cleanText = data.text
-        .replace(/\x00/g, '')
-        .replace(/[\r\n]+/g, '\n')
-        .replace(/\s+/g, ' ')
-        .trim()
+      // Load the PDF document
+      console.log('Starting to load PDF document...');
+      const loadingTask = getDocument({ data: uint8Array });
+      const pdf = await loadingTask.promise;
+      console.log(`PDF loaded successfully with ${pdf.numPages} pages.`);
 
-      if (!cleanText) {
-        console.log('No readable text found in PDF');
-        throw new Error('No readable text found in PDF')
+      // Extract text from all pages
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        console.log(`Processing page ${i}...`);
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items
+          .filter(isTextItem)
+          .map((item) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+        console.log(`Page ${i} processed successfully.`);
       }
 
-      console.log('Returning cleaned text, length:', cleanText.length);
-      return NextResponse.json({ text: cleanText })
+      // Clean up the extracted text
+      console.log('Cleaning up extracted text...');
+      const cleanText = fullText
+        .replace(/\x00/g, '') // Remove null bytes
+        .replace(/[\r\n]+/g, '\n') // Normalize line endings
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+
+      if (!cleanText) {
+        throw new Error('No readable text found in PDF');
+      }
+
+      console.log('PDF text extraction completed successfully.');
+      return NextResponse.json({ text: cleanText });
     } catch (pdfError) {
-      console.error('PDF parsing error:', pdfError)
+      console.error('PDF parsing error:', pdfError);
       return NextResponse.json(
         { error: 'Failed to parse PDF content', details: String(pdfError) },
         { status: 422 }
-      )
+      );
     }
   } catch (error) {
     console.error('Request processing error:', error)
