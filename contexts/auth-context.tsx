@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
@@ -41,7 +41,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+// Create a separate component to use the searchParams
+function AuthProviderContent({ children }: { children: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
@@ -236,6 +237,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
+  );
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<div>Loading authentication...</div>}>
+      <AuthProviderContent>{children}</AuthProviderContent>
+    </Suspense>
   );
 }
 
