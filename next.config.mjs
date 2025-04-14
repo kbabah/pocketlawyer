@@ -11,6 +11,8 @@ try {
   }
 }
 
+import pdfjsDist from 'pdfjs-dist';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -30,7 +32,7 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      'pdfjs-dist': require.resolve('pdfjs-dist'),
+      'pdfjs-dist': pdfjsDist,
     }
     return config
   },
