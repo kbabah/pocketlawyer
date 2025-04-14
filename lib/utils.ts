@@ -1,9 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -24,19 +20,18 @@ export async function extractTextFromPDF(file: File): Promise<string> {
         
         try {
           // Load the PDF document
-          const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
-          const pdf = await loadingTask.promise
+          // Removed: const loadingTask = pdfjsLib.getDocument({ data: uint8Array })
+          // Removed: const pdf = await loadingTask.promise
           
           // Extract text from all pages
           let fullText = ''
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i)
-            const content = await page.getTextContent()
-            const pageText = content.items
-              .map((item: any) => item.str)
-              .join(' ')
-            fullText += pageText + '\n'
-          }
+          // Removed: for (let i = 1; i <= pdf.numPages; i++) {
+          // Removed: const page = await pdf.getPage(i)
+          // Removed: const content = await page.getTextContent()
+          // Removed: const pageText = content.items
+          // Removed: .map((item: any) => item.str)
+          // Removed: .join(' ')
+          // Removed: fullText += pageText + '\n'
           
           // Clean up the extracted text
           const cleanText = fullText
