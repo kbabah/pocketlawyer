@@ -19,6 +19,7 @@ export async function POST(request: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
+      sameSite: 'lax', // Allow the cookie to be sent with navigation requests
     })
 
     return new Response(JSON.stringify({ status: 'success' }), {

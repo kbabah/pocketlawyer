@@ -51,13 +51,18 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   // Handle redirect after auth state change
   useEffect(() => {
     if (!loading && user) {
+      // Get callback URL if exists
       const callbackUrl = searchParams.get("callbackUrl");
-      if (callbackUrl) {
-        router.push(callbackUrl);
-      } else {
-        // Redirect to the main chat interface instead of root
-        router.push("/");
-      }
+      
+      // Use a short timeout to ensure the auth state is fully processed
+      setTimeout(() => {
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else {
+          // Redirect to the main chat interface
+          router.replace("/");
+        }
+      }, 100);
     }
   }, [user, loading, router, searchParams]);
 
