@@ -8,6 +8,7 @@ import ChatInterface from "@/components/chat-interface"
 import { useAuth } from "@/contexts/auth-context"
 import { Scale } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { FeedbackDialog } from "@/components/feedback-dialog"
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -46,7 +47,8 @@ export default function Home() {
             <Scale className="h-5 w-5 text-primary" />
             <h1 className="text-xl font-bold">{t("app.name")}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <FeedbackDialog />
             <span className="text-sm text-muted-foreground hidden sm:inline-block">{t("welcome.hero.title")}</span>
           </div>
         </header>

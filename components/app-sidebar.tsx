@@ -35,7 +35,6 @@ import {
   SidebarFooter,
   SidebarTrigger
 } from "@/components/ui/sidebar"
-import { FeedbackDialog } from "./feedback-dialog"
 import { toast } from "sonner"
 
 export function AppSidebar() {
@@ -166,7 +165,6 @@ export function AppSidebar() {
         <SidebarFooter>
           <div className="flex flex-col gap-2 p-2">
             <div className="flex items-center gap-2">
-              <FeedbackDialog />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex-1 justify-start gap-2">
