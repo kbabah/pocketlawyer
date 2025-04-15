@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  // Redirect root path to welcome page
+  if (request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/welcome', request.url))
+  }
+
   // Get the session cookie
   const session = request.cookies.get('firebase-session')
 
