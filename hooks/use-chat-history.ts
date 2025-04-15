@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { collection, query, where, orderBy, addDoc, deleteDoc, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { Message } from 'ai';
 
 export interface ChatSession {
@@ -27,26 +25,19 @@ export function useChatHistory(userId: string | undefined) {
     const loadChatHistory = async () => {
       setLoading(true);
       try {
-        const chatsRef = collection(db, 'chats');
-        const q = query(
-          chatsRef,
-          where('userId', '==', userId),
-          orderBy('timestamp', 'desc')
-        );
-
-        const querySnapshot = await getDocs(q);
+        const response = await fetch(`/api/chat/manage?userId=${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch chat history');
+        
+        const chats = await response.json();
         const history: ChatHistory = {};
 
-        querySnapshot.forEach((doc) => {
-          const chat = doc.data() as ChatSession & { userId: string };
+        chats.forEach((chat: ChatSession & { userId: string }) => {
           const date = new Date(chat.timestamp).toISOString().split('T')[0];
-
           if (!history[date]) {
             history[date] = [];
           }
-
           history[date].push({
-            id: doc.id,
+            id: chat.id,
             title: chat.title,
             messages: chat.messages,
             timestamp: chat.timestamp,
@@ -77,8 +68,15 @@ export function useChatHistory(userId: string | undefined) {
         timestamp: Date.now(),
       };
 
-      const docRef = await addDoc(collection(db, 'chats'), chatData);
-      return docRef.id;
+      const response = await fetch('/api/chat/manage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(chatData),
+      });
+
+      if (!response.ok) throw new Error('Failed to save chat');
+      const { id } = await response.json();
+      return id;
     } catch (error) {
       console.error('Error saving chat:', error);
       return null;
@@ -89,20 +87,25 @@ export function useChatHistory(userId: string | undefined) {
     if (!userId || messages.length === 0) return;
 
     try {
-      const chatRef = doc(db, 'chats', chatId);
       const title = messages[0].content.slice(0, 30) + (messages[0].content.length > 30 ? '...' : '');
       
-      await updateDoc(chatRef, {
-        messages,
-        title,
-        timestamp: Date.now(),
+      const response = await fetch('/api/chat/manage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId,
+          messages,
+          title,
+          timestamp: Date.now(),
+        }),
       });
+
+      if (!response.ok) throw new Error('Failed to update chat');
 
       // Update local state
       const date = new Date().toISOString().split('T')[0];
       const updatedHistory = { ...chatHistory };
       
-      // Remove the chat from its old date if it exists
       Object.keys(updatedHistory).forEach((oldDate) => {
         updatedHistory[oldDate] = updatedHistory[oldDate].filter((chat) => chat.id !== chatId);
         if (updatedHistory[oldDate].length === 0) {
@@ -110,7 +113,6 @@ export function useChatHistory(userId: string | undefined) {
         }
       });
 
-      // Add the updated chat to today's date
       if (!updatedHistory[date]) {
         updatedHistory[date] = [];
       }
@@ -132,7 +134,13 @@ export function useChatHistory(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      await deleteDoc(doc(db, 'chats', chatId));
+      const response = await fetch('/api/chat/manage', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId }),
+      });
+
+      if (!response.ok) throw new Error('Failed to delete chat');
       
       // Update local state
       const newHistory = { ...chatHistory };

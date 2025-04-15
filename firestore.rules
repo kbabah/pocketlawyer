@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow both authenticated and anonymous users to create feedback
+    match /feedback/{feedbackId} {
+      allow create: if 
+        (request.auth != null && request.resource.data.userId == request.auth.uid) || 
+        (!request.auth && request.resource.data.userId == 'anonymous');
+      allow read, write, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Allow authenticated users to read and write their own chats
+    match /chats/{chatId} {
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow read, write, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}

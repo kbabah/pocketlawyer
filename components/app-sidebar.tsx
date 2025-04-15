@@ -35,6 +35,7 @@ import {
   SidebarFooter,
   SidebarTrigger
 } from "@/components/ui/sidebar"
+import { FeedbackDialog } from "./feedback-dialog"
 
 export function AppSidebar() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -55,9 +56,18 @@ export function AppSidebar() {
 
   const confirmDelete = async () => {
     if (!itemToDelete) return
-    await deleteChat(itemToDelete.id)
-    setDeleteDialogOpen(false)
-    setItemToDelete(null)
+    try {
+      await deleteChat(itemToDelete.id)
+      setDeleteDialogOpen(false)
+      setItemToDelete(null)
+      
+      // If we're currently viewing the deleted chat, redirect to home
+      if (window.location.pathname === `/chat/${itemToDelete.id}`) {
+        router.push("/")
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error)
+    }
   }
 
   const handleSignOut = async () => {
@@ -125,21 +135,21 @@ export function AppSidebar() {
                       <div key={chat.id} className="px-2">
                         <Button
                           variant="ghost"
-                          className="w-full justify-between px-2 py-6"
+                          className="w-full justify-between px-2 py-6 group relative"
                           onClick={() => router.push(`/chat/${chat.id}`)}
                         >
                           <span className="truncate">{chat.title}</span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="ml-2 h-6 w-6"
+                            className="ml-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleDeleteChat(date, chat.id)
                             }}
                           >
-                            <span className="sr-only">{t("sidebar.delete.chat")}</span>
                             <MessageSquare className="h-4 w-4" />
+                            <span className="sr-only">{t("sidebar.delete.chat")}</span>
                           </Button>
                         </Button>
                       </div>
@@ -151,39 +161,44 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start gap-2 p-4">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} />
-                  <AvatarFallback>{getUserInitials()}</AvatarFallback>
-                </Avatar>
-                <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left">
-                  {user?.name || t("auth.signin")}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[240px]">
-              {user ? (
-                <>
-                  <DropdownMenuItem className="flex-col items-start">
-                    <div className="font-medium">{user.name}</div>
-                    <div className="text-sm text-muted-foreground">{user.email}</div>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => router.push("/profile")}>
-                    {t("profile.title")}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={handleSignOut}>{t("sidebar.signout")}</DropdownMenuItem>
-                </>
-              ) : (
-                <DropdownMenuItem onSelect={() => router.push("/sign-in")}>
-                  {t("auth.signin")}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex flex-col gap-2 p-2">
+            <div className="flex items-center gap-2">
+              <FeedbackDialog />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex-1 justify-start gap-2">
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} />
+                      <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                    </Avatar>
+                    <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left">
+                      {user?.name || t("auth.signin")}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[240px]">
+                  {user ? (
+                    <>
+                      <DropdownMenuItem className="flex-col items-start">
+                        <div className="font-medium">{user.name}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={() => router.push("/profile")}>
+                        {t("profile.title")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onSelect={handleSignOut}>{t("sidebar.signout")}</DropdownMenuItem>
+                    </>
+                  ) : (
+                    <DropdownMenuItem onSelect={() => router.push("/sign-in")}>
+                      {t("auth.signin")}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </SidebarFooter>
       </Sidebar>
 

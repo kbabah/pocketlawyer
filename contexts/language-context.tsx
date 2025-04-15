@@ -5,6 +5,16 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 // Define available languages
 export type Language = "en" | "fr"
 
+// Define translations interface
+interface TranslationStrings {
+  [key: string]: string;
+}
+
+interface Translations {
+  en: TranslationStrings;
+  fr: TranslationStrings;
+}
+
 // Define the context type
 interface LanguageContextType {
   language: Language
@@ -16,7 +26,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
 
 // Translations
-const translations = {
+const translations: Translations = {
   en: {
     // Common
     "app.name": "PocketLawyer",
@@ -101,6 +111,11 @@ const translations = {
     "chat.search.placeholder": "Search the web...",
     "chat.search": "Search",
 
+    // Chat errors
+    "chat.not.found": "Chat not found. Redirecting to new chat...",
+    "chat.unauthorized": "You don't have access to this chat. Redirecting to new chat...",
+    "chat.error.loading": "Error loading chat. Please try again.",
+
     // Document analysis
     "document.select": "Select Document",
     "document.signin.prompt": "Sign in for enhanced document analysis and to save your results",
@@ -150,6 +165,16 @@ const translations = {
     "auth.reset.password.description": "Enter your email address and we'll send you a password reset link",
     "auth.reset.password.button": "Send Reset Link",
     "auth.reset.password.success": "Password reset link sent! Check your email",
+
+    // Feedback
+    "feedback.button": "Give Feedback",
+    "feedback.title": "Help us improve",
+    "feedback.rating.required": "Please select a rating",
+    "feedback.comment.placeholder": "Share your experience (optional)",
+    "feedback.submit": "Submit Feedback",
+    "feedback.submitting": "Submitting...",
+    "feedback.success": "Thank you for your feedback!",
+    "feedback.error": "Failed to submit feedback. Please try again.",
   },
   fr: {
     // Common
@@ -237,6 +262,11 @@ const translations = {
     "chat.search.placeholder": "Rechercher sur le web...",
     "chat.search": "Rechercher",
 
+    // Chat errors
+    "chat.not.found": "Chat introuvable. Redirection vers un nouveau chat...",
+    "chat.unauthorized": "Vous n'avez pas accès à ce chat. Redirection vers un nouveau chat...",
+    "chat.error.loading": "Erreur lors du chargement du chat. Veuillez réessayer.",
+
     // Document analysis
     "document.select": "Sélectionner un document",
     "document.signin.prompt": "Connectez-vous pour une analyse de document améliorée et pour sauvegarder vos résultats",
@@ -287,6 +317,16 @@ const translations = {
     "auth.reset.password.description": "Entrez votre adresse e-mail et nous vous enverrons un lien de réinitialisation",
     "auth.reset.password.button": "Envoyer le lien",
     "auth.reset.password.success": "Lien de réinitialisation envoyé ! Vérifiez vos emails",
+
+    // Feedback
+    "feedback.button": "Donner un avis",
+    "feedback.title": "Aidez-nous à nous améliorer",
+    "feedback.rating.required": "Veuillez sélectionner une note",
+    "feedback.comment.placeholder": "Partagez votre expérience (facultatif)",
+    "feedback.submit": "Soumettre",
+    "feedback.submitting": "Envoi en cours...",
+    "feedback.success": "Merci pour votre avis !",
+    "feedback.error": "Échec de l'envoi. Veuillez réessayer.",
   }
 }
 

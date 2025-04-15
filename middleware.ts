@@ -2,34 +2,43 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  // Get the session cookie
+  const session = request.cookies.get('firebase-session')
+
   // List of public paths that don't require authentication
   const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error']
   const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
-  // Handle root path redirection
-  if (request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/welcome', request.url))
-  }
-
   // Don't require authentication for public paths and static files
-  if (
-    isPublicPath ||
+  const isStaticResource = 
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/api') ||
     request.nextUrl.pathname.startsWith('/static') ||
     request.nextUrl.pathname.includes('favicon.ico')
-  ) {
+
+  if (isStaticResource) {
     return NextResponse.next()
   }
 
-  // Get the session cookie
-  const session = request.cookies.get('firebase-session')
+  // Handle root path redirection based on auth status
+  if (request.nextUrl.pathname === '/') {
+    if (!session) {
+      return NextResponse.redirect(new URL('/welcome', request.url))
+    }
+    // If authenticated, allow access to root (which will be the chat interface)
+    return NextResponse.next()
+  }
 
-  // If there's no session, redirect to sign-in page
-  if (!session) {
+  // If trying to access protected route without session, redirect to sign-in
+  if (!isPublicPath && !session) {
     const signInUrl = new URL('/sign-in', request.url)
     signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
     return NextResponse.redirect(signInUrl)
+  }
+
+  // If already authenticated and trying to access auth pages, redirect to root
+  if (session && isPublicPath && request.nextUrl.pathname !== '/welcome') {
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return NextResponse.next()
