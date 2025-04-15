@@ -36,6 +36,7 @@ import {
   SidebarTrigger
 } from "@/components/ui/sidebar"
 import { FeedbackDialog } from "./feedback-dialog"
+import { toast } from "sonner"
 
 export function AppSidebar() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -65,8 +66,10 @@ export function AppSidebar() {
       if (window.location.pathname === `/chat/${itemToDelete.id}`) {
         router.push("/")
       }
+      toast.success(t("chat.deleted"))
     } catch (error) {
       console.error('Error deleting chat:', error)
+      toast.error(t("chat.error.deleting"))
     }
   }
 

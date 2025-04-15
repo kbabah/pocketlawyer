@@ -34,6 +34,10 @@ export async function DELETE(request: Request) {
   try {
     const { chatId } = await request.json();
     
+    if (!chatId) {
+      return NextResponse.json({ error: 'Chat ID is required' }, { status: 400 });
+    }
+
     // Check if chat exists first
     const existingChat = await getChat(chatId);
     if (!existingChat) {
@@ -44,7 +48,10 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Chat API Error:', error);
-    return NextResponse.json({ error: 'Failed to delete chat' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete chat', details: process.env.NODE_ENV === 'development' ? error.message : undefined },
+      { status: 500 }
+    );
   }
 }
 

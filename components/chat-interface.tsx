@@ -131,44 +131,33 @@ export default function ChatInterface() {
   const isMessageLimitReached = !user && messages.length >= messageLimit
 
   return (
-    <div className="flex flex-col h-screen transition-all duration-300 ease-in-out md:pl-[16rem]">
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full flex flex-col items-center transition-all duration-300 ease-in-out"
-      >
-        <div className="px-4 py-2 border-b border-primary/10 w-full flex justify-center">
-          <div className="w-full max-w-xl">
-            <TabsList className="grid w-full grid-cols-3 bg-primary/5">
-              <TabsTrigger
-                value="chat"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                <Scale className="mr-2 h-4 w-4" />
-                {t("chat.tab.chat")}
-              </TabsTrigger>
-              <TabsTrigger
-                value="web"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                <Search className="mr-2 h-4 w-4" />
-                {t("chat.tab.web")}
-              </TabsTrigger>
-              <TabsTrigger
-                value="document"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                {t("chat.tab.document")}
-              </TabsTrigger>
-            </TabsList>
+    <div className="flex flex-col min-h-full">
+      <Tabs defaultValue="chat" className="flex flex-col flex-1">
+        <div className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="px-4 py-2 border-b border-primary/10 w-full flex justify-center">
+            <div className="w-full max-w-xl">
+              <TabsList className="grid w-full grid-cols-3 bg-primary/5">
+                <TabsTrigger value="chat" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Scale className="mr-2 h-4 w-4" />
+                  {t("chat.tab.chat")}
+                </TabsTrigger>
+                <TabsTrigger value="web" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Search className="mr-2 h-4 w-4" />
+                  {t("chat.tab.web")}
+                </TabsTrigger>
+                <TabsTrigger value="document" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <FileText className="mr-2 h-4 w-4" />
+                  {t("chat.tab.document")}
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </div>
         </div>
 
-        <TabsContent value="chat" className="flex-1 w-full">
-          <div className="flex flex-col items-center h-full">
-            <ScrollArea className="flex-1 w-full">
-              <div className="flex flex-col items-center py-4">
+        <TabsContent value="chat" className="flex-1 flex flex-col px-4 md:px-0">
+          <div className="mx-auto w-full max-w-xl flex-1 flex flex-col">
+            <ScrollArea className="flex-1 pr-4">
+              <div className="py-4 space-y-6">
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center max-w-xl text-center px-4">
                     <Scale size={48} className="mb-4 text-primary" />
@@ -193,48 +182,30 @@ export default function ChatInterface() {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-6">
-                    {messages.map((message) => (
-                      <div key={message.id} className="flex items-center justify-center">
-                        <div
-                          className={`flex items-start gap-3 max-w-xl w-full ${
-                            message.role === "user" ? "flex-row-reverse" : ""
-                          }`}
-                        >
-                          <Avatar>
-                            {message.role === "user" ? (
-                              <User className="p-2" />
-                            ) : (
-                              <Scale className="p-2" />
-                            )}
-                          </Avatar>
-                          <div
-                            className={`rounded-lg px-4 py-2 max-w-[85%] ${
-                              message.role === "user"
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-secondary/30"
-                            }`}
-                          >
-                            <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-                          </div>
+                  messages.map((message) => (
+                    <div key={message.id} className="flex items-center justify-center">
+                      <div className={`flex items-start gap-3 max-w-xl w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}>
+                        <Avatar>
+                          {message.role === "user" ? <User className="p-2" /> : <Scale className="p-2" />}
+                        </Avatar>
+                        <div className={`rounded-lg px-4 py-2 max-w-[85%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary/30"}`}>
+                          <p className="whitespace-pre-wrap text-sm">{message.content}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))
                 )}
               </div>
             </ScrollArea>
 
-            <div className="w-full max-w-xl p-4 flex flex-col gap-2">
-              <form
-                onSubmit={handleSubmit}
-                className="flex items-center gap-2"
-              >
+            <div className="py-4 flex flex-col gap-2">
+              <form onSubmit={handleSubmit} className="flex items-center gap-2">
                 <Input
                   placeholder={t("chat.input.placeholder")}
                   value={input}
                   onChange={handleInputChange}
                   disabled={isLoading || isMessageLimitReached}
+                  className="flex-1"
                 />
                 <TooltipProvider>
                   <Tooltip>
@@ -260,11 +231,11 @@ export default function ChatInterface() {
           </div>
         </TabsContent>
 
-        <TabsContent value="web" className="flex-1 w-full">
+        <TabsContent value="web" className="flex-1">
           <WebBrowser query={searchQuery} />
         </TabsContent>
 
-        <TabsContent value="document" className="flex-1 w-full">
+        <TabsContent value="document" className="flex-1">
           <DocumentAnalysis onAnalysisComplete={handleDocumentAnalysis} />
         </TabsContent>
       </Tabs>

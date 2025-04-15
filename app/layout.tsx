@@ -21,11 +21,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} flex min-h-screen flex-col antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <AuthProvider>
-              <SidebarProvider>{children}</SidebarProvider>
+              <SidebarProvider>
+                <main className="flex-1 relative">{children}</main>
+              </SidebarProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
