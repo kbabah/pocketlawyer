@@ -149,7 +149,8 @@ export function AppSidebar() {
                           className="ml-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2 md:opacity-30 md:group-hover:opacity-100"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteChat(date, chat.id);
+                            const chatDate = new Date(chat.timestamp).toISOString().split('T')[0];
+                            handleDeleteChat(chatDate, chat.id);
                           }}
                           aria-label={t("sidebar.delete.chat")}
                         >
