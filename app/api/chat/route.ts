@@ -1,12 +1,33 @@
 import { openai } from "@ai-sdk/openai"
 import { streamText } from "ai"
+import { OPENAI_MODELS } from '@/lib/openai'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
 
+// Validate the requested model or fallback to default
+function validateModel(requestedModel: string): string {
+  // Array of supported models
+  const supportedModels = Object.values(OPENAI_MODELS);
+  
+  // If the requested model is supported, use it
+  if (supportedModels.includes(requestedModel)) {
+    return requestedModel;
+  }
+  
+  // Otherwise fallback to default model
+  console.warn(`Unsupported model requested: ${requestedModel}. Using default: ${OPENAI_MODELS.GPT41}`);
+  return OPENAI_MODELS.GPT41;
+}
+
 export async function POST(req: Request) {
   try {
-    const { messages, userId, documentContent, language = "en" } = await req.json()
+    // Use DEFAULT_MODEL constant for better clarity and consistency
+    const DEFAULT_MODEL = OPENAI_MODELS.GPT41;
+    const { messages, userId, documentContent, language = "en", model = DEFAULT_MODEL } = await req.json()
+
+    // Validate the model parameter
+    const validatedModel = validateModel(model);
 
     // Base system prompt that strictly enforces Cameroonian law focus
     const basePrompt = `You are PocketLawyer, an AI legal assistant exclusively focused on Cameroonian law. 
@@ -28,7 +49,7 @@ ${language === "fr" ?
     }
 
     const result = streamText({
-      model: openai("gpt-4"),
+      model: openai(validatedModel), // Use the validated model
       system: systemPrompt,
       messages,
       tools: {

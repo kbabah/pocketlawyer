@@ -16,7 +16,9 @@ export default function Welcome() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Scale className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">{t("app.name")}</span>
+            <span className="text-xl font-bold flex items-center">
+              {t("app.name")} <span className="ml-1">🇨🇲</span>
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />

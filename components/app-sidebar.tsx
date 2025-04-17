@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Scale, MessageSquare, Calendar, Loader2 } from "lucide-react"
+import { Scale, MessageSquare, Calendar, Loader2, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import {
   AlertDialog,
@@ -97,7 +97,9 @@ export function AppSidebar() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
-              <h2 className="text-lg font-semibold">PocketLawyer</h2>
+              <h2 className="text-lg font-semibold flex items-center">
+                PocketLawyer <span className="ml-1">🇨🇲</span>
+              </h2>
             </div>
             <LanguageSwitcher />
           </div>
@@ -134,25 +136,26 @@ export function AppSidebar() {
                       {format(new Date(date), "MMMM d, yyyy")}
                     </div>
                     {chats.map((chat) => (
-                      <div key={chat.id} className="px-2">
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-between px-2 py-6 group relative"
+                      <div key={chat.id} className="px-2 relative group">
+                        <div 
+                          className="w-full flex items-center justify-between px-2 py-6 rounded-md text-sm font-medium transition-colors hover:bg-muted cursor-pointer"
                           onClick={() => router.push(`/chat/${chat.id}`)}
                         >
                           <span className="truncate">{chat.title}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteChat(date, chat.id)
-                            }}
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                            <span className="sr-only">{t("sidebar.delete.chat")}</span>
-                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="ml-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2 md:opacity-30 md:group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const chatDate = new Date(chat.timestamp).toISOString().split('T')[0];
+                            handleDeleteChat(chatDate, chat.id);
+                          }}
+                          aria-label={t("sidebar.delete.chat")}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <span className="sr-only">{t("sidebar.delete.chat")}</span>
                         </Button>
                       </div>
                     ))}
