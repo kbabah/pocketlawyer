@@ -22,7 +22,9 @@ function validateModel(requestedModel: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { messages, userId, documentContent, language = "en", model = OPENAI_MODELS.GPT41 } = await req.json()
+    // Use DEFAULT_MODEL constant for better clarity and consistency
+    const DEFAULT_MODEL = OPENAI_MODELS.GPT41;
+    const { messages, userId, documentContent, language = "en", model = DEFAULT_MODEL } = await req.json()
 
     // Validate the model parameter
     const validatedModel = validateModel(model);
