@@ -103,25 +103,43 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
       
       <div className="border rounded p-4">
         <h4 className="text-sm font-medium mb-2">{t("document.select") || "Select Document"}</h4>
-        <Input 
-          type="file" 
-          accept="application/pdf" 
-          onChange={handleFileChange} 
-          className="mb-2"
-        />
+        
+        {/* File size limit information */}
+        <div className="text-xs text-muted-foreground mb-3 bg-muted p-2 rounded flex items-start">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          <div>
+            <p className="font-medium">File Size Limit: 1MB maximum</p>
+            <p>Only PDF files are supported. Large documents may take longer to process.</p>
+          </div>
+        </div>
+        
+        <div className="flex flex-col sm:flex-row gap-2 items-start">
+          <div className="w-full">
+            <label htmlFor="file-upload" className="block mb-1 text-xs">Select PDF document:</label>
+            <Input 
+              id="file-upload"
+              type="file" 
+              accept="application/pdf" 
+              onChange={handleFileChange} 
+              className="mb-2"
+            />
+          </div>
+          <Button 
+            onClick={handleExtract} 
+            disabled={!file || loading}
+            className="mt-2 sm:mt-6"
+            variant="default"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading ? t("document.analyzing") || "Extracting..." : t("document.extract") || "Extract Text"}
+          </Button>
+        </div>
+        
         {file && (
-          <p className="text-xs text-muted-foreground mb-2">
+          <p className="text-xs text-muted-foreground mt-2">
             {file.name} ({(file.size / 1024).toFixed(1)} KB)
           </p>
         )}
-        <Button 
-          onClick={handleExtract} 
-          disabled={!file || loading} 
-          className="mt-2"
-        >
-          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {loading ? t("document.analyzing") || "Extracting..." : t("document.analyze") || "Extract Text"}
-        </Button>
       </div>
       
       {text && (

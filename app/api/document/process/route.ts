@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const maxDuration = 60 // Extended to allow more processing time
 
+// 1MB file size limit in bytes
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+
 // OCR-prioritized PDF text extraction
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
   try {
@@ -106,6 +109,14 @@ export async function POST(req: NextRequest) {
     
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    }
+
+    // Check file size - enforce 1MB limit
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({
+        error: 'File size exceeds the 1MB limit. Please upload a smaller document.',
+        success: false
+      }, { status: 400 });
     }
 
     // Check file type
