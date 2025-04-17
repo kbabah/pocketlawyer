@@ -114,13 +114,22 @@ export default function ChatInterface() {
 
     // Save chat if user is authenticated
     if (user?.id) {
-      if (chatId) {
-        await updateChat(chatId, newMessages)
-      } else {
-        const newChatId = await saveChat(newMessages)
-        if (newChatId) {
-          router.push(`/chat/${newChatId}`)
+      try {
+        if (chatId) {
+          await updateChat(chatId, newMessages)
+          // No navigation needed, we're updating the current chat
+        } else {
+          // Save as a new chat but stay on current page
+          const newChatId = await saveChat(newMessages)
+          if (newChatId) {
+            // Update URL without page navigation/reload to prevent 404
+            window.history.replaceState({}, '', `/?chatId=${newChatId}`)
+            toast.success(t("chat.saved") || "Chat saved successfully")
+          }
         }
+      } catch (error) {
+        console.error("Failed to save document analysis:", error)
+        toast.error(t("chat.error.saving") || "Failed to save chat")
       }
     }
 

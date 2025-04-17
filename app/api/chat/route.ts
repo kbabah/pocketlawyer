@@ -1,12 +1,13 @@
 import { openai } from "@ai-sdk/openai"
 import { streamText } from "ai"
+import { OPENAI_MODELS } from '@/lib/openai'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
 
 export async function POST(req: Request) {
   try {
-    const { messages, userId, documentContent, language = "en" } = await req.json()
+    const { messages, userId, documentContent, language = "en", model = OPENAI_MODELS.GPT41 } = await req.json()
 
     // Base system prompt that strictly enforces Cameroonian law focus
     const basePrompt = `You are PocketLawyer, an AI legal assistant exclusively focused on Cameroonian law. 
@@ -28,7 +29,7 @@ ${language === "fr" ?
     }
 
     const result = streamText({
-      model: openai("gpt-4"),
+      model: openai(model), // Use the provided model or default to GPT-4.1
       system: systemPrompt,
       messages,
       tools: {

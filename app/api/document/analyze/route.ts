@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { openai } from '@/lib/openai'
+import { openai, OPENAI_MODELS } from '@/lib/openai'
 
 export const maxDuration = 30
 
 export async function POST(req: NextRequest) {
-  // Accept JSON with { text: string, question: string }
-  const { text, question } = await req.json()
+  // Accept JSON with { text: string, question: string, model?: string }
+  const { text, question, model = OPENAI_MODELS.GPT41 } = await req.json()
   if (!text || !question) {
     return NextResponse.json({ error: 'Missing document text or question' }, { status: 400 })
   }
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     // Use OpenAI to answer the question based on the document text
     const prompt = `You are a legal assistant. Given the following document, answer the user's question as specifically as possible using only the document's content.\n\nDocument:\n${text}\n\nQuestion: ${question}`
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: model, // Use the provided model or default to GPT-4.1
       messages: [
         { role: 'system', content: 'You are a helpful legal assistant.' },
         { role: 'user', content: prompt }
