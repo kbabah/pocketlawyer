@@ -146,11 +146,12 @@ export function AppSidebar() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="ml-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2"
+                          className="ml-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2 md:opacity-30 md:group-hover:opacity-100"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteChat(date, chat.id);
                           }}
+                          aria-label={t("sidebar.delete.chat")}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                           <span className="sr-only">{t("sidebar.delete.chat")}</span>

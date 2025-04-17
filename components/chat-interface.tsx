@@ -122,8 +122,8 @@ export default function ChatInterface() {
           // Save as a new chat but stay on current page
           const newChatId = await saveChat(newMessages)
           if (newChatId) {
-            // Update URL without page navigation/reload to prevent 404
-            window.history.replaceState({}, '', `/?chatId=${newChatId}`)
+            // Use router.replace instead of window.history for better integration with Next.js
+            router.replace(`/?chatId=${newChatId}`, { scroll: false })
             toast.success(t("chat.saved") || "Chat saved successfully")
           }
         }

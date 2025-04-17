@@ -94,7 +94,7 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     }
     
     // If all methods failed, return a helpful message
-    return "Could not extract readable text from this PDF. It may be an image-based document, encrypted, or contain non-standard text encoding. Please try a different document.";
+    return "Could not extract readable text from this PDF. It may be an image-based document, encrypted, or contain non-standard text encoding. Please try a different document or a PDF with selectable text. Error code: PDF-TEXT-ERR-001. If this problem persists, contact support with this error code and document details.";
     
   } catch (error: any) {
     console.error('PDF processing error:', error.message);
