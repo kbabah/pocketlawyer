@@ -66,7 +66,7 @@ export function FeedbackDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          {t("feedback.button")}
+          Rate Us
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -108,7 +108,7 @@ export function FeedbackDialog() {
             disabled={isSubmitting}
             className="w-full"
           >
-            {isSubmitting ? t("feedback.submitting") : t("feedback.submit")}
+            {isSubmitting ? "Submitting Feedback..." : "Submit Feedback"}
           </Button>
         </div>
       </DialogContent>

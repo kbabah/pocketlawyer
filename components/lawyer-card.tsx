@@ -151,7 +151,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
               className="text-xs"
             >
               <MessageSquareIcon className="h-3 w-3 mr-1" />
-              View Profile
+              View Full Profile
             </Button>
             <Button 
               size="sm" 
@@ -159,7 +159,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
               className="text-xs"
             >
               <CalendarIcon className="h-3 w-3 mr-1" />
-              Book Consultation
+              Schedule Consultation
             </Button>
           </div>
         </div>

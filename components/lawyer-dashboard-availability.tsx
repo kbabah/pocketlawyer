@@ -281,19 +281,18 @@ export function LawyerDashboardAvailability({ lawyerProfile }: LawyerDashboardAv
                           <div className="flex justify-between items-center">
                             <p className="text-sm text-muted-foreground">Set your available time slots for {formatDayName(dayName)}</p>
                             <Button
-                              variant="outline"
-                              size="sm"
+                              type="button"
                               onClick={() => addTimeSlot(dayName)}
                               className="h-8"
                             >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Add Slot
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Time Slot
                             </Button>
                           </div>
 
                           {daySchedule.slots.length === 0 ? (
                             <p className="text-sm text-center py-4 text-muted-foreground">
-                              No time slots added. Click "Add Slot" to create availability.
+                              No time slots added. Click "Add Time Slot" to create availability.
                             </p>
                           ) : (
                             <div className="space-y-3">
@@ -358,7 +357,7 @@ export function LawyerDashboardAvailability({ lawyerProfile }: LawyerDashboardAv
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving Changes...
+                Saving Schedule...
               </>
             ) : (
               'Save Schedule'

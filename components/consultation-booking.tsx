@@ -208,10 +208,10 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Processing...
+              Scheduling Consultation...
             </>
           ) : (
-            'Book Consultation'
+            "Schedule Consultation"
           )}
         </Button>
       </CardFooter>

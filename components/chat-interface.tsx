@@ -18,6 +18,7 @@ import { useChatHistory } from "@/hooks/use-chat-history"
 import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { Message } from 'ai'
+import Link from "next/link"
 
 export default function ChatInterface() {
   const [activeTab, setActiveTab] = useState<string>("chat")
@@ -325,7 +326,7 @@ export default function ChatInterface() {
                     <h2 className="text-2xl font-bold mb-2">{t("chat.welcome.title")}</h2>
                     <p className="text-muted-foreground mb-4">{t("chat.welcome.subtitle")}</p>
                     <Card className="p-4 w-full border-primary/20">
-                      <p className="font-medium mb-2">{t("chat.try.asking")}:</p>
+                      <p className="font-medium mb-2">{t("chat try asking")}:</p>
                       <ul className="space-y-2 text-sm">
                         <li>{t("chat.example1")}</li>
                         <li>{t("chat.example2")}</li>
@@ -362,7 +363,7 @@ export default function ChatInterface() {
             <div className="py-4 flex flex-col gap-2">
               <form onSubmit={handleSubmit} className="flex items-center gap-2">
                 <Input
-                  placeholder={t("chat.input.placeholder")}
+                  placeholder={t("start chating")}
                   value={input}
                   onChange={handleInputChange}
                   disabled={loadingStates.sending || isMessageLimitReached}
@@ -372,7 +373,7 @@ export default function ChatInterface() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button type="submit" disabled={loadingStates.sending || isMessageLimitReached}>
-                        {loadingStates.sending ? t("chat.sending") : t("chat.send")}
+                        {loadingStates.sending ? "Sending Message..." : "Send Message"}
                       </Button>
                     </TooltipTrigger>
                     {isMessageLimitReached && (
@@ -384,8 +385,12 @@ export default function ChatInterface() {
                 </TooltipProvider>
               </form>
               {!user && messages.length > 0 && (
-                <div className="text-xs text-center text-muted-foreground">
-                  {t("chat.remaining.messages").replace("{remaining}", String(Math.max(0, messageLimit - messages.length)))}
+                <div className="flex items-center gap-2 justify-center text-sm">
+                  <Link href="/sign-in">
+                    <Button variant="outline" size="sm">
+                      Sign In to Continue Chat
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>

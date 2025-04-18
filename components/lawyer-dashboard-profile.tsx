@@ -278,7 +278,7 @@ export default function LawyerDashboardProfile() {
                     ) : (
                       <>
                         <Upload className="h-4 w-4 mr-2" />
-                        {t('lawyer.photo.upload')}
+                        Upload Photo
                       </>
                     )}
                   </Button>
@@ -439,7 +439,7 @@ export default function LawyerDashboardProfile() {
               </Select>
               <Button type="button" onClick={addLanguage} disabled={!newLanguage}>
                 <Plus className="h-4 w-4" />
-                <span className="sr-only">Add language</span>
+                Add Language
               </Button>
             </div>
           </div>
@@ -454,9 +454,11 @@ export default function LawyerDashboardProfile() {
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {t('lawyer.profile.saving')}
+                Saving Changes...
               </>
-            ) : t('lawyer.profile.save')}
+            ) : (
+              'Save Profile Changes'
+            )}
           </Button>
         </CardFooter>
       </Card>

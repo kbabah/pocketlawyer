@@ -393,7 +393,7 @@ export function LawyerRegistrationForm() {
               ))}
               <Button type="button" variant="outline" onClick={addEducation}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Education
+                Add Education Details
               </Button>
             </div>
 
@@ -469,7 +469,7 @@ export function LawyerRegistrationForm() {
               ))}
               <Button type="button" variant="outline" onClick={addBarAdmission}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Bar Admission
+                Add Bar Admission Details
               </Button>
             </div>
 
@@ -628,7 +628,7 @@ export function LawyerRegistrationForm() {
               ))}
               <Button type="button" variant="outline" onClick={addExperience}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Experience
+                Add Experience Details
               </Button>
             </div>
 
@@ -791,7 +791,7 @@ export function LawyerRegistrationForm() {
             </div>
             <CardFooter className="flex justify-end px-0">
               <Button type="submit" disabled={loading}>
-                {loading ? "Submitting Application..." : "Submit Application for Review"}
+                {loading ? "Submitting Registration..." : "Submit Registration"}
               </Button>
             </CardFooter>
           </form>

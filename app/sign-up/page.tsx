@@ -97,7 +97,7 @@ function SignUpContent() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Create Account"}
+              {isSubmitting ? "Creating Your Account..." : "Create Your Account"}
             </Button>
           </form>
         </TabsContent>
@@ -110,7 +110,7 @@ function SignUpContent() {
               disabled={isSubmitting}
             >
               <FaGoogle className="mr-2" />
-              Sign up with Google
+              Create Account with Google
             </Button>
           </div>
         </TabsContent>

@@ -383,7 +383,7 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
                               onClick={() => handleOpenReply(review)}
                             >
                               <MessageSquare className="h-4 w-4 mr-1" />
-                              Reply to Review
+                              Respond to Review
                             </Button>
                           </div>
                         )}
@@ -433,7 +433,7 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
               onClick={() => setIsReplyDialogOpen(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              Go Back
             </Button>
             <Button
               type="button"
@@ -443,10 +443,10 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
+                  Sending Response...
                 </>
               ) : (
-                'Send Reply'
+                'Send Response'
               )}
             </Button>
           </DialogFooter>

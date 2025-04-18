@@ -307,14 +307,14 @@ export default function LawyerDashboardConsultations() {
                           </div>
                           <div className="flex gap-2">
                             <Button size="sm" onClick={() => handleShowDetails(consultation)}>
-                              {t('lawyer.consultation.details')}
+                              View Details
                             </Button>
                             <Button 
                               size="sm" 
                               variant="outline" 
                               onClick={() => handleOpenCancelDialog(consultation)}
                             >
-                              {t('lawyer.consultation.cancel')}
+                              Cancel Consultation
                             </Button>
                           </div>
                         </div>
@@ -367,7 +367,7 @@ export default function LawyerDashboardConsultations() {
                             </div>
                           </div>
                           <Button size="sm" onClick={() => handleShowDetails(consultation)}>
-                            {t('lawyer.consultation.details')}
+                            View Details
                           </Button>
                         </div>
                       </CardContent>
@@ -422,7 +422,7 @@ export default function LawyerDashboardConsultations() {
                             </div>
                           </div>
                           <Button size="sm" variant="outline" onClick={() => handleShowDetails(consultation)}>
-                            {t('lawyer.consultation.details')}
+                            View Details
                           </Button>
                         </div>
                       </CardContent>
@@ -485,7 +485,7 @@ export default function LawyerDashboardConsultations() {
                                 variant="outline" 
                                 onClick={() => handleShowDetails(consultation)}
                               >
-                                {t('lawyer.consultation.details')}
+                                View Details
                               </Button>
                             </div>
                           </CardContent>
@@ -587,11 +587,14 @@ export default function LawyerDashboardConsultations() {
                       handleOpenCancelDialog(selectedConsultation)
                     }}
                   >
-                    {t('lawyer.consultation.cancel')}
+                    Cancel Consultation
                   </Button>
                 )}
-                <Button onClick={() => setDetailsOpen(false)}>
-                  {t('close')}
+                <Button
+                  variant="ghost"
+                  onClick={() => setDetailsOpen(false)}
+                >
+                  Close Details
                 </Button>
               </DialogFooter>
             </div>
@@ -646,7 +649,7 @@ export default function LawyerDashboardConsultations() {
                   variant="ghost"
                   onClick={() => setCancelDialogOpen(false)}
                 >
-                  {t('back')}
+                  Keep Consultation
                 </Button>
                 <Button 
                   variant="destructive" 
@@ -656,10 +659,10 @@ export default function LawyerDashboardConsultations() {
                   {cancelLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {t('lawyer.consultation.cancelling')}
+                      Cancelling...
                     </>
                   ) : (
-                    t('lawyer.consultation.confirm.cancel')
+                    'Confirm Cancellation'
                   )}
                 </Button>
               </DialogFooter>
@@ -691,7 +694,7 @@ export default function LawyerDashboardConsultations() {
                   variant="ghost"
                   onClick={() => setNotesDialogOpen(false)}
                 >
-                  {t('cancel')}
+                  Discard Changes
                 </Button>
                 <Button 
                   onClick={handleSaveNotes}
@@ -700,10 +703,10 @@ export default function LawyerDashboardConsultations() {
                   {savingNotes ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {t('saving')}
+                      Saving Notes...
                     </>
                   ) : (
-                    t('save')
+                    'Save Notes'
                   )}
                 </Button>
               </DialogFooter>
