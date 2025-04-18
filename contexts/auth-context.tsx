@@ -1,13 +1,13 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, ReactNode, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { createContext, useContext, useEffect, useState, ReactNode, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  signOut,
+  signOut as firebaseSignOut,
   onAuthStateChanged,
   browserSessionPersistence,
   setPersistence,
@@ -15,217 +15,216 @@ import {
   updatePassword as updateFirebasePassword,
   sendPasswordResetEmail,
   updateEmail as updateFirebaseEmail,
-  User as FirebaseUser
-} from "firebase/auth";
-import { auth } from "@/lib/firebase";
+} from "firebase/auth"
+import { auth } from "@/lib/firebase"
+import { toast } from "sonner"
 
 interface User {
-  id: string;
-  email: string | null;
-  name: string | null;
-  profileImage?: string | null;
-  provider: "email" | "google";
+  id: string
+  email: string | null
+  name: string | null
+  profileImage?: string | null
+  provider: "email" | "google"
 }
 
 interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name?: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  updateProfile: (data: { name?: string; email?: string; photoURL?: string }) => Promise<void>;
-  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  user: User | null
+  loading: boolean
+  signIn: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string, name?: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
+  signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+  updateProfile: (data: { name?: string; email?: string; photoURL?: string }) => Promise<void>
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Create a separate component to use the searchParams
 function AuthProviderContent({ children }: { children: ReactNode }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Handle redirect after auth state change
+  // Handle auth state changes
   useEffect(() => {
-    if (!loading && user) {
-      // Get callback URL if exists
-      const callbackUrl = searchParams.get("callbackUrl");
-      
-      // Use a short timeout to ensure the auth state is fully processed
-      setTimeout(() => {
-        if (callbackUrl) {
-          router.push(callbackUrl);
+    const handleAuthStateChange = async (firebaseUser: any) => {
+      try {
+        if (firebaseUser) {
+          // Get fresh ID token
+          const idToken = await firebaseUser.getIdToken(true)
+          
+          // Set session cookie
+          const response = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to establish session')
+          }
+
+          // Update user state
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+            profileImage: firebaseUser.photoURL,
+            provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email'
+          })
+
+          // Handle redirect after successful auth
+          const callbackUrl = searchParams.get("callbackUrl")
+          if (callbackUrl) {
+            router.push(callbackUrl)
+          }
         } else {
-          // Redirect to the main chat interface
-          router.replace("/");
+          setUser(null)
+          // Clear session
+          await fetch('/api/auth/session', { method: 'DELETE' })
         }
-      }, 100);
-    }
-  }, [user, loading, router, searchParams]);
-
-  useEffect(() => {
-    // Set session persistence
-    setPersistence(auth, browserSessionPersistence);
-
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Get the ID token
-        const idToken = await firebaseUser.getIdToken();
-        
-        // Set the session cookie via an API endpoint
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idToken }),
-        });
-
-        const user: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName,
-          profileImage: firebaseUser.photoURL,
-          provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email'
-        };
-        setUser(user);
-      } else {
-        setUser(null);
-        // Clear the session cookie
-        await fetch('/api/auth/session', { method: 'DELETE' });
+      } catch (error) {
+        console.error('Auth state change error:', error)
+        toast.error('Authentication error occurred')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false);
-    });
+    }
 
-    return () => unsubscribe();
-  }, []);
+    // Set session persistence and listen for auth changes
+    setPersistence(auth, browserSessionPersistence)
+      .then(() => {
+        return onAuthStateChanged(auth, handleAuthStateChange)
+      })
+      .catch((error) => {
+        console.error('Persistence error:', error)
+        setLoading(false)
+      })
+  }, [router, searchParams])
 
   const signIn = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Router push will happen in useEffect after auth state changes
-    } catch (error: any) {
-      throw new Error(error.message);
-    }
-  };
-
-  const signUp = async (email: string, password: string, name?: string) => {
-    if (!email.includes("@")) {
-      throw new Error("Invalid email format");
-    }
-
-    if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters");
-    }
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update the user's display name if provided
-      if (name && userCredential.user) {
-        await updateFirebaseProfile(userCredential.user, {
-          displayName: name
-        });
-      }
-
-      // Get the ID token right after sign-up
-      const idToken = await userCredential.user.getIdToken();
-      
-      // Set the session cookie
+      const result = await signInWithEmailAndPassword(auth, email, password)
+      const idToken = await result.user.getIdToken()
       await fetch('/api/auth/session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
-      });
-
-      // Router push will happen in useEffect after auth state changes
+      })
     } catch (error: any) {
-      console.error('Sign-up error:', error);
-      throw new Error(error.message);
+      console.error('Sign in error:', error)
+      throw new Error(error.message)
     }
-  };
+  }
+
+  const signUp = async (email: string, password: string, name?: string) => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password)
+      
+      if (name) {
+        await updateFirebaseProfile(result.user, { displayName: name })
+      }
+
+      const idToken = await result.user.getIdToken()
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
+    } catch (error: any) {
+      console.error('Sign up error:', error)
+      throw new Error(error.message)
+    }
+  }
 
   const signInWithGoogle = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      // Router push will happen in useEffect after auth state changes
+      const provider = new GoogleAuthProvider()
+      const result = await signInWithPopup(auth, provider)
+      const idToken = await result.user.getIdToken()
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      })
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('Google sign in error:', error)
+      throw new Error(error.message)
     }
-  };
+  }
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
-      router.push("/welcome");
+      await firebaseSignOut(auth)
+      await fetch('/api/auth/session', { method: 'DELETE' })
+      router.push('/welcome')
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('Sign out error:', error)
+      throw new Error(error.message)
     }
-  };
+  }
 
   const resetPassword = async (email: string) => {
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, email)
+      toast.success('Password reset email sent')
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('Password reset error:', error)
+      throw new Error(error.message)
     }
-  };
+  }
 
   const updateProfile = async (data: { name?: string; email?: string; photoURL?: string }) => {
     if (!auth.currentUser) {
-      throw new Error("No authenticated user");
+      throw new Error('No authenticated user')
     }
 
     try {
-      // Update display name and photo URL if provided
+      const updates: any = {}
+      
       if (data.name || data.photoURL) {
         await updateFirebaseProfile(auth.currentUser, {
           displayName: data.name || auth.currentUser.displayName,
           photoURL: data.photoURL || auth.currentUser.photoURL,
-        });
+        })
       }
 
-      // Update email if provided
       if (data.email && data.email !== auth.currentUser.email) {
-        await updateFirebaseEmail(auth.currentUser, data.email);
+        await updateFirebaseEmail(auth.currentUser, data.email)
       }
 
       // Update local user state
-      if (auth.currentUser) {
-        setUser({
-          id: auth.currentUser.uid,
-          email: auth.currentUser.email,
-          name: auth.currentUser.displayName,
-          profileImage: auth.currentUser.photoURL,
-          provider: auth.currentUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email'
-        });
-      }
+      setUser(prev => prev ? {
+        ...prev,
+        name: auth.currentUser?.displayName || prev.name,
+        email: auth.currentUser?.email || prev.email,
+        profileImage: auth.currentUser?.photoURL || prev.profileImage
+      } : null)
+
+      toast.success('Profile updated successfully')
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('Profile update error:', error)
+      throw new Error(error.message)
     }
-  };
+  }
 
   const updatePassword = async (currentPassword: string, newPassword: string) => {
-    if (!auth.currentUser || !auth.currentUser.email) {
-      throw new Error("No authenticated user");
+    if (!auth.currentUser?.email) {
+      throw new Error('No authenticated user')
     }
 
     try {
-      // Re-authenticate user first
-      await signInWithEmailAndPassword(auth, auth.currentUser.email, currentPassword);
-      
-      // Update password
-      await updateFirebasePassword(auth.currentUser, newPassword);
+      // Re-authenticate
+      await signInWithEmailAndPassword(auth, auth.currentUser.email, currentPassword)
+      await updateFirebasePassword(auth.currentUser, newPassword)
+      toast.success('Password updated successfully')
     } catch (error: any) {
-      throw new Error(error.message);
+      console.error('Password update error:', error)
+      throw new Error(error.message)
     }
-  };
+  }
 
   return (
     <AuthContext.Provider
@@ -243,7 +242,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
     >
       {children}
     </AuthContext.Provider>
-  );
+  )
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -251,13 +250,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <Suspense fallback={<div>Loading authentication...</div>}>
       <AuthProviderContent>{children}</AuthProviderContent>
     </Suspense>
-  );
+  )
 }
 
 export function useAuth() {
   const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
 }

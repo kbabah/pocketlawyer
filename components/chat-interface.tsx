@@ -44,17 +44,171 @@ export default function ChatInterface() {
 
   const { saveChat, updateChat } = useChatHistory(user?.id)
 
+  const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
+  const [loadingStates, setLoadingStates] = useState({
+    saving: false,
+    sending: false,
+    loading: false
+  });
+
+  const [networkStatus, setNetworkStatus] = useState({
+    isOnline: true,
+    isRetrying: false,
+    retryCount: 0
+  });
+
+  // Monitor network status
+  useEffect(() => {
+    const handleOnline = () => setNetworkStatus(prev => ({ ...prev, isOnline: true }));
+    const handleOffline = () => setNetworkStatus(prev => ({ ...prev, isOnline: false }));
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Retry logic for failed operations
+  const retryOperation = async (operation: () => Promise<any>, maxRetries = 3) => {
+    setNetworkStatus(prev => ({ ...prev, isRetrying: true }));
+    
+    try {
+      return await operation();
+    } catch (error) {
+      if (networkStatus.retryCount < maxRetries) {
+        setNetworkStatus(prev => ({ ...prev, retryCount: prev.retryCount + 1 }));
+        await new Promise(resolve => setTimeout(resolve, 1000 * (networkStatus.retryCount + 1)));
+        return retryOperation(operation, maxRetries);
+      }
+      throw error;
+    } finally {
+      setNetworkStatus(prev => ({ ...prev, isRetrying: false, retryCount: 0 }));
+    }
+  };
+
+  // Show all messages including pending ones
+  const allMessages = [...messages, ...pendingMessages];
+
+  // Enhance scroll behavior
+  const scrollToBottom = (smooth = true) => {
+    const scrollContainer = document.querySelector('.ScrollAreaViewport');
+    if (scrollContainer) {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: smooth ? 'smooth' : 'auto'
+      });
+    }
+  };
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    if (allMessages.length) {
+      scrollToBottom();
+    }
+  }, [allMessages]);
+
+  // Enhanced error handling
+  const handleError = (error: any, operation: string) => {
+    console.error(`${operation} error:`, error);
+    const errorMessage = error?.message || t(`chat.error.${operation}`);
+    toast.error(errorMessage);
+  };
+
+  // Enhanced message submission with retry
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isLoading || isMessageLimitReached) return
+    e.preventDefault();
+    if (!input.trim() || loadingStates.sending || isMessageLimitReached) return;
+
+    if (!networkStatus.isOnline) {
+      toast.error(t("chat.error.offline"));
+      return;
+    }
+
+    setLoadingStates(prev => ({ ...prev, sending: true }));
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input.trim()
+    };
 
     try {
-      await originalHandleSubmit(e)
+      setPendingMessages(prev => [...prev, userMessage]);
+      // Wrap the void return in a Promise
+      await retryOperation(() => new Promise<void>((resolve) => {
+        originalHandleSubmit(e);
+        resolve();
+      }));
+      scrollToBottom();
     } catch (error) {
-      console.error('Chat error:', error)
-      toast.error(t("chat.error.sending"))
+      handleError(error, 'sending');
+      setPendingMessages(prev => prev.filter(msg => msg.id !== userMessage.id));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, sending: false }));
     }
-  }
+  };
+
+  // Enhanced batch save with retry
+  const batchSaveMessages = async (messagesToSave: Message[]) => {
+    if (!user?.id || loadingStates.saving) return;
+    
+    if (!networkStatus.isOnline) {
+      // Store messages locally if offline
+      localStorage.setItem('pendingMessages', JSON.stringify(messagesToSave));
+      return;
+    }
+    
+    setLoadingStates(prev => ({ ...prev, saving: true }));
+    try {
+      await retryOperation(async () => {
+        if (chatId) {
+          await updateChat(chatId, messagesToSave);
+        } else {
+          const newChatId = await saveChat(messagesToSave);
+          if (newChatId) {
+            router.replace(`/?chatId=${newChatId}`, { scroll: false });
+            toast.success(t("chat.saved"));
+          }
+        }
+        setPendingMessages([]);
+        localStorage.removeItem('pendingMessages');
+      });
+    } catch (error) {
+      handleError(error, 'saving');
+      // Keep messages in local storage to retry later
+      localStorage.setItem('pendingMessages', JSON.stringify(messagesToSave));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  };
+
+  // Debounced save
+  useEffect(() => {
+    if (pendingMessages.length === 0) return;
+    
+    const timer = setTimeout(() => {
+      batchSaveMessages([...messages, ...pendingMessages]);
+    }, 2000); // 2 second debounce
+
+    return () => clearTimeout(timer);
+  }, [pendingMessages]);
+
+  // Try to sync pending messages when coming back online
+  useEffect(() => {
+    if (networkStatus.isOnline) {
+      const pendingMessages = localStorage.getItem('pendingMessages');
+      if (pendingMessages) {
+        try {
+          const messages = JSON.parse(pendingMessages);
+          batchSaveMessages(messages);
+        } catch (error) {
+          console.error('Error syncing pending messages:', error);
+        }
+      }
+    }
+  }, [networkStatus.isOnline]);
 
   // Load existing chat if chatId is provided
   useEffect(() => {
@@ -78,8 +232,7 @@ export default function ChatInterface() {
           router.push("/")
         }
       } catch (error) {
-        console.error('Error loading chat:', error)
-        toast.error(t("chat.error.loading"))
+        handleError(error, 'loading');
         router.push("/")
       } finally {
         setInitialLoadComplete(true)
@@ -88,16 +241,6 @@ export default function ChatInterface() {
 
     loadExistingChat()
   }, [chatId, user?.id, initialLoadComplete, setMessages, router, t])
-
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (messages.length) {
-      const scrollContainer = document.querySelector('.ScrollAreaViewport')
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight
-      }
-    }
-  }, [messages])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -128,8 +271,7 @@ export default function ChatInterface() {
           }
         }
       } catch (error) {
-        console.error("Failed to save document analysis:", error)
-        toast.error(t("chat.error.saving") || "Failed to save chat")
+        handleError(error, 'saving');
       }
     }
 
@@ -141,6 +283,16 @@ export default function ChatInterface() {
 
   return (
     <div className="flex flex-col min-h-full">
+      {!networkStatus.isOnline && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2 text-sm text-center">
+          {t("chat.offline.warning")}
+        </div>
+      )}
+      {networkStatus.isRetrying && (
+        <div className="bg-blue-500/10 border-b border-blue-500/20 px-4 py-2 text-sm text-center">
+          {t("chat.retrying")} ({networkStatus.retryCount})
+        </div>
+      )}
       <Tabs defaultValue="chat" className="flex flex-col flex-1">
         <div className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="px-4 py-2 border-b border-primary/10 w-full flex justify-center">
@@ -191,7 +343,7 @@ export default function ChatInterface() {
                     )}
                   </div>
                 ) : (
-                  messages.map((message) => (
+                  allMessages.map((message) => (
                     <div key={message.id} className="flex items-center justify-center">
                       <div className={`flex items-start gap-3 max-w-xl w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}>
                         <Avatar>
@@ -213,14 +365,14 @@ export default function ChatInterface() {
                   placeholder={t("chat.input.placeholder")}
                   value={input}
                   onChange={handleInputChange}
-                  disabled={isLoading || isMessageLimitReached}
+                  disabled={loadingStates.sending || isMessageLimitReached}
                   className="flex-1"
                 />
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button type="submit" disabled={isLoading || isMessageLimitReached}>
-                        {isLoading ? t("chat.sending") : t("chat.send")}
+                      <Button type="submit" disabled={loadingStates.sending || isMessageLimitReached}>
+                        {loadingStates.sending ? t("chat.sending") : t("chat.send")}
                       </Button>
                     </TooltipTrigger>
                     {isMessageLimitReached && (

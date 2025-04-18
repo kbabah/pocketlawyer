@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Message } from 'ai';
+import { toast } from 'sonner';
 
 export interface ChatSession {
   id: string;
@@ -12,9 +13,35 @@ export interface ChatHistory {
   [date: string]: ChatSession[];
 }
 
+interface ApiError extends Error {
+  status?: number;
+  code?: string;
+}
+
+const validateMessages = (messages: Message[]): boolean => {
+  return Array.isArray(messages) && 
+    messages.every(msg => 
+      msg && 
+      typeof msg.content === 'string' && 
+      typeof msg.role === 'string' && 
+      ['user', 'assistant'].includes(msg.role)
+    );
+};
+
 export function useChatHistory(userId: string | undefined) {
   const [chatHistory, setChatHistory] = useState<ChatHistory>({});
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleApiError = (error: ApiError, operation: string) => {
+    console.error(`Chat history ${operation} error:`, error);
+    const message = error.status === 404 ? 'Chat not found' :
+                   error.status === 403 ? 'Unauthorized access' :
+                   error.message || `Failed to ${operation}`;
+    setError(message);
+    toast.error(message);
+    return null;
+  };
 
   useEffect(() => {
     if (!userId) {
@@ -24,29 +51,42 @@ export function useChatHistory(userId: string | undefined) {
 
     const loadChatHistory = async () => {
       setLoading(true);
+      setError(null);
       try {
         const response = await fetch(`/api/chat/manage?userId=${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch chat history');
+        if (!response.ok) {
+          throw Object.assign(new Error('Failed to fetch chat history'), {
+            status: response.status
+          });
+        }
         
         const chats = await response.json();
-        const history: ChatHistory = {};
+        if (!Array.isArray(chats)) {
+          throw new Error('Invalid chat history format');
+        }
 
+        const history: ChatHistory = {};
         chats.forEach((chat: ChatSession & { userId: string }) => {
+          if (!chat?.id || !chat?.messages || !chat?.timestamp) {
+            console.warn('Skipping invalid chat entry:', chat);
+            return;
+          }
+
           const date = new Date(chat.timestamp).toISOString().split('T')[0];
           if (!history[date]) {
             history[date] = [];
           }
           history[date].push({
             id: chat.id,
-            title: chat.title,
+            title: chat.title || chat.messages[0]?.content?.slice(0, 30) || 'Untitled Chat',
             messages: chat.messages,
             timestamp: chat.timestamp,
           });
         });
 
         setChatHistory(history);
-      } catch (error) {
-        console.error('Error loading chat history:', error);
+      } catch (error: any) {
+        handleApiError(error, 'loading');
         setChatHistory({});
       } finally {
         setLoading(false);
@@ -56,11 +96,14 @@ export function useChatHistory(userId: string | undefined) {
     loadChatHistory();
   }, [userId]);
 
-  const saveChat = async (messages: Message[]) => {
-    if (!userId || messages.length === 0) return null;
+  const saveChat = async (messages: Message[]): Promise<string | null> => {
+    if (!userId || !validateMessages(messages)) {
+      toast.error('Invalid message format');
+      return null;
+    }
 
     try {
-      const title = messages[0].content.slice(0, 30) + (messages[0].content.length > 30 ? '...' : '');
+      const title = messages[0]?.content?.slice(0, 30) + (messages[0]?.content?.length > 30 ? '...' : '') || 'New Chat';
       const chatData = {
         userId,
         title,
@@ -74,21 +117,27 @@ export function useChatHistory(userId: string | undefined) {
         body: JSON.stringify(chatData),
       });
 
-      if (!response.ok) throw new Error('Failed to save chat');
+      if (!response.ok) {
+        throw Object.assign(new Error('Failed to save chat'), {
+          status: response.status
+        });
+      }
+
       const { id } = await response.json();
       return id;
-    } catch (error) {
-      console.error('Error saving chat:', error);
-      return null;
+    } catch (error: any) {
+      return handleApiError(error, 'saving');
     }
   };
 
-  const updateChat = async (chatId: string, messages: Message[]) => {
-    if (!userId || messages.length === 0) return;
+  const updateChat = async (chatId: string, messages: Message[]): Promise<boolean> => {
+    if (!userId || !validateMessages(messages)) {
+      toast.error('Invalid message format');
+      return false;
+    }
 
     try {
-      const title = messages[0].content.slice(0, 30) + (messages[0].content.length > 30 ? '...' : '');
-      
+      const title = messages[0]?.content?.slice(0, 30) + (messages[0]?.content?.length > 30 ? '...' : '') || 'Updated Chat';
       const response = await fetch('/api/chat/manage', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -100,12 +149,17 @@ export function useChatHistory(userId: string | undefined) {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to update chat');
+      if (!response.ok) {
+        throw Object.assign(new Error('Failed to update chat'), {
+          status: response.status
+        });
+      }
 
       // Update local state
       const date = new Date().toISOString().split('T')[0];
       const updatedHistory = { ...chatHistory };
       
+      // Remove chat from old date
       Object.keys(updatedHistory).forEach((oldDate) => {
         updatedHistory[oldDate] = updatedHistory[oldDate].filter((chat) => chat.id !== chatId);
         if (updatedHistory[oldDate].length === 0) {
@@ -113,6 +167,7 @@ export function useChatHistory(userId: string | undefined) {
         }
       });
 
+      // Add chat to new date
       if (!updatedHistory[date]) {
         updatedHistory[date] = [];
       }
@@ -125,13 +180,15 @@ export function useChatHistory(userId: string | undefined) {
       });
 
       setChatHistory(updatedHistory);
-    } catch (error) {
-      console.error('Error updating chat:', error);
+      return true;
+    } catch (error: any) {
+      handleApiError(error, 'updating');
+      return false;
     }
   };
 
-  const deleteChat = async (chatId: string) => {
-    if (!userId) return;
+  const deleteChat = async (chatId: string): Promise<boolean> => {
+    if (!userId) return false;
 
     try {
       const response = await fetch('/api/chat/manage', {
@@ -140,7 +197,11 @@ export function useChatHistory(userId: string | undefined) {
         body: JSON.stringify({ chatId }),
       });
 
-      if (!response.ok) throw new Error('Failed to delete chat');
+      if (!response.ok) {
+        throw Object.assign(new Error('Failed to delete chat'), {
+          status: response.status
+        });
+      }
       
       // Update local state
       const newHistory = { ...chatHistory };
@@ -151,14 +212,17 @@ export function useChatHistory(userId: string | undefined) {
         }
       });
       setChatHistory(newHistory);
-    } catch (error) {
-      console.error('Error deleting chat:', error);
+      return true;
+    } catch (error: any) {
+      handleApiError(error, 'deleting');
+      return false;
     }
   };
 
   return {
     chatHistory,
     loading,
+    error,
     saveChat,
     updateChat,
     deleteChat,

@@ -16,12 +16,13 @@ import { Star } from "lucide-react"
 import { toast } from "sonner"
 
 export function FeedbackDialog() {
-  const [isOpen, setIsOpen] = useState(false)
+  const [open, setOpen] = useState(false)
   const [rating, setRating] = useState(0)
+  const [hoveredRating, setHoveredRating] = useState(0)
   const [comment, setComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { user } = useAuth()
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -30,15 +31,18 @@ export function FeedbackDialog() {
     }
 
     setIsSubmitting(true)
+
     try {
+      // In a real app, this would call an API endpoint
       const response = await fetch("/api/feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           rating,
           comment,
-          userId: user?.id,
-          page: window.location.pathname
+          userId: user?.id || null,
         }),
       })
 
@@ -47,10 +51,11 @@ export function FeedbackDialog() {
       }
 
       toast.success(t("feedback.success"))
-      setIsOpen(false)
+      setOpen(false)
       setRating(0)
       setComment("")
     } catch (error) {
+      console.error("Feedback submission error:", error)
       toast.error(t("feedback.error"))
     } finally {
       setIsSubmitting(false)
@@ -58,31 +63,43 @@ export function FeedbackDialog() {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           {t("feedback.button")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("feedback.title")}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3, 4, 5].map((value) => (
-              <Button
-                key={value}
-                variant={rating === value ? "default" : "outline"}
-                size="sm"
-                onClick={() => setRating(value)}
-              >
-                <Star className={rating >= value ? "fill-current" : ""} />
-              </Button>
-            ))}
+        <div className="space-y-6">
+          <div className="flex justify-center py-4">
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className="rounded-full p-1 focus:outline-none"
+                  onMouseEnter={() => setHoveredRating(value)}
+                  onMouseLeave={() => setHoveredRating(0)}
+                  onClick={() => setRating(value)}
+                  aria-label={`Rate ${value} star${value !== 1 ? "s" : ""}`}
+                >
+                  <Star
+                    className={`h-8 w-8 ${
+                      value <= (hoveredRating || rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300"
+                    } transition-colors`}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
           <Textarea
             placeholder={t("feedback.comment.placeholder")}
+            className="min-h-[100px]"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />

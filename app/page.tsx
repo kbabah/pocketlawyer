@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/auth-context"
 import { Scale } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { FeedbackDialog } from "@/components/feedback-dialog"
+import { Button } from "@/components/ui/button"
+import { MessageSquare } from "lucide-react"
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -21,6 +23,10 @@ export default function Home() {
       router.push("/welcome")
     }
   }, [user, loading, router])
+
+  const handleTalkToLawyer = () => {
+    router.push("/lawyers")
+  }
 
   if (loading) {
     return (
@@ -50,6 +56,14 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            <Button 
+              variant="primary" 
+              className="hidden sm:flex"
+              onClick={handleTalkToLawyer}
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              {t("talk.to.lawyer")}
+            </Button>
             <FeedbackDialog />
             <span className="text-sm text-muted-foreground hidden sm:inline-block">{t("welcome.hero.title")}</span>
           </div>

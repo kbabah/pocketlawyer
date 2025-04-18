@@ -2,12 +2,17 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Get the session cookie
   const session = request.cookies.get('firebase-session')
-
+  
   // List of public paths that don't require authentication
   const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error']
-  const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  
+  // Additional public paths including lawyer directories
+  const publicLawyerPaths = ['/lawyers']
+  
+  const isPublicPath = [...publicPaths, ...publicLawyerPaths].some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
 
   // Don't require authentication for public paths and static files
   const isStaticResource = 
@@ -20,12 +25,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Special handling for lawyer registration - requires auth
+  if (request.nextUrl.pathname.startsWith('/lawyers/register')) {
+    if (!session) {
+      const signInUrl = new URL('/sign-in', request.url)
+      signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
+      return NextResponse.redirect(signInUrl)
+    }
+    return NextResponse.next()
+  }
+
   // Handle root path redirection based on auth status
   if (request.nextUrl.pathname === '/') {
     if (!session) {
       return NextResponse.redirect(new URL('/welcome', request.url))
     }
-    // If authenticated, allow access to root (which will be the chat interface)
     return NextResponse.next()
   }
 
@@ -37,7 +51,7 @@ export function middleware(request: NextRequest) {
   }
 
   // If already authenticated and trying to access auth pages, redirect to root
-  if (session && isPublicPath && request.nextUrl.pathname !== '/welcome') {
+  if (session && publicPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

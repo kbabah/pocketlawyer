@@ -1,77 +1,125 @@
-import { openai } from "@ai-sdk/openai"
-import { streamText } from "ai"
-import { OPENAI_MODELS } from '@/lib/openai'
+import { OpenAIStream, StreamingTextResponse, type Message } from 'ai';
+import OpenAI from 'openai';
+import { openai } from '@/lib/openai';
+import { auth } from '@/lib/firebase-admin';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { rateLimitRequest, getRateLimitContext } from '../../../lib/rate-limit';
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30
+// Cache for concurrent request handling
+const requestCache = new Map<string, Promise<Response>>();
 
-// Validate the requested model or fallback to default
-function validateModel(requestedModel: string): string {
-  // Array of supported models
-  const supportedModels = Object.values(OPENAI_MODELS);
-  
-  // If the requested model is supported, use it
-  if (supportedModels.includes(requestedModel)) {
-    return requestedModel;
-  }
-  
-  // Otherwise fallback to default model
-  console.warn(`Unsupported model requested: ${requestedModel}. Using default: ${OPENAI_MODELS.GPT41}`);
-  return OPENAI_MODELS.GPT41;
-}
-
-export async function POST(req: Request) {
+export async function POST(request: Request): Promise<Response> {
   try {
-    // Use DEFAULT_MODEL constant for better clarity and consistency
-    const DEFAULT_MODEL = OPENAI_MODELS.GPT41;
-    const { messages, userId, documentContent, language = "en", model = DEFAULT_MODEL } = await req.json()
+    // Verify authentication
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('session');
+    let userId: string | undefined;
 
-    // Validate the model parameter
-    const validatedModel = validateModel(model);
-
-    // Base system prompt that strictly enforces Cameroonian law focus
-    const basePrompt = `You are PocketLawyer, an AI legal assistant exclusively focused on Cameroonian law. 
-You must ONLY answer questions related to Cameroonian law, legal procedures, and the Cameroonian legal system.
-If a question is not specifically about Cameroonian law or the legal system in Cameroon, respond with:
-${language === "fr" ? 
-      "Je ne peux répondre qu'aux questions concernant le droit camerounais. Veuillez reformuler votre question en relation avec le système juridique camerounais." :
-      "I can only answer questions about Cameroonian law. Please rephrase your question to relate to the Cameroonian legal system."
-}`
-
-    // Enhanced system prompt for authenticated users with language preference
-    let systemPrompt = userId
-      ? `${basePrompt}\n\nFor authenticated users, provide detailed responses with specific legal references and citations from Cameroonian law. If you're unsure about any aspect of Cameroonian law, acknowledge your limitations and suggest consulting a qualified legal professional in Cameroon. Please respond in ${language === "fr" ? "French" : "English"}`
-      : `${basePrompt}\n\nProvide helpful information strictly about Cameroonian law. If you're unsure about any aspect of Cameroonian law, acknowledge your limitations and suggest consulting a qualified legal professional in Cameroon. Please respond in ${language === "fr" ? "French" : "English"}`
-
-    // If document content is provided, add it to the system prompt
-    if (documentContent) {
-      systemPrompt += `\n\nThe user has provided the following Cameroonian legal document for analysis. Use this document to inform your responses when relevant to Cameroonian law:\n\n${documentContent}`
+    if (sessionCookie?.value) {
+      try {
+        const decodedClaim = await auth.verifySessionCookie(sessionCookie.value);
+        userId = decodedClaim.uid;
+      } catch (error) {
+        console.warn('Invalid session token:', error);
+        // Continue as anonymous user
+      }
     }
 
-    const result = streamText({
-      model: openai(validatedModel), // Use the validated model
-      system: systemPrompt,
-      messages,
-      tools: {
-        web_search_preview: openai.tools.webSearchPreview({
-          searchContextSize: "high",
-        }),
-      },
-    })
+    // Apply rate limiting
+    const rateLimitContext = getRateLimitContext(request, userId);
+    const rateLimitResult = await rateLimitRequest(rateLimitContext, {
+      maxRequests: userId ? 30 : 10, // Higher limit for authenticated users
+      windowMs: 60000 // 1 minute window
+    });
 
-    return result.toDataStreamResponse()
-  } catch (e: unknown) {
-    const error = e as Error;
+    if (!rateLimitResult.success) {
+      return rateLimitResult.response!;
+    }
+
+    // Parse request data
+    const { messages, language = 'en' } = await request.json();
+
+    // Generate cache key for concurrent requests
+    const cacheKey = JSON.stringify({ messages, language });
+    
+    // Check if there's already an ongoing request for this input
+    if (requestCache.has(cacheKey)) {
+      return requestCache.get(cacheKey)!;
+    }
+
+    // Create the response promise
+    const responsePromise = createChatResponse(messages, language, userId);
+    
+    // Cache the promise
+    requestCache.set(cacheKey, responsePromise);
+
+    // Remove from cache after completion
+    responsePromise.finally(() => {
+      requestCache.delete(cacheKey);
+    });
+
+    // Add rate limit headers to response
+    const response = await responsePromise;
+    if (rateLimitResult.headers) {
+      Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          response.headers.set(key, value.toString());
+        }
+      });
+    }
+
+    return response;
+  } catch (error: any) {
     console.error('Chat API Error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: 'An error occurred while processing your request',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined 
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
+    
+    // Handle different types of errors
+    if (error.code === 'context_length_exceeded') {
+      return new NextResponse('Message is too long', { status: 413 });
+    }
+    if (error.code === 'rate_limit_exceeded') {
+      return new NextResponse('Rate limit exceeded', { status: 429 });
+    }
+    if (error.code === 'invalid_request_error') {
+      return new NextResponse('Invalid request', { status: 400 });
+    }
+    
+    return new NextResponse('Internal server error', { status: 500 });
+  }
+}
+
+async function createChatResponse(messages: Message[], language: string, userId?: string): Promise<Response> {
+  try {
+    // Prepare system message based on language
+    const systemMessage: OpenAI.ChatCompletionMessageParam = {
+      role: "system",
+      content: `You are PocketLawyer, a legal assistant. Communicate in ${language}. ${
+        !userId ? 'For unauthenticated users, provide brief responses.' : ''
+      } Always cite relevant laws and regulations.`
+    };
+
+    // Prepare messages for the API call
+    const apiMessages: OpenAI.ChatCompletionMessageParam[] = [
+      systemMessage,
+      ...messages.slice(-10).map(msg => ({
+        role: msg.role as OpenAI.ChatCompletionMessageParam["role"],
+        content: msg.content
+      }))
+    ];
+
+    // Create chat completion
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: apiMessages,
+      temperature: 0.7,
+      max_tokens: userId ? 2000 : 500, // Limit response length for unauthenticated users
+      stream: true,
+    });
+
+    // Create streaming response
+    const stream = OpenAIStream(response);
+    return new StreamingTextResponse(stream);
+  } catch (error: any) {
+    throw error; // Let the main handler deal with errors
   }
 }
