@@ -57,7 +57,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <Button 
-              variant="primary" 
+              variant="default" 
               className="hidden sm:flex"
               onClick={handleTalkToLawyer}
             >

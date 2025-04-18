@@ -49,6 +49,13 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
   const [replyText, setReplyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Reset reply text when dialog opens
+  useEffect(() => {
+    if (!isReplyDialogOpen) {
+      setReplyText('');
+    }
+  }, [isReplyDialogOpen]);
+
   // Fetch reviews on component mount
   useEffect(() => {
     const fetchReviews = async () => {
@@ -124,14 +131,14 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
     filterReviews(reviews, tab, searchQuery);
   };
 
-  // Handle search
+  // Handle search with undefined check
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
+    const query = e.target.value || '';
     setSearchQuery(query);
     filterReviews(reviews, activeTab, query);
   };
 
-  // Open reply dialog
+  // Open reply dialog and set initial reply text
   const handleOpenReply = (review: Review) => {
     setSelectedReview(review);
     setReplyText(review.reply || '');
@@ -249,7 +256,7 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
         <CardHeader>
           <CardTitle>Reviews Summary</CardTitle>
           <CardDescription>
-            Overview of client feedback and ratings
+            Overview of your client feedback and ratings
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -303,7 +310,7 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search reviews..."
+                placeholder="Search in reviews..."
                 value={searchQuery}
                 onChange={handleSearch}
                 className="w-full sm:w-[240px] pl-8"
@@ -320,76 +327,69 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
           >
             <TabsList>
               <TabsTrigger value="all">All Reviews</TabsTrigger>
-              <TabsTrigger value="unreplied">Unreplied</TabsTrigger>
-              <TabsTrigger value="replied">Replied</TabsTrigger>
+              <TabsTrigger value="unreplied">Awaiting Responses</TabsTrigger>
+              <TabsTrigger value="replied">Responded Reviews</TabsTrigger>
             </TabsList>
             
             <TabsContent value={activeTab} className="space-y-6">
               {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No reviews are available.
                 </div>
               ) : (
                 <>
-                  {filteredReviews.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No reviews found
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {filteredReviews.map((review) => (
-                        <div key={review.id} className="border rounded-lg p-4">
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex items-center gap-3">
-                              <Avatar>
-                                {review.clientPhotoURL ? (
-                                  <AvatarImage src={review.clientPhotoURL} alt={review.clientName} />
-                                ) : (
-                                  <AvatarFallback>
-                                    {review.clientName.charAt(0).toUpperCase()}
-                                  </AvatarFallback>
-                                )}
-                              </Avatar>
-                              <div>
-                                <div className="font-medium">{review.clientName}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {formatDate(review.createdAt)}
-                                </div>
+                  <div className="grid gap-4">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="p-4 border rounded-lg space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={review.clientPhoto} alt={review.clientName} />
+                              <AvatarFallback>{review.clientName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{review.clientName}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {formatDate(review.createdAt)}
                               </div>
-                            </div>
-                            <div className="flex items-center">
-                              {renderStars(review.rating)}
                             </div>
                           </div>
-                          
-                          <div className="mb-4 whitespace-pre-line">{review.comment}</div>
-                          
-                          {review.reply ? (
-                            <div className="bg-muted rounded p-3 mt-3">
-                              <div className="flex items-center mb-2">
-                                <Badge variant="outline" className="mr-2">Your Reply</Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {review.replyAt && formatDate(review.replyAt)}
-                                </span>
-                              </div>
-                              <div className="whitespace-pre-line text-sm">{review.reply}</div>
-                            </div>
-                          ) : (
-                            <div className="flex justify-end mt-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenReply(review)}
-                              >
-                                <MessageSquare className="h-4 w-4 mr-1" />
-                                Reply
-                              </Button>
-                            </div>
-                          )}
+                          <div className="flex items-center">
+                            {renderStars(review.rating)}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        
+                        <div className="mb-4 whitespace-pre-line">{review.comment}</div>
+                        
+                        {review.reply ? (
+                          <div className="bg-muted rounded p-3 mt-3">
+                            <div className="flex items-center mb-2">
+                              <Badge variant="outline" className="mr-2">Your Response</Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {review.replyAt && formatDate(review.replyAt)}
+                              </span>
+                            </div>
+                            <div className="whitespace-pre-line text-sm">{review.reply}</div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end mt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenReply(review)}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              Reply to Review
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
             </TabsContent>
@@ -403,7 +403,7 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
           <DialogHeader>
             <DialogTitle>Reply to Review</DialogTitle>
             <DialogDescription>
-              Your response will be visible to all users. Be professional and helpful.
+              Your response will be visible to all users. Please maintain a professional and constructive tone.
             </DialogDescription>
           </DialogHeader>
           
@@ -418,7 +418,7 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
               </div>
               
               <Textarea
-                placeholder="Write your reply..."
+                placeholder="Write your reply here..."
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 rows={4}
@@ -443,10 +443,10 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
+                  Sending...
                 </>
               ) : (
-                'Submit Reply'
+                'Send Reply'
               )}
             </Button>
           </DialogFooter>

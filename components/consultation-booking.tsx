@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { CalendarIcon, Clock, Users } from 'lucide-react'
+import { format, addMonths } from 'date-fns'
+import { CalendarIcon, Clock, Users, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -52,13 +52,13 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
 
   const handleBookConsultation = async () => {
     if (!user) {
-      toast.error(t('consultation.login.required'))
-      router.push('/sign-in')
+      const currentUrl = window.location.pathname + window.location.search
+      router.push(`/sign-in?callbackUrl=${encodeURIComponent(currentUrl)}`)
       return
     }
 
     if (!date || !timeSlot || !consultationType) {
-      toast.error(t('consultation.fields.required'))
+      toast.error('Please fill in all required fields.')
       return
     }
 
@@ -94,11 +94,15 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
         throw new Error(errorData.error || 'Failed to book consultation')
       }
 
-      toast.success(t('consultation.booking.success'))
-      router.push('/profile')
-    } catch (error) {
+      toast.success('Consultation booked successfully!')
+      router.push('/profile/consultations')
+    } catch (error: any) {
       console.error('Booking error:', error)
-      toast.error(t('consultation.booking.error'))
+      if (error.message.includes('Unauthorized') || error.message.includes('Invalid token')) {
+        router.push(`/sign-in?callbackUrl=${encodeURIComponent(window.location.pathname)}`)
+      } else {
+        toast.error(error.message || 'An error occurred while booking the consultation.')
+      }
     } finally {
       setLoading(false)
     }
@@ -107,14 +111,14 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('consultation.booking.title')}</CardTitle>
+        <CardTitle>Schedule a Consultation</CardTitle>
         <CardDescription>
-          {t('consultation.booking.description')} {lawyer.name}
+          Book a consultation session with {lawyer.name}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">{t('consultation.select.date')}</h3>
+          <h3 className="text-sm font-medium">Select Date</h3>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -125,15 +129,15 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, 'PPP') : t('consultation.choose.date')}
+                {date ? format(date, 'PPP') : 'Select a date'}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
                 selected={date}
                 onSelect={setDate}
-                disabled={(date) => date < new Date() || date > new Date(new Date().setMonth(new Date().getMonth() + 3))}
+                disabled={(date) => date < new Date() || date > addMonths(new Date(), 2)}
                 initialFocus
               />
             </PopoverContent>
@@ -141,13 +145,13 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">{t('consultation.select.time')}</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <h3 className="text-sm font-medium">Available Time Slots</h3>
+          <div className="grid grid-cols-2 gap-2">
             {timeSlots.map((slot) => (
               <Button
-                key={slot.id}
+                key={slot.time}
                 variant={timeSlot === slot.time ? 'default' : 'outline'}
-                className={cn(!slot.available && 'opacity-50 cursor-not-allowed')}
+                className={cn(!slot.available && 'opacity-50')}
                 onClick={() => slot.available && setTimeSlot(slot.time)}
                 disabled={!slot.available}
               >
@@ -159,27 +163,27 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">{t('consultation.type')}</h3>
+          <h3 className="text-sm font-medium">Consultation Type</h3>
           <Select 
             value={consultationType} 
             onValueChange={setConsultationType}
           >
             <SelectTrigger>
-              <SelectValue placeholder={t('consultation.select.type')} />
+              <SelectValue placeholder="Select consultation type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="video">{t('consultation.type.video')}</SelectItem>
-              <SelectItem value="audio">{t('consultation.type.audio')}</SelectItem>
-              <SelectItem value="chat">{t('consultation.type.chat')}</SelectItem>
-              <SelectItem value="inPerson">{t('consultation.type.in.person')}</SelectItem>
+              <SelectItem value="video">Video Call</SelectItem>
+              <SelectItem value="audio">Audio Call</SelectItem>
+              <SelectItem value="chat">Text Chat</SelectItem>
+              <SelectItem value="inPerson">In-Person Meeting</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">{t('consultation.additional.info')}</h3>
+          <h3 className="text-sm font-medium">Additional Information</h3>
           <Textarea
-            placeholder={t('consultation.additional.info.placeholder')}
+            placeholder="Please provide a brief description of your legal matter..."
             value={additionalInfo}
             onChange={(e) => setAdditionalInfo(e.target.value)}
           />
@@ -187,11 +191,11 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
 
         <div className="rounded-lg bg-muted p-3">
           <div className="flex items-center justify-between">
-            <div className="font-medium">{t('consultation.fee')}</div>
-            <div className="font-bold">{lawyer.hourlyRate}</div>
+            <div className="font-medium">Consultation Fee</div>
+            <div className="font-bold">{lawyer.hourlyRate} FCFA</div>
           </div>
           <div className="mt-2 text-sm text-muted-foreground">
-            {t('consultation.duration')}: 1 {t('consultation.hour')}
+            Duration: 1 hour
           </div>
         </div>
       </CardContent>
@@ -201,7 +205,14 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
           onClick={handleBookConsultation} 
           disabled={loading || !date || !timeSlot || !consultationType}
         >
-          {loading ? t('consultation.booking.processing') : t('consultation.book.now')}
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            'Book Consultation'
+          )}
         </Button>
       </CardFooter>
     </Card>

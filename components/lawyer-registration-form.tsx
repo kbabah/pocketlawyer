@@ -247,10 +247,9 @@ export function LawyerRegistrationForm() {
   return (
     <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Lawyer Profile Registration</CardTitle>
+        <CardTitle>Legal Professional Registration</CardTitle>
         <CardDescription>
-          Register as a lawyer to offer legal consultation services on our platform.
-          Your profile will be reviewed for verification before being published.
+          Complete this form to join our platform as a legal professional. Your profile will be reviewed and verified before being published.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -297,7 +296,7 @@ export function LawyerRegistrationForm() {
                 name="bio"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Bio</FormLabel>
+                    <FormLabel>Professional Bio</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Write a detailed professional bio..."
@@ -306,7 +305,7 @@ export function LawyerRegistrationForm() {
                       />
                     </FormControl>
                     <FormDescription>
-                      Your bio should include your professional background, expertise, and approach to handling legal matters.
+                      Provide a detailed professional biography highlighting your background, expertise, and approach to handling legal matters. This will be visible to potential clients.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -527,7 +526,7 @@ export function LawyerRegistrationForm() {
             <Separator />
 
             <div className="space-y-6">
-              <h3 className="text-lg font-medium">Experience</h3>
+              <h3 className="text-lg font-medium">Professional Experience</h3>
               {experienceFields.map((field, index) => (
                 <div key={index} className="p-4 border rounded-md">
                   <div className="flex justify-between items-center mb-4">
@@ -616,10 +615,10 @@ export function LawyerRegistrationForm() {
                     </FormItem>
                   </div>
                   <FormItem className="mt-4">
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Professional Experience</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe your responsibilities and achievements..."
+                        placeholder="Describe your key responsibilities and notable achievements in this role"
                         value={field.description}
                         onChange={(e) => handleExperienceChange(index, "description", e.target.value)}
                       />
@@ -644,7 +643,7 @@ export function LawyerRegistrationForm() {
                   <FormItem>
                     <FormLabel>Languages</FormLabel>
                     <FormDescription>
-                      Select the languages you are fluent in
+                      Select all languages in which you can provide legal services
                     </FormDescription>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {field.value?.map((item) => (
@@ -693,7 +692,7 @@ export function LawyerRegistrationForm() {
                   name="hourlyRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hourly Rate (USD)</FormLabel>
+                      <FormLabel>Consultation Rate</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -701,6 +700,9 @@ export function LawyerRegistrationForm() {
                           onChange={(e) => field.onChange(Number(e.target.value))}
                         />
                       </FormControl>
+                      <FormDescription>
+                        Set your hourly rate for legal consultations
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -777,9 +779,9 @@ export function LawyerRegistrationForm() {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Virtual Consultations Only</FormLabel>
+                        <FormLabel>Virtual Consultations</FormLabel>
                         <FormDescription>
-                          Check this if you only provide virtual consultations
+                          Select this option if you exclusively provide virtual consultations
                         </FormDescription>
                       </div>
                     </FormItem>
@@ -789,7 +791,7 @@ export function LawyerRegistrationForm() {
             </div>
             <CardFooter className="flex justify-end px-0">
               <Button type="submit" disabled={loading}>
-                {loading ? "Submitting..." : "Submit for Verification"}
+                {loading ? "Submitting Application..." : "Submit Application for Review"}
               </Button>
             </CardFooter>
           </form>

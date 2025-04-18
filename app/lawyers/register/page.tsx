@@ -15,7 +15,7 @@ export default function LawyerRegistrationPage() {
   useEffect(() => {
     if (!loading && !user) {
       // Redirect to sign-in if not logged in
-      router.push('/sign-in?callbackUrl=/lawyers/register')
+      router.replace('/sign-in?callbackUrl=/lawyers/register')
     }
   }, [user, loading, router])
 
@@ -38,12 +38,12 @@ export default function LawyerRegistrationPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8">
         <Link href="/lawyers" className="text-primary hover:underline">
-          &larr; Back to Lawyers Directory
+          ← Back to Directory
         </Link>
-        <h1 className="text-3xl font-bold mt-4 mb-2">Register as a Lawyer</h1>
+        <h1 className="text-3xl font-bold mt-4 mb-2">Legal Professional Registration</h1>
         <p className="text-muted-foreground">
-          Complete the form below to register as a legal professional on our platform.
-          Your profile will be reviewed for verification before being published.
+          Complete the form below to join our platform as a legal professional.
+          Your profile will undergo verification before being published.
         </p>
       </div>
       

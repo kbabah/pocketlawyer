@@ -47,7 +47,6 @@ function LawyerFilters({
     searchTerm: ''
   })
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
 
   const handleCheckboxChange = (category: 'specialization' | 'location' | 'language', value: string) => {
     setFilters(prev => {
@@ -78,9 +77,10 @@ function LawyerFilters({
     })
   }
 
-  const handleSearch = () => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
     setFilters(prev => {
-      const updatedFilters = { ...prev, searchTerm }
+      const updatedFilters = { ...prev, searchTerm: value }
       onFilterChange(updatedFilters)
       return updatedFilters
     })
@@ -97,7 +97,6 @@ function LawyerFilters({
     }
     
     setFilters(resetValues)
-    setSearchTerm('')
     onFilterChange(resetValues)
   }
 
@@ -116,15 +115,12 @@ function LawyerFilters({
         <div className="relative flex-1">
           <Input
             placeholder={t('lawyer.search.placeholder')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={filters.searchTerm}
+            onChange={handleSearchChange}
             className="w-full"
           />
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleSearch} className="whitespace-nowrap">
-            {t('lawyer.search.button')}
-          </Button>
           <Button 
             variant="outline" 
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}

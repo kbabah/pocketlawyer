@@ -55,8 +55,8 @@ function SignUpContent() {
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
       <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("auth.signup.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("auth.signup.description")}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Create Your Account</h1>
+        <p className="text-sm text-muted-foreground">Join PocketLawyer to get personalized legal assistance</p>
       </div>
       <Tabs defaultValue="email" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -66,17 +66,17 @@ function SignUpContent() {
         <TabsContent value="email">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">{t("auth.name")}</Label>
+              <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
-                placeholder="John Doe"
+                placeholder="John Smith"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 placeholder="name@example.com"
@@ -87,7 +87,7 @@ function SignUpContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t("auth.password")}</Label>
+              <Label htmlFor="password">Create Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -97,7 +97,7 @@ function SignUpContent() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? t("auth.creating") : t("auth.signup")}
+              {isSubmitting ? "Creating account..." : "Create Account"}
             </Button>
           </form>
         </TabsContent>
@@ -110,18 +110,18 @@ function SignUpContent() {
               disabled={isSubmitting}
             >
               <FaGoogle className="mr-2" />
-              {t("auth.signup.google")}
+              Sign up with Google
             </Button>
           </div>
         </TabsContent>
       </Tabs>
       <p className="px-8 text-center text-sm text-muted-foreground">
-        {t("auth.has.account")}{" "}
+        Already have an account?{" "}
         <Link
           href="/sign-in"
           className="underline underline-offset-4 hover:text-primary"
         >
-          {t("auth.signin")}
+          Sign in
         </Link>
       </p>
     </div>

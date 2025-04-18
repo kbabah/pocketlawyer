@@ -7,10 +7,21 @@ export function middleware(request: NextRequest) {
   // List of public paths that don't require authentication
   const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error']
   
-  // Additional public paths including lawyer directories
+  // Public lawyer paths (only directory listing and public profiles)
   const publicLawyerPaths = ['/lawyers']
+
+  // Protected paths that require authentication
+  const protectedPaths = [
+    '/api/consultations',
+    '/api/consultations/book',
+    '/profile/consultations'
+  ]
   
   const isPublicPath = [...publicPaths, ...publicLawyerPaths].some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  const isProtectedPath = protectedPaths.some(path =>
     request.nextUrl.pathname.startsWith(path)
   )
 
@@ -23,6 +34,13 @@ export function middleware(request: NextRequest) {
 
   if (isStaticResource) {
     return NextResponse.next()
+  }
+
+  // Force authentication for protected paths
+  if (isProtectedPath && !session) {
+    const signInUrl = new URL('/sign-in', request.url)
+    signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
+    return NextResponse.redirect(signInUrl)
   }
 
   // Special handling for lawyer registration - requires auth

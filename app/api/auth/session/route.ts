@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     const expiresIn = 60 * 60 * 24 * 14 * 1000 // 14 days
     const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn })
     
-    const cookieStore = cookies()
+    // Set the session cookie
+    const cookieStore = await cookies()
     await cookieStore.set('firebase-session', sessionCookie, {
       maxAge: expiresIn,
       httpOnly: true,
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     await cookieStore.delete('firebase-session')
     
     return NextResponse.json({ status: 'success' })

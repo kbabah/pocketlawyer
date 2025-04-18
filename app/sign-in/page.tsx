@@ -53,8 +53,8 @@ function SignInContent() {
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
       <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("auth.signin.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("auth.signin.description")}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Welcome Back</h1>
+        <p className="text-sm text-muted-foreground">Sign in to access your account</p>
       </div>
       <Tabs defaultValue="email" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -64,7 +64,7 @@ function SignInContent() {
         <TabsContent value="email">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">{t("auth.email")}</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 placeholder="name@example.com"
@@ -76,12 +76,12 @@ function SignInContent() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t("auth.password")}</Label>
+                <Label htmlFor="password">Password</Label>
                 <Link
                   href="/reset-password"
                   className="text-xs text-muted-foreground underline underline-offset-4 hover:text-primary"
                 >
-                  {t("auth.forgot.password")}
+                  Forgot your password?
                 </Link>
               </div>
               <Input
@@ -93,7 +93,7 @@ function SignInContent() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? t("auth.signing.in") : t("auth.signin.button")}
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
           </form>
         </TabsContent>
@@ -106,18 +106,18 @@ function SignInContent() {
               disabled={isSubmitting}
             >
               <FaGoogle className="mr-2" />
-              {t("auth.signin.google")}
+              Continue with Google
             </Button>
           </div>
         </TabsContent>
       </Tabs>
       <p className="px-8 text-center text-sm text-muted-foreground">
-        {t("auth.no.account")}{" "}
+        New to PocketLawyer?{" "}
         <Link
           href="/sign-up"
           className="underline underline-offset-4 hover:text-primary"
         >
-          {t("auth.signup")}
+          Create an account
         </Link>
       </p>
     </div>

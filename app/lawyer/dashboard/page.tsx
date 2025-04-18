@@ -62,8 +62,8 @@ export default function LawyerDashboard() {
   // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    // Update URL without refreshing page
-    window.history.pushState({}, '', `/lawyer/dashboard?tab=${value}`);
+    // Use Next.js router.replace for tab navigation
+    router.replace(`/lawyer/dashboard?tab=${value}`);
   };
 
   // Set initial tab from URL query param on component mount
@@ -130,7 +130,7 @@ export default function LawyerDashboard() {
 
   if (!lawyerProfile) {
     // This should not happen given the redirects in useEffect, but just in case
-    router.push('/lawyer/register');
+    router.replace('/lawyer/register');
     return null;
   }
 
@@ -163,9 +163,9 @@ export default function LawyerDashboard() {
             {!lawyerProfile.verified && (
               <Alert variant="warning" className="mt-4">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Verification Pending</AlertTitle>
+                <AlertTitle>Verification in Progress</AlertTitle>
                 <AlertDescription>
-                  Your profile is currently awaiting verification. Some features may be limited until your account is verified.
+                  Your profile is currently under review. Some features will be limited until your account is verified.
                 </AlertDescription>
               </Alert>
             )}
@@ -179,8 +179,8 @@ export default function LawyerDashboard() {
             className="lg:hidden space-y-6"
           >
             <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="availability">Availability</TabsTrigger>
+              <TabsTrigger value="profile">My Profile</TabsTrigger>
+              <TabsTrigger value="availability">Schedule</TabsTrigger>
               <TabsTrigger value="consultations">Consultations</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
@@ -209,12 +209,12 @@ export default function LawyerDashboard() {
                 <CardHeader>
                   <CardTitle>Account Settings</CardTitle>
                   <CardDescription>
-                    Manage your account settings and preferences
+                    Manage your account preferences and settings
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground">
-                    Account settings features coming soon.
+                    Additional account settings will be available soon.
                   </p>
                 </CardContent>
               </Card>

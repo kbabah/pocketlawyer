@@ -225,7 +225,7 @@ export default function LawyerDashboardConsultations() {
       case 'upcoming':
         return 'default'
       case 'completed':
-        return 'success'
+        return 'secondary'
       case 'cancelled':
         return 'destructive'
     }

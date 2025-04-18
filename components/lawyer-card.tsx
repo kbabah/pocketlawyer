@@ -46,8 +46,33 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
               <AvatarFallback>{getInitials(lawyer.name)}</AvatarFallback>
             </Avatar>
             <div className="space-y-1">
-              <p className="font-medium text-sm truncate">{lawyer.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{lawyer.specialties?.join(', ') || ''}</p>
+              <h3 className="font-semibold text-lg">{lawyer.name}</h3>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <StarIcon
+                      key={i}
+                      size={14}
+                      className={i < Math.floor(lawyer.rating || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  ({lawyer.reviewCount} reviews)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {lawyer.specialties.slice(0, 3).map((specialization, index) => (
+                  <Badge key={index} variant="outline" className="text-xs">
+                    {specialization}
+                  </Badge>
+                ))}
+                {lawyer.specialties && lawyer.specialties.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{lawyer.specialties.length - 3} more
+                  </Badge>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -66,11 +91,19 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
             </Avatar>
             <div className="space-y-1 flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium truncate">{lawyer.name}</h3>
-                <div className="flex items-center">
-                  <StarIcon className="h-4 w-4 text-yellow-400 fill-current" />
-                  <span className="text-sm ml-1">
-                    {lawyer.rating} ({lawyer.reviewCount})
+                <h3 className="font-semibold text-lg">{lawyer.name}</h3>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <StarIcon
+                        key={i}
+                        size={14}
+                        className={i < Math.floor(lawyer.rating || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    ({lawyer.reviewCount} reviews)
                   </span>
                 </div>
               </div>
@@ -84,7 +117,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {lawyer.specialties?.slice(0, 3).map((specialization, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {specialization}
@@ -92,7 +125,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
                 ))}
                 {lawyer.specialties && lawyer.specialties.length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{lawyer.specialties.length - 3}
+                    +{lawyer.specialties.length - 3} more
                   </Badge>
                 )}
               </div>
@@ -106,8 +139,8 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
         
         <div className="flex items-center justify-between mt-4 pt-4 border-t">
           <div className="text-sm">
-            <p className="font-medium">{t('lawyer.consultation.fee')}</p>
-            <p className="text-primary">{lawyer.hourlyRate} {t('lawyer.per.hour')}</p>
+            <p className="font-medium">Consultation Fee</p>
+            <p className="text-primary">{lawyer.hourlyRate} FCFA per hour</p>
           </div>
           
           <div className="flex gap-2">
@@ -118,7 +151,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
               className="text-xs"
             >
               <MessageSquareIcon className="h-3 w-3 mr-1" />
-              {t('lawyer.view.profile')}
+              View Profile
             </Button>
             <Button 
               size="sm" 
@@ -126,7 +159,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
               className="text-xs"
             >
               <CalendarIcon className="h-3 w-3 mr-1" />
-              {t('lawyer.book')}
+              Book Consultation
             </Button>
           </div>
         </div>

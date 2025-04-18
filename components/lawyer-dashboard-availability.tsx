@@ -232,10 +232,8 @@ export function LawyerDashboardAvailability({ lawyerProfile }: LawyerDashboardAv
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Manage Availability</CardTitle>
-          <CardDescription>
-            Set your available days and time slots for consultations.
-          </CardDescription>
+          <CardTitle>Availability Management</CardTitle>
+          <CardDescription>Set your consultation schedule and manage your availability</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -244,7 +242,7 @@ export function LawyerDashboardAvailability({ lawyerProfile }: LawyerDashboardAv
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Profile Not Verified</AlertTitle>
               <AlertDescription>
-                You can set your availability, but clients won't be able to book consultations until your profile is verified.
+                You can set your availability now, but clients will not be able to book consultations until your profile is verified.
               </AlertDescription>
             </Alert>
           )}
@@ -360,10 +358,10 @@ export function LawyerDashboardAvailability({ lawyerProfile }: LawyerDashboardAv
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                Saving Changes...
               </>
             ) : (
-              'Save Availability'
+              'Save Schedule'
             )}
           </Button>
         </CardFooter>
@@ -371,16 +369,16 @@ export function LawyerDashboardAvailability({ lawyerProfile }: LawyerDashboardAv
 
       <Card>
         <CardHeader>
-          <CardTitle>Availability Tips</CardTitle>
+          <CardTitle>Scheduling Guidelines</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <h3 className="text-lg font-medium">Setting Your Schedule</h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li className="text-sm">Check the days you're available to take consultations</li>
+              <li className="text-sm">Select the days when you are available for consultations</li>
               <li className="text-sm">Add specific time slots for each available day</li>
-              <li className="text-sm">Make sure time slots don't overlap</li>
-              <li className="text-sm">You can add multiple slots per day for different hours</li>
+              <li className="text-sm">Ensure time slots do not overlap</li>
+              <li className="text-sm">You can add multiple time slots per day</li>
             </ul>
           </div>
           
@@ -389,10 +387,10 @@ export function LawyerDashboardAvailability({ lawyerProfile }: LawyerDashboardAv
           <div className="space-y-2">
             <h3 className="text-lg font-medium">Managing Bookings</h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li className="text-sm">Booked time slots cannot be edited or removed</li>
-              <li className="text-sm">You can add new available time slots at any time</li>
-              <li className="text-sm">Changes you make are not retroactive to existing bookings</li>
-              <li className="text-sm">Remember to regularly update your availability</li>
+              <li className="text-sm">Booked time slots cannot be modified</li>
+              <li className="text-sm">You can add new time slots at any time</li>
+              <li className="text-sm">Changes will not affect existing bookings</li>
+              <li className="text-sm">Remember to update your schedule regularly</li>
             </ul>
           </div>
         </CardContent>

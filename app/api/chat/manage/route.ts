@@ -11,8 +11,8 @@ interface ApiError extends Error {
 // Helper to verify authentication
 async function verifyAuth(request: Request) {
   try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('session')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('firebase-session')?.value;
     
     if (!token) {
       throw Object.assign(new Error('Unauthorized - No token'), { status: 401 });

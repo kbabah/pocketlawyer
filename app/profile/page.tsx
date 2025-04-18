@@ -87,10 +87,10 @@ export default function Profile() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl flex items-center gap-2">
               <Scale className="h-6 w-6" />
-              Profile Settings
+              Account Settings
             </CardTitle>
             <CardDescription>
-              Update your profile information and password
+              Manage your account information and security settings
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -103,7 +103,7 @@ export default function Profile() {
               <TabsContent value="profile">
                 <form onSubmit={handleProfileUpdate} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
                       value={name}
@@ -122,7 +122,7 @@ export default function Profile() {
                     />
                     {user.provider === "google" && (
                       <p className="text-sm text-muted-foreground">
-                        Email cannot be changed for Google accounts
+                        Email cannot be modified for Google-linked accounts
                       </p>
                     )}
                   </div>
@@ -140,7 +140,7 @@ export default function Profile() {
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Update Profile"
+                      "Save Changes"
                     )}
                   </Button>
                 </form>
@@ -184,7 +184,7 @@ export default function Profile() {
                   {user.provider === "google" && (
                     <Alert>
                       <AlertDescription>
-                        Password management is handled by Google for Google accounts
+                        Password management is handled through Google for Google-linked accounts
                       </AlertDescription>
                     </Alert>
                   )}
@@ -206,7 +206,7 @@ export default function Profile() {
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Update Password"
+                      "Save Changes"
                     )}
                   </Button>
                 </form>

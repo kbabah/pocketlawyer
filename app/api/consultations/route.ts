@@ -1,31 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
 import { auth as adminAuth } from '@/lib/firebase-admin';
+import { cookies } from 'next/headers';
+
+async function verifyAuth(request: NextRequest) {
+  // Try Firebase ID token first (for API calls)
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decodedToken = await adminAuth.verifyIdToken(token);
+      return decodedToken.uid;
+    } catch (error) {
+      console.warn('Invalid ID token:', error);
+    }
+  }
+
+  // Fallback to session cookie (for server-side requests)
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('firebase-session')?.value;
+  
+  if (!sessionCookie) {
+    throw new Error('Unauthorized');
+  }
+
+  try {
+    const decodedClaim = await adminAuth.verifySessionCookie(sessionCookie);
+    return decodedClaim.uid;
+  } catch (error) {
+    throw new Error('Unauthorized');
+  }
+}
 
 // Handle POST request for creating a new consultation booking
 export async function POST(request: NextRequest) {
   try {
-    // Get the authorization token
-    const authHeader = request.headers.get('authorization');
+    // Verify authentication and get userId
+    const userId = await verifyAuth(request);
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Extract the token from the Authorization header
-    const token = authHeader.split(' ')[1];
-    
-    let decodedToken;
-    try {
-      // Verify the Firebase ID token
-      decodedToken = await adminAuth.verifyIdToken(token);
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
     // Get the request body
     const body = await request.json();
     
@@ -36,9 +49,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Get userId from the verified token
-    const userId = decodedToken.uid;
 
     // Get the lawyer details to determine hourlyRate
     const lawyerRef = doc(db, 'lawyers', body.lawyerId);
@@ -58,7 +68,7 @@ export async function POST(request: NextRequest) {
     
     // Create consultation data
     const consultationData = {
-      id: uuidv4(),
+      id: crypto.randomUUID(),
       lawyerId: body.lawyerId,
       clientId: userId,
       subject: body.consultationType || 'Legal Consultation',
@@ -88,8 +98,11 @@ export async function POST(request: NextRequest) {
       consultationId: docRef.id
     }, { status: 201 });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error booking consultation:', error);
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json(
       { error: 'Failed to book consultation' },
       { status: 500 }
@@ -100,27 +113,8 @@ export async function POST(request: NextRequest) {
 // Handle GET request to fetch consultations for the current user
 export async function GET(request: NextRequest) {
   try {
-    // Get the authorization token
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Extract the token from the Authorization header
-    const token = authHeader.split(' ')[1];
-    
-    let decodedToken;
-    try {
-      // Verify the Firebase ID token
-      decodedToken = await adminAuth.verifyIdToken(token);
-    } catch (error) {
-      console.error('Error verifying token:', error);
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    }
-
-    // Get userId from the verified token
-    const userId = decodedToken.uid;
+    // Verify authentication and get userId
+    const userId = await verifyAuth(request);
     
     // Query parameters
     const { searchParams } = new URL(request.url);
@@ -139,11 +133,12 @@ export async function GET(request: NextRequest) {
       ...doc.data()
     }));
 
-    // Return consultations
     return NextResponse.json({ consultations });
-
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching consultations:', error);
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     return NextResponse.json(
       { error: 'Failed to fetch consultations' },
       { status: 500 }
