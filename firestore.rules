@@ -2,6 +2,35 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Base rules
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Chat rules
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+
+    // Chat search index rules
+    match /chatSearchIndex/{indexId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+
     // Allow both authenticated and anonymous users to create feedback
     match /feedback/{feedbackId} {
       allow create: if 
@@ -10,10 +39,9 @@ service cloud.firestore {
       allow read, write, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     
-    // Allow authenticated users to read and write their own chats
-    match /chats/{chatId} {
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow read, write, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    // Allow other collections (keeping existing rules)
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

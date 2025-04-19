@@ -68,6 +68,8 @@ export interface Location {
   country: string;
   postalCode?: string;
   virtualOnly: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Consultation {
@@ -81,6 +83,7 @@ export interface Consultation {
     start: string;
     end: string;
   };
+  timezone: string;
   status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
   paymentStatus: 'pending' | 'completed' | 'refunded';
   paymentAmount: number;

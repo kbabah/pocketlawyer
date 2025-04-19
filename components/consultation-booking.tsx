@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { format, addMonths } from 'date-fns'
+import { format, addMonths, isBefore, startOfDay, addDays } from 'date-fns'
 import { CalendarIcon, Clock, Users, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -36,19 +36,19 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
   const [consultationType, setConsultationType] = useState<string>("video")
   const [additionalInfo, setAdditionalInfo] = useState("")
   const [loading, setLoading] = useState(false)
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
-  // Mock time slots - in a real app, this would come from an API based on lawyer availability
-  const timeSlots: TimeSlot[] = [
-    { id: '1', time: '09:00', available: true },
-    { id: '2', time: '10:00', available: true },
-    { id: '3', time: '11:00', available: true },
-    { id: '4', time: '12:00', available: false },
-    { id: '5', time: '13:00', available: false },
-    { id: '6', time: '14:00', available: true },
-    { id: '7', time: '15:00', available: true },
-    { id: '8', time: '16:00', available: true },
-    { id: '9', time: '17:00', available: true },
-  ]
+  // Get list of available timezones
+  const timezones = Intl.supportedValuesOf('timeZone')
+
+  // Calculate booking window
+  const maxDate = addDays(startOfDay(new Date()), 60)
+  const today = startOfDay(new Date())
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    setDate(selectedDate)
+    setTimeSlot(undefined) // Reset time slot when date changes
+  }
 
   const handleBookConsultation = async () => {
     if (!user) {
@@ -57,7 +57,7 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
       return
     }
 
-    if (!date || !timeSlot || !consultationType) {
+    if (!date || !timeSlot || !consultationType || !timezone) {
       toast.error('Please fill in all required fields.')
       return
     }
@@ -65,15 +65,17 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
     setLoading(true)
 
     try {
-      // Get the current user's ID token
       const token = await auth.currentUser?.getIdToken()
       
       if (!token) {
         throw new Error('Authentication token not available')
       }
 
-      // Make the API call with the token in the Authorization header
-      const response = await fetch('/api/consultations', {
+      // Calculate end time (1 hour later)
+      const [hours, minutes] = timeSlot.split(':').map(Number)
+      const endTime = `${(hours + 1).toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+
+      const response = await fetch('/api/consultations/book', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -81,17 +83,23 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
         },
         body: JSON.stringify({
           lawyerId: lawyer.id,
-          userId: user.id,
+          clientId: user.id,
           date: format(date, 'yyyy-MM-dd'),
-          timeSlot,
+          timeSlot: {
+            start: timeSlot,
+            end: endTime
+          },
+          timezone,
           consultationType,
-          additionalInfo
+          subject: `${consultationType.charAt(0).toUpperCase() + consultationType.slice(1)} Consultation`,
+          description: additionalInfo || ''
         })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to book consultation')
+        throw new Error(data.error || 'Failed to book consultation')
       }
 
       toast.success('Consultation booked successfully!')
@@ -129,15 +137,15 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {date ? format(date, 'PPP') : 'Select a date'}
+                {date ? format(date, 'PPP') : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
                 selected={date}
-                onSelect={setDate}
-                disabled={(date) => date < new Date() || date > addMonths(new Date(), 2)}
+                onSelect={handleDateSelect}
+                disabled={(date) => isBefore(date, today) || date > maxDate}
                 initialFocus
               />
             </PopoverContent>
@@ -145,18 +153,31 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">Available Time Slots</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {timeSlots.map((slot) => (
+          <h3 className="text-sm font-medium">Select Time (Your Local Time)</h3>
+          <Select value={timezone} onValueChange={setTimezone}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select your timezone" />
+            </SelectTrigger>
+            <SelectContent>
+              {timezones.map((tz) => (
+                <SelectItem key={tz} value={tz}>
+                  {tz}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="grid grid-cols-3 gap-2">
+            {lawyer.availability.schedule[format(date || new Date(), 'EEEE').toLowerCase()]?.slots.map((slot) => (
               <Button
-                key={slot.time}
-                variant={timeSlot === slot.time ? 'default' : 'outline'}
-                className={cn(!slot.available && 'opacity-50')}
-                onClick={() => slot.available && setTimeSlot(slot.time)}
-                disabled={!slot.available}
+                key={slot.start}
+                variant={timeSlot === slot.start ? 'default' : 'outline'}
+                className={cn(slot.booked && 'opacity-50 cursor-not-allowed')}
+                onClick={() => !slot.booked && setTimeSlot(slot.start)}
+                disabled={slot.booked}
               >
                 <Clock className="mr-2 h-4 w-4" />
-                {slot.time}
+                {slot.start}
               </Button>
             ))}
           </div>
@@ -203,7 +224,7 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
         <Button 
           className="w-full" 
           onClick={handleBookConsultation} 
-          disabled={loading || !date || !timeSlot || !consultationType}
+          disabled={loading || !date || !timeSlot || !consultationType || !timezone}
         >
           {loading ? (
             <>

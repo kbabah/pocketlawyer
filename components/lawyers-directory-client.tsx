@@ -1,16 +1,19 @@
 "use client"
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { LawyerFilters, type LawyerFilters as LawyerFiltersType } from '@/components/lawyer-filters'
 import { LawyerCard } from '@/components/lawyer-card'
 import { Button } from '@/components/ui/button'
 import { Lawyer } from '@/types/lawyer'
 import Link from 'next/link'
+import { useGeolocation } from '@/hooks/use-geolocation'
 
 interface LawyersDirectoryClientProps {
   initialLawyers: Lawyer[]
 }
+
+type LawyerWithDistance = Lawyer & { distance?: number }
 
 export function LawyersDirectoryClient({ initialLawyers }: LawyersDirectoryClientProps) {
   const [filters, setFilters] = useState<LawyerFiltersType>({
@@ -21,55 +24,97 @@ export function LawyersDirectoryClient({ initialLawyers }: LawyersDirectoryClien
     rating: 0,
     searchTerm: ''
   })
+  const { coordinates, isLoading: locationLoading } = useGeolocation()
+  const [lawyers, setLawyers] = useState<LawyerWithDistance[]>(initialLawyers)
+  const [loading, setLoading] = useState(false)
 
-  const handleFilterChange = (newFilters: LawyerFiltersType) => {
+  const handleFilterChange = useCallback(async (newFilters: LawyerFiltersType) => {
     setFilters(newFilters)
-  }
+    setLoading(true)
 
-  const filteredLawyers = useMemo(() => {
-    return initialLawyers.filter(lawyer => {
-      // Filter by specialization
-      if (filters.specialization.length > 0 && 
-          !filters.specialization.some(spec => lawyer.specialties.includes(spec))) {
-        return false
+    try {
+      // Build query parameters
+      const params = new URLSearchParams()
+      
+      // Add specialty filters
+      newFilters.specialization.forEach(spec => 
+        params.append('specialties[]', spec)
+      )
+
+      // Add location filters
+      if (newFilters.location.length > 0) {
+        const [city, state] = newFilters.location[0].split(', ')
+        if (city) params.append('city', city)
+        if (state) params.append('state', state)
       }
 
-      // Filter by location
-      if (filters.location.length > 0 && 
-          !filters.location.includes(`${lawyer.location.city}, ${lawyer.location.state}`)) {
-        return false
+      // Add language filter
+      if (newFilters.language.length > 0) {
+        params.append('language', newFilters.language[0])
       }
 
-      // Filter by language
-      if (filters.language.length > 0 && 
-          !filters.language.some(lang => lawyer.languages.includes(lang))) {
-        return false
+      // Add coordinates if available
+      if (coordinates) {
+        params.append('latitude', coordinates.latitude.toString())
+        params.append('longitude', coordinates.longitude.toString())
       }
 
-      // Filter by consultation fee
-      if (lawyer.hourlyRate < filters.consultationFee[0] || 
-          lawyer.hourlyRate > filters.consultationFee[1]) {
-        return false
-      }
+      // Fetch filtered lawyers
+      const response = await fetch(`/api/lawyers?${params.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch lawyers')
+      
+      const data = await response.json()
+      setLawyers(data.lawyers)
+    } catch (error) {
+      console.error('Error fetching filtered lawyers:', error)
+      // Fallback to client-side filtering
+      const filtered = initialLawyers.filter(lawyer => {
+        // Filter by specialization
+        if (newFilters.specialization.length > 0 && 
+            !newFilters.specialization.some(spec => lawyer.specialties.includes(spec))) {
+          return false
+        }
 
-      // Filter by rating
-      if (filters.rating > 0 && (lawyer.rating || 0) < filters.rating) {
-        return false
-      }
+        // Filter by location
+        if (newFilters.location.length > 0 && 
+            !newFilters.location.includes(`${lawyer.location.city}, ${lawyer.location.state}`)) {
+          return false
+        }
 
-      // Filter by search term
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase()
-        return (
-          lawyer.name.toLowerCase().includes(searchLower) ||
-          lawyer.bio.toLowerCase().includes(searchLower) ||
-          lawyer.specialties.some(spec => spec.toLowerCase().includes(searchLower))
-        )
-      }
+        // Filter by language
+        if (newFilters.language.length > 0 && 
+            !newFilters.language.some(lang => lawyer.languages.includes(lang))) {
+          return false
+        }
 
-      return true
-    })
-  }, [initialLawyers, filters])
+        // Filter by consultation fee
+        if (lawyer.hourlyRate < newFilters.consultationFee[0] || 
+            lawyer.hourlyRate > newFilters.consultationFee[1]) {
+          return false
+        }
+
+        // Filter by rating
+        if (newFilters.rating > 0 && (lawyer.rating || 0) < newFilters.rating) {
+          return false
+        }
+
+        // Filter by search term
+        if (newFilters.searchTerm) {
+          const searchLower = newFilters.searchTerm.toLowerCase()
+          return (
+            lawyer.name.toLowerCase().includes(searchLower) ||
+            lawyer.bio.toLowerCase().includes(searchLower) ||
+            lawyer.specialties.some(spec => spec.toLowerCase().includes(searchLower))
+          )
+        }
+
+        return true
+      })
+      setLawyers(filtered)
+    } finally {
+      setLoading(false)
+    }
+  }, [initialLawyers, coordinates])
 
   // Extract unique values for filter options
   const specializations = useMemo(() => 
@@ -96,6 +141,7 @@ export function LawyersDirectoryClient({ initialLawyers }: LawyersDirectoryClien
             specializations={specializations}
             locations={locations}
             languages={languages}
+            loading={loading || locationLoading}
           />
           <div className="mt-6">
             <Card>
@@ -125,12 +171,15 @@ export function LawyersDirectoryClient({ initialLawyers }: LawyersDirectoryClien
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLawyers.map((lawyer) => (
-            <LawyerCard key={lawyer.id} lawyer={lawyer} />
+          {lawyers.map((lawyer) => (
+            <LawyerCard 
+              key={lawyer.id} 
+              lawyer={lawyer}
+            />
           ))}
         </div>
         
-        {filteredLawyers.length === 0 && (
+        {lawyers.length === 0 && (
           <div className="text-center py-12">
             <h3 className="text-xl font-medium mb-2">No lawyers found</h3>
             <p className="text-muted-foreground">

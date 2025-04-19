@@ -124,7 +124,6 @@ export async function GET(request: Request) {
     const userId = await verifyAuth(request);
     const { searchParams } = new URL(request.url);
     const chatId = searchParams.get('chatId');
-    const requestedUserId = searchParams.get('userId');
 
     // If requesting specific chat
     if (chatId) {
@@ -141,18 +140,10 @@ export async function GET(request: Request) {
       return NextResponse.json(chat);
     }
     
-    // If requesting user's chats
-    if (requestedUserId) {
-      // Ensure user can only access their own chats
-      if (requestedUserId !== userId) {
-        throw Object.assign(new Error('Unauthorized'), { status: 403 });
-      }
-      
-      const chats = await getUserChats(userId);
-      return NextResponse.json(chats);
-    }
-    
-    throw Object.assign(new Error('Invalid request parameters'), { status: 400 });
+    // If requesting all user's chats (no chatId provided)
+    const chats = await getUserChats(userId);
+    return NextResponse.json(chats);
+
   } catch (error: any) {
     return handleApiError(error);
   }

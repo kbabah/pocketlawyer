@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,13 +13,14 @@ import {
 } from '@/components/ui/accordion'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useLanguage } from '@/contexts/language-context'
-import { X, Filter } from 'lucide-react'
+import { X, Filter, Loader2 } from 'lucide-react'
 
 interface LawyerFiltersProps {
   onFilterChange: (filters: LawyerFilters) => void
   specializations?: string[]
   locations?: string[]
   languages?: string[]
+  loading?: boolean
 }
 
 export interface LawyerFilters {
@@ -35,58 +36,48 @@ function LawyerFilters({
   onFilterChange, 
   specializations = [], 
   locations = [], 
-  languages = [] 
+  languages = [],
+  loading = false
 }: LawyerFiltersProps) {
   const { t } = useLanguage()
-  const [filters, setFilters] = useState<LawyerFilters>({
+  const [localFilters, setLocalFilters] = useState<LawyerFilters>({
     specialization: [],
     location: [],
     language: [],
-    consultationFee: [0, 100000], // Default range in FCFA
+    consultationFee: [0, 100000],
     rating: 0,
     searchTerm: ''
   })
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
-  const handleCheckboxChange = (category: 'specialization' | 'location' | 'language', value: string) => {
-    setFilters(prev => {
-      const currentValues = prev[category]
-      const updatedValues = currentValues.includes(value)
-        ? currentValues.filter(item => item !== value)
-        : [...currentValues, value]
-      
-      const updatedFilters = { ...prev, [category]: updatedValues }
-      onFilterChange(updatedFilters)
-      return updatedFilters
-    })
-  }
+  const updateFilters = useCallback((updatedFilters: LawyerFilters) => {
+    setLocalFilters(updatedFilters)
+    onFilterChange(updatedFilters)
+  }, [onFilterChange])
 
-  const handleFeeRangeChange = (values: number[]) => {
-    setFilters(prev => {
-      const updatedFilters = { ...prev, consultationFee: [values[0], values[1]] }
-      onFilterChange(updatedFilters)
-      return updatedFilters
-    })
-  }
+  const handleCheckboxChange = useCallback((category: 'specialization' | 'location' | 'language', value: string) => {
+    const currentValues = localFilters[category]
+    const updatedValues = currentValues.includes(value)
+      ? currentValues.filter(item => item !== value)
+      : [...currentValues, value]
+    
+    updateFilters({ ...localFilters, [category]: updatedValues })
+  }, [localFilters, updateFilters])
 
-  const handleRatingChange = (value: number[]) => {
-    setFilters(prev => {
-      const updatedFilters = { ...prev, rating: value[0] }
-      onFilterChange(updatedFilters)
-      return updatedFilters
-    })
-  }
+  const handleFeeRangeChange = useCallback((values: number[]) => {
+    updateFilters({ ...localFilters, consultationFee: [values[0], values[1]] })
+  }, [localFilters, updateFilters])
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setFilters(prev => {
-      const updatedFilters = { ...prev, searchTerm: value }
-      onFilterChange(updatedFilters)
-      return updatedFilters
-    })
-  }
+  const handleRatingChange = useCallback((value: number[]) => {
+    updateFilters({ ...localFilters, rating: value[0] })
+  }, [localFilters, updateFilters])
 
-  const resetFilters = () => {
+  const handleSearch = useCallback(() => {
+    updateFilters({ ...localFilters, searchTerm })
+  }, [localFilters, searchTerm, updateFilters])
+
+  const resetFilters = useCallback(() => {
     const resetValues: LawyerFilters = {
       specialization: [],
       location: [],
@@ -95,39 +86,53 @@ function LawyerFilters({
       rating: 0,
       searchTerm: ''
     }
-    
-    setFilters(resetValues)
-    onFilterChange(resetValues)
-  }
+    setSearchTerm('')
+    updateFilters(resetValues)
+  }, [updateFilters])
 
-  // Count active filters
-  const activeFiltersCount = 
-    filters.specialization.length + 
-    filters.location.length + 
-    filters.language.length + 
-    (filters.rating > 0 ? 1 : 0) +
-    (filters.searchTerm ? 1 : 0) +
-    ((filters.consultationFee[0] > 0 || filters.consultationFee[1] < 100000) ? 1 : 0)
+  const activeFiltersCount = useMemo(() => 
+    localFilters.specialization.length + 
+    localFilters.location.length + 
+    localFilters.language.length + 
+    (localFilters.rating > 0 ? 1 : 0) +
+    (localFilters.searchTerm ? 1 : 0) +
+    ((localFilters.consultationFee[0] > 0 || localFilters.consultationFee[1] < 100000) ? 1 : 0),
+    [localFilters]
+  )
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
         <div className="relative flex-1">
           <Input
-            placeholder={t('lawyer.search.placeholder')}
-            value={filters.searchTerm}
-            onChange={handleSearchChange}
+            placeholder={t('Search by name, specialty, or keyword')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
+            disabled={loading}
           />
         </div>
         <div className="flex gap-2">
           <Button 
+            onClick={handleSearch} 
+            className="whitespace-nowrap"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t('Filtering...')}
+              </>
+            ) : t('Search')}
+          </Button>
+          <Button 
             variant="outline" 
             onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
             className="sm:hidden"
+            disabled={loading}
           >
             <Filter className="h-4 w-4 mr-2" />
-            {t('filters')}
+            {t('Filters')}
             {activeFiltersCount > 0 && (
               <span className="ml-1 rounded-full bg-primary text-primary-foreground text-xs w-5 h-5 flex items-center justify-center">
                 {activeFiltersCount}
@@ -139,8 +144,13 @@ function LawyerFilters({
 
       <div className={`${mobileFiltersOpen ? 'block' : 'hidden'} sm:block bg-card sm:bg-transparent p-4 sm:p-0 rounded-md border sm:border-0`}>
         <div className="flex items-center justify-between mb-4 sm:hidden">
-          <h3 className="font-medium">{t('filters')}</h3>
-          <Button variant="ghost" size="sm" onClick={() => setMobileFiltersOpen(false)}>
+          <h3 className="font-medium">{t('Refine Search')}</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setMobileFiltersOpen(false)}
+            disabled={loading}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -148,17 +158,25 @@ function LawyerFilters({
         {activeFiltersCount > 0 && (
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm text-muted-foreground">
-              {t('active.filters', { count: activeFiltersCount })}
+              {t(`${activeFiltersCount} active filter${activeFiltersCount === 1 ? '' : 's'}`)}
             </span>
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 text-xs">
-              {t('reset.filters')}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={resetFilters} 
+              className="h-8 text-xs"
+              disabled={loading}
+            >
+              {t('Clear All')}
             </Button>
           </div>
         )}
 
         <Accordion type="multiple" defaultValue={['specialization', 'location', 'fee', 'rating']} className="space-y-2">
           <AccordionItem value="specialization">
-            <AccordionTrigger className="py-2">{t('lawyer.filter.specialization')}</AccordionTrigger>
+            <AccordionTrigger className="py-2" disabled={loading}>
+              {t('Practice Areas')}
+            </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-2">
                 {specializations && specializations.length > 0 ? (
@@ -166,17 +184,21 @@ function LawyerFilters({
                     <div key={specialization} className="flex items-center space-x-2">
                       <Checkbox
                         id={`spec-${specialization}`}
-                        checked={filters.specialization.includes(specialization)}
+                        checked={localFilters.specialization.includes(specialization)}
                         onCheckedChange={() => handleCheckboxChange('specialization', specialization)}
+                        disabled={loading}
                       />
-                      <Label htmlFor={`spec-${specialization}`} className="text-sm cursor-pointer">
+                      <Label 
+                        htmlFor={`spec-${specialization}`} 
+                        className="text-sm cursor-pointer"
+                      >
                         {specialization}
                       </Label>
                     </div>
                   ))
                 ) : (
                   <div className="text-sm text-muted-foreground py-2">
-                    {t('lawyer.filter.no.specializations') || 'No specializations available'}
+                    {t('No practice areas available')}
                   </div>
                 )}
               </div>
@@ -184,7 +206,9 @@ function LawyerFilters({
           </AccordionItem>
 
           <AccordionItem value="location">
-            <AccordionTrigger className="py-2">{t('lawyer.filter.location')}</AccordionTrigger>
+            <AccordionTrigger className="py-2" disabled={loading}>
+              {t('Location')}
+            </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-2">
                 {locations && locations.length > 0 ? (
@@ -192,17 +216,21 @@ function LawyerFilters({
                     <div key={location} className="flex items-center space-x-2">
                       <Checkbox
                         id={`loc-${location}`}
-                        checked={filters.location.includes(location)}
+                        checked={localFilters.location.includes(location)}
                         onCheckedChange={() => handleCheckboxChange('location', location)}
+                        disabled={loading}
                       />
-                      <Label htmlFor={`loc-${location}`} className="text-sm cursor-pointer">
+                      <Label 
+                        htmlFor={`loc-${location}`} 
+                        className="text-sm cursor-pointer"
+                      >
                         {location}
                       </Label>
                     </div>
                   ))
                 ) : (
                   <div className="text-sm text-muted-foreground py-2">
-                    {t('lawyer.filter.no.locations') || 'No locations available'}
+                    {t('No locations available')}
                   </div>
                 )}
               </div>
@@ -210,7 +238,9 @@ function LawyerFilters({
           </AccordionItem>
 
           <AccordionItem value="language">
-            <AccordionTrigger className="py-2">{t('lawyer.filter.language')}</AccordionTrigger>
+            <AccordionTrigger className="py-2" disabled={loading}>
+              {t('Languages Spoken')}
+            </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-2">
                 {languages && languages.length > 0 ? (
@@ -218,17 +248,21 @@ function LawyerFilters({
                     <div key={language} className="flex items-center space-x-2">
                       <Checkbox
                         id={`lang-${language}`}
-                        checked={filters.language.includes(language)}
+                        checked={localFilters.language.includes(language)}
                         onCheckedChange={() => handleCheckboxChange('language', language)}
+                        disabled={loading}
                       />
-                      <Label htmlFor={`lang-${language}`} className="text-sm cursor-pointer">
+                      <Label 
+                        htmlFor={`lang-${language}`} 
+                        className="text-sm cursor-pointer"
+                      >
                         {language}
                       </Label>
                     </div>
                   ))
                 ) : (
                   <div className="text-sm text-muted-foreground py-2">
-                    {t('lawyer.filter.no.languages') || 'No languages available'}
+                    {t('No languages available')}
                   </div>
                 )}
               </div>
@@ -236,41 +270,47 @@ function LawyerFilters({
           </AccordionItem>
 
           <AccordionItem value="fee">
-            <AccordionTrigger className="py-2">{t('lawyer.filter.fee')}</AccordionTrigger>
+            <AccordionTrigger className="py-2" disabled={loading}>
+              {t('Consultation Fee Range')}
+            </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">{filters.consultationFee[0]} FCFA</span>
+                  <span className="text-sm">{localFilters.consultationFee[0].toLocaleString()} FCFA</span>
                   <span className="text-sm">
-                    {filters.consultationFee[1] === 100000 ? '100,000+ FCFA' : `${filters.consultationFee[1]} FCFA`}
+                    {localFilters.consultationFee[1] === 100000 ? '100,000+ FCFA' : `${localFilters.consultationFee[1].toLocaleString()} FCFA`}
                   </span>
                 </div>
                 <Slider
-                  defaultValue={[filters.consultationFee[0], filters.consultationFee[1]]}
+                  defaultValue={[localFilters.consultationFee[0], localFilters.consultationFee[1]]}
                   min={0}
                   max={100000}
                   step={5000}
                   onValueChange={handleFeeRangeChange}
+                  disabled={loading}
                 />
               </div>
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="rating">
-            <AccordionTrigger className="py-2">{t('lawyer.filter.rating')}</AccordionTrigger>
+            <AccordionTrigger className="py-2" disabled={loading}>
+              {t('Minimum Rating')}
+            </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">
-                    {filters.rating > 0 ? `${filters.rating}+ ${t('lawyer.stars')}` : t('lawyer.any.rating')}
+                    {localFilters.rating > 0 ? `${localFilters.rating}+ Stars` : t('Any Rating')}
                   </span>
                 </div>
                 <Slider
-                  defaultValue={[filters.rating]}
+                  defaultValue={[localFilters.rating]}
                   min={0}
                   max={5}
                   step={1}
                   onValueChange={handleRatingChange}
+                  disabled={loading}
                 />
               </div>
             </AccordionContent>

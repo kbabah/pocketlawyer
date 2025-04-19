@@ -16,6 +16,7 @@ import { toast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { X, Plus, Trash } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { getAuth } from 'firebase/auth';
 
 // Zod schema for form validation
 const lawyerFormSchema = z.object({
@@ -84,7 +85,7 @@ export function LawyerRegistrationForm() {
   const form = useForm<z.infer<typeof lawyerFormSchema>>({
     resolver: zodResolver(lawyerFormSchema),
     defaultValues: {
-      name: user?.displayName || "",
+      name: user?.name || "",  // Changed from displayName to name
       email: user?.email || "",
       bio: "",
       specialties: [],
@@ -198,29 +199,62 @@ export function LawyerRegistrationForm() {
     try {
       setLoading(true);
 
-      // Prepare lawyer profile data
+      // Get the current user's ID token
+      const auth = getAuth();
+      const idToken = await auth.currentUser?.getIdToken();
+
+      if (!idToken) {
+        throw new Error('Authentication token not available');
+      }
+
+      // Prepare lawyer profile data - ensuring all required fields are present
       const lawyerData = {
-        ...data,
-        userId: user.uid,
-        education: educationFields,
-        barAdmissions: barAdmissions,
-        experience: experienceFields,
-        verified: false, // Requires admin verification
-        active: false, // Inactive until verified
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        userId: user.id, // Use the ID from the auth context user object
+        name: data.name,
+        email: data.email,
+        bio: data.bio,
+        specialties: data.specialties,
+        hourlyRate: data.hourlyRate,
+        languages: data.languages,
+        location: data.location,
+        education: educationFields.map(field => ({
+          institution: field.institution || '',
+          degree: field.degree || '',
+          fieldOfStudy: field.fieldOfStudy || '',
+          from: field.from || '',
+          to: field.to || ''
+        })),
+        barAdmissions: barAdmissions.map(admission => ({
+          state: admission.state || '',
+          year: admission.year || 0,
+          barNumber: admission.barNumber || '',
+          status: admission.status || 'active'
+        })),
+        experience: experienceFields.map(exp => ({
+          title: exp.title || '',
+          company: exp.company || '',
+          location: exp.location || '',
+          from: exp.from || '',
+          to: exp.to || '',
+          current: exp.current || false,
+          description: exp.description || ''
+        }))
       };
+
+      console.log('Submitting lawyer data:', lawyerData);
 
       // Submit lawyer profile
       const response = await fetch('/api/lawyers/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify(lawyerData),
+        body: JSON.stringify(lawyerData)
       });
 
       const result = await response.json();
+      console.log('Registration response:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Failed to register lawyer profile');
@@ -234,6 +268,7 @@ export function LawyerRegistrationForm() {
       // Redirect to confirmation page
       router.push('/lawyer/pending');
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast({
         title: "Error",
         description: error.message,

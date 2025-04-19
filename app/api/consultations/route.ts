@@ -5,31 +5,21 @@ import { auth as adminAuth } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
 async function verifyAuth(request: NextRequest) {
-  // Try Firebase ID token first (for API calls)
-  const authHeader = request.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
-    try {
-      const decodedToken = await adminAuth.verifyIdToken(token);
-      return decodedToken.uid;
-    } catch (error) {
-      console.warn('Invalid ID token:', error);
-    }
-  }
-
-  // Fallback to session cookie (for server-side requests)
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('firebase-session')?.value;
-  
-  if (!sessionCookie) {
-    throw new Error('Unauthorized');
-  }
-
   try {
-    const decodedClaim = await adminAuth.verifySessionCookie(sessionCookie);
-    return decodedClaim.uid;
-  } catch (error) {
-    throw new Error('Unauthorized');
+    const cookieStore = await cookies();
+    const token = cookieStore.get('firebase-session')?.value;
+    
+    if (!token) {
+      throw Object.assign(new Error('Unauthorized - No token'), { status: 401 });
+    }
+
+    const decodedToken = await adminAuth.verifySessionCookie(token);
+    return decodedToken.uid;
+  } catch (error: any) {
+    throw Object.assign(new Error('Unauthorized'), { 
+      status: error.status || 401,
+      code: error.code
+    });
   }
 }
 
@@ -61,21 +51,19 @@ export async function POST(request: NextRequest) {
     const lawyerData = lawyerSnap.data();
 
     // Calculate time slot end time (assuming 1 hour consultations)
-    const startTime = body.timeSlot;
-    const [hours, minutes] = startTime.split(':').map(Number);
+    const [hours, minutes] = body.timeSlot.start.split(':').map(Number);
     const endHour = hours + 1;
     const endTime = `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     
     // Create consultation data
     const consultationData = {
-      id: crypto.randomUUID(),
       lawyerId: body.lawyerId,
       clientId: userId,
       subject: body.consultationType || 'Legal Consultation',
       description: body.additionalInfo || '',
       date: body.date,
       timeSlot: {
-        start: startTime,
+        start: body.timeSlot.start,
         end: endTime,
       },
       status: 'scheduled',
@@ -136,7 +124,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ consultations });
   } catch (error: any) {
     console.error('Error fetching consultations:', error);
-    if (error.message === 'Unauthorized') {
+    if (error.message.includes('Unauthorized')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     return NextResponse.json(

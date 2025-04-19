@@ -1,4 +1,5 @@
-import { OpenAIStream, StreamingTextResponse, type Message } from 'ai';
+import { type Message } from 'ai';
+import { createParser } from 'eventsource-parser';
 import OpenAI from 'openai';
 import { openai } from '@/lib/openai';
 import { auth } from '@/lib/firebase-admin';
@@ -8,6 +9,24 @@ import { rateLimitRequest, getRateLimitContext } from '../../../lib/rate-limit';
 
 // Cache for concurrent request handling
 const requestCache = new Map<string, Promise<Response>>();
+
+// Helper to create a streaming response
+function createStream(response: AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>) {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  return new ReadableStream({
+    async start(controller) {
+      for await (const chunk of response) {
+        const text = chunk.choices[0]?.delta?.content || '';
+        if (text) {
+          controller.enqueue(encoder.encode(text));
+        }
+      }
+      controller.close();
+    },
+  });
+}
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -59,17 +78,8 @@ export async function POST(request: Request): Promise<Response> {
       requestCache.delete(cacheKey);
     });
 
-    // Add rate limit headers to response
-    const response = await responsePromise;
-    if (rateLimitResult.headers) {
-      Object.entries(rateLimitResult.headers).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          response.headers.set(key, value.toString());
-        }
-      });
-    }
+    return responsePromise;
 
-    return response;
   } catch (error: any) {
     console.error('Chat API Error:', error);
     
@@ -98,27 +108,40 @@ async function createChatResponse(messages: Message[], language: string, userId?
       } Always cite relevant laws and regulations.`
     };
 
-    // Prepare messages for the API call
+    // Prepare messages for the API call - ensure correct typing
     const apiMessages: OpenAI.ChatCompletionMessageParam[] = [
       systemMessage,
-      ...messages.slice(-10).map(msg => ({
-        role: msg.role as OpenAI.ChatCompletionMessageParam["role"],
-        content: msg.content
-      }))
+      ...messages.slice(-10).map(msg => {
+        const role = msg.role === 'user' ? 'user' as const :
+                    msg.role === 'assistant' ? 'assistant' as const :
+                    msg.role === 'system' ? 'system' as const : 'user' as const;
+        return {
+          role,
+          content: msg.content
+        };
+      })
     ];
 
-    // Create chat completion
+    // Create chat completion with streaming
     const response = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: apiMessages,
       temperature: 0.7,
-      max_tokens: userId ? 2000 : 500, // Limit response length for unauthenticated users
-      stream: true,
+      max_tokens: userId ? 2000 : 500,
+      stream: true
     });
 
     // Create streaming response
-    const stream = OpenAIStream(response);
-    return new StreamingTextResponse(stream);
+    const stream = createStream(response);
+    
+    // Return the streaming response
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error: any) {
     throw error; // Let the main handler deal with errors
   }

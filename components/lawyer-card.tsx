@@ -13,12 +13,12 @@ import { useRouter } from 'next/navigation'
 import { Lawyer } from '@/types/lawyer'
 
 interface LawyerCardProps {
-  lawyer: Lawyer
+  lawyer: Lawyer & { distance?: number }
   compact?: boolean
 }
 
 function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
   const router = useRouter()
   const [isBookingOpen, setIsBookingOpen] = useState(false)
 
@@ -29,6 +29,13 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
       .map((n) => n[0])
       .join('')
       .toUpperCase()
+  }
+
+  // Format distance to be human readable
+  const formatDistance = (distance?: number) => {
+    if (!distance) return null
+    if (distance < 1) return `${Math.round(distance * 1000)}m away`
+    return `${Math.round(distance * 10) / 10}km away`
   }
 
   // Handle booking click
@@ -47,31 +54,12 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
             </Avatar>
             <div className="space-y-1">
               <h3 className="font-semibold text-lg">{lawyer.name}</h3>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <StarIcon
-                      key={i}
-                      size={14}
-                      className={i < Math.floor(lawyer.rating || 0) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  ({lawyer.reviewCount} reviews)
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-1">
+              <div className="flex flex-wrap gap-1">
                 {lawyer.specialties.slice(0, 3).map((specialization, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {specialization}
                   </Badge>
                 ))}
-                {lawyer.specialties && lawyer.specialties.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{lawyer.specialties.length - 3} more
-                  </Badge>
-                )}
               </div>
             </div>
           </CardContent>
@@ -94,7 +82,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
                 <h3 className="font-semibold text-lg">{lawyer.name}</h3>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
+                    {Array.from({ length: 5 }, (_, i) => (
                       <StarIcon
                         key={i}
                         size={14}
@@ -103,7 +91,7 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
                     ))}
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    ({lawyer.reviewCount} reviews)
+                    ({lawyer.reviewCount || 0} reviews)
                   </span>
                 </div>
               </div>
@@ -111,19 +99,22 @@ function LawyerCard({ lawyer, compact = false }: LawyerCardProps) {
               <div className="flex items-center text-muted-foreground">
                 <MapPinIcon className="h-3 w-3 mr-1 flex-shrink-0" />
                 <span className="text-xs truncate">
-                  {lawyer.location && typeof lawyer.location === 'object' 
-                    ? `${lawyer.location.city}, ${lawyer.location.state}`
-                    : lawyer.location}
+                  {`${lawyer.location.city}, ${lawyer.location.state}`}
+                  {lawyer.distance && (
+                    <span className="ml-1 text-primary">
+                      • {formatDistance(lawyer.distance)}
+                    </span>
+                  )}
                 </span>
               </div>
 
               <div className="flex flex-wrap gap-1 mt-1">
-                {lawyer.specialties?.slice(0, 3).map((specialization, index) => (
+                {lawyer.specialties.slice(0, 3).map((specialization, index) => (
                   <Badge key={index} variant="outline" className="text-xs">
                     {specialization}
                   </Badge>
                 ))}
-                {lawyer.specialties && lawyer.specialties.length > 3 && (
+                {lawyer.specialties.length > 3 && (
                   <Badge variant="outline" className="text-xs">
                     +{lawyer.specialties.length - 3} more
                   </Badge>
