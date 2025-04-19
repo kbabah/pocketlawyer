@@ -56,6 +56,7 @@ export function LawyersLayoutClient({ children }: LawyersLayoutClientProps) {
             size="icon"
             onClick={handleBackToChat}
             className="md:hidden"
+            aria-label={t("back.to.chat")}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -68,12 +69,12 @@ export function LawyersLayoutClient({ children }: LawyersLayoutClientProps) {
         </div>
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
+            variant="default"
             className="hidden md:flex items-center gap-2"
             onClick={handleBackToChat}
           >
             <ArrowLeft className="h-4 w-4" />
-            {t("back.to.chat")}
+            Return to Chat Assistant
           </Button>
           <LanguageSwitcher />
           <DropdownMenu>

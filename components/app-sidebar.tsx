@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -106,14 +107,27 @@ export function AppSidebar() {
         </SidebarHeader>
         
         <SidebarContent>
-          <Button
-            variant="outline"
-            className="w-full justify-start gap-2 mb-2 mx-2"
-            onClick={handleNewChat}
-          >
-            <MessageSquare className="h-4 w-4" />
-            {t("sidebar.new.chat")}
-          </Button>
+          <div className="space-y-2 mx-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-2"
+              onClick={handleNewChat}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Start New Chat
+            </Button>
+            
+            <Button
+              variant="default"
+              className="w-full justify-start gap-2"
+              onClick={() => router.push('/lawyers')}
+            >
+              <Scale className="h-4 w-4" />
+              Consult a Lawyer
+            </Button>
+          </div>
+
+          <Separator className="my-4" />
 
           <ScrollArea className="flex-1">
             {loading ? (

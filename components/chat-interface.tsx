@@ -301,15 +301,15 @@ export default function ChatInterface() {
               <TabsList className="grid w-full grid-cols-3 bg-primary/5">
                 <TabsTrigger value="chat" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Scale className="mr-2 h-4 w-4" />
-                  {t("chat.tab.chat")}
+                  Chat with Assistant
                 </TabsTrigger>
                 <TabsTrigger value="web" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Search className="mr-2 h-4 w-4" />
-                  {t("chat.tab.web")}
+                  Legal Research
                 </TabsTrigger>
                 <TabsTrigger value="document" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <FileText className="mr-2 h-4 w-4" />
-                  {t("chat.tab.document")}
+                  Analyze Documents
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -323,14 +323,14 @@ export default function ChatInterface() {
                 {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center max-w-xl text-center px-4">
                     <Scale size={48} className="mb-4 text-primary" />
-                    <h2 className="text-2xl font-bold mb-2">{t("chat.welcome.title")}</h2>
-                    <p className="text-muted-foreground mb-4">{t("chat.welcome.subtitle")}</p>
+                    <h2 className="text-2xl font-bold mb-2">Hello! I'm Your Legal Assistant</h2>
+                    <p className="text-muted-foreground mb-4">I can help you understand Cameroonian law and provide guidance on legal matters.</p>
                     <Card className="p-4 w-full border-primary/20">
-                      <p className="font-medium mb-2">{t("chat try asking")}:</p>
+                      <p className="font-medium mb-2">Try asking me questions like:</p>
                       <ul className="space-y-2 text-sm">
-                        <li>{t("chat.example1")}</li>
-                        <li>{t("chat.example2")}</li>
-                        <li>{t("chat.example3")}</li>
+                        <li>"What are my rights as a tenant under Cameroonian law?"</li>
+                        <li>"How do I register a business in Cameroon?"</li>
+                        <li>"Explain the legal process for divorce in Cameroon"</li>
                       </ul>
                     </Card>
 
@@ -338,7 +338,7 @@ export default function ChatInterface() {
                       <div className="mt-6 p-3 border border-primary/20 rounded-lg bg-primary/5 flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
                         <p className="text-sm">
-                          <span className="font-medium">{t("auth.signin")}</span> {t("chat.signin.prompt")}
+                          <span className="font-medium">Create an account</span> to unlock unlimited conversations and personalized legal guidance
                         </p>
                       </div>
                     )}
@@ -363,7 +363,7 @@ export default function ChatInterface() {
             <div className="py-4 flex flex-col gap-2">
               <form onSubmit={handleSubmit} className="flex items-center gap-2">
                 <Input
-                  placeholder={t("start chating")}
+                  placeholder="Ask me about Cameroonian law..."
                   value={input}
                   onChange={handleInputChange}
                   disabled={loadingStates.sending || isMessageLimitReached}
@@ -373,12 +373,12 @@ export default function ChatInterface() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button type="submit" disabled={loadingStates.sending || isMessageLimitReached}>
-                        {loadingStates.sending ? "Sending Message..." : "Send Message"}
+                        {loadingStates.sending ? "Sending..." : "Ask Question"}
                       </Button>
                     </TooltipTrigger>
                     {isMessageLimitReached && (
                       <TooltipContent>
-                        <p>{t("chat.limit.reached")}</p>
+                        <p>Create an account to continue the conversation</p>
                       </TooltipContent>
                     )}
                   </Tooltip>
