@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
 import { FaGoogle } from "react-icons/fa"
 import { toast } from "sonner"
+import ReCAPTCHA from 'react-google-recaptcha'
 
 // SignInContent component that uses useSearchParams
 function SignInContent() {
@@ -23,11 +24,17 @@ function SignInContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
   // Rest of the component logic...
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    if (!captchaToken) {
+      toast.error('Please complete the captcha')
+      setIsSubmitting(false)
+      return
+    }
 
     try {
       await signIn(email, password)
@@ -92,7 +99,13 @@ function SignInContent() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <div className="mt-4">
+              <ReCAPTCHA
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                onChange={setCaptchaToken}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isSubmitting || !captchaToken}>
               {isSubmitting ? t("auth.signing.in") : t("auth.signin.button")}
             </Button>
           </form>

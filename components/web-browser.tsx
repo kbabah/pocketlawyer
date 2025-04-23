@@ -30,7 +30,6 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
     e.preventDefault()
-    // Add to history when navigating to a new URL
     if (currentUrl) {
       setHistory(prev => [...prev.slice(0, historyIndex + 1), currentUrl])
       setHistoryIndex(prev => prev + 1)
@@ -43,7 +42,6 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
       setHistoryIndex(prev => prev - 1)
       setCurrentUrl(history[historyIndex - 1])
     } else if (historyIndex === 0) {
-      // Return to search results
       setCurrentUrl(null)
       setHistoryIndex(-1)
     }
@@ -128,7 +126,12 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <iframe src={currentUrl} className="flex-1 w-full border-0 min-h-[85vh]" />
+          <iframe 
+            src={currentUrl} 
+            className="flex-1 w-full border-0 min-h-[85vh]"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            referrerPolicy="no-referrer"
+          />
         </div>
       ) : (
         <>

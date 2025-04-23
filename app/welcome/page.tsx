@@ -164,13 +164,13 @@ export default function Welcome() {
             <span className="text-sm text-muted-foreground">{t("app.copyright")}</span>
           </div>
           <div className="flex gap-6">
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
               {t("welcome.footer.terms")}
             </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">
               {t("welcome.footer.privacy")}
             </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground">
+            <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground">
               {t("welcome.footer.contact")}
             </Link>
           </div>

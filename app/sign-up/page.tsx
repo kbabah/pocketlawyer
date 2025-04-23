@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLanguage } from "@/contexts/language-context"
 import { FaGoogle } from "react-icons/fa"
 import { toast } from "sonner"
+import ReCAPTCHA from 'react-google-recaptcha'
 
 // Extract the content that uses useSearchParams
 function SignUpContent() {
@@ -25,11 +26,23 @@ function SignUpContent() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
   // Rest of the component logic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    if (!termsAccepted) {
+      toast.error('You must accept the Terms and Conditions')
+      setIsSubmitting(false)
+      return
+    }
+    if (!captchaToken) {
+      toast.error('Please complete the captcha')
+      setIsSubmitting(false)
+      return
+    }
 
     try {
       await signUp(email, password, name)
@@ -96,7 +109,29 @@ function SignUpContent() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <div className="flex items-center">
+              <input
+                id="terms"
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                required
+              />
+              <label htmlFor="terms" className="ml-2 text-sm">
+                I agree to the <Link href="/terms" className="underline">Terms and Conditions</Link>
+              </label>
+            </div>
+            <div className="mt-4">
+              <ReCAPTCHA
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY!}
+                onChange={setCaptchaToken}
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || !termsAccepted || !captchaToken}
+            >
               {isSubmitting ? t("auth.creating") : t("auth.signup")}
             </Button>
           </form>

@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const session = request.cookies.get('firebase-session')
 
   // List of public paths that don't require authentication
-  const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error']
+  const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error', '/terms', '/privacy', '/contact']
   const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
   // Don't require authentication for public paths and static files
