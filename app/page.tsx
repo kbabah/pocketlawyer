@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import ChatInterface from "@/components/chat-interface"
@@ -16,6 +16,31 @@ export default function Home() {
   const { user, loading } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
+  const pathname = usePathname()
+
+  // Check if user is admin
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    // Check admin status when user changes
+    const checkAdminStatus = async () => {
+      if (user) {
+        try {
+          const res = await fetch('/api/auth/verify', {
+            method: 'POST',
+          })
+          const data = await res.json()
+          setIsAdmin(data.isAdmin)
+        } catch (error) {
+          console.error('Error checking admin status:', error)
+          setIsAdmin(false)
+        }
+      } else {
+        setIsAdmin(false)
+      }
+    }
+    checkAdminStatus()
+  }, [user])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -56,6 +81,25 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(pathname.startsWith('/admin') ? '/' : '/admin')}
+              >
+                {pathname.startsWith('/admin') ? (
+                  <>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    {t("header.go.to.chat")}
+                  </>
+                ) : (
+                  <>
+                    <Scale className="mr-2 h-4 w-4" />
+                    {t("header.go.to.admin")}
+                  </>
+                )}
+              </Button>
+            )}
             <Button 
               variant="default" 
               className="hidden sm:flex"

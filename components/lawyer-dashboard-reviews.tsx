@@ -1,13 +1,11 @@
+"use client"
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Star, Search, Loader2, MessageSquare } from 'lucide-react';
+import { Star, StarHalf, Search, Loader2, MessageSquare } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from "@/contexts/language-context";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +46,7 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
   const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLanguage();
 
   // Reset reply text when dialog opens
   useEffect(() => {
@@ -209,20 +208,24 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
 
   // Render stars based on rating
   const renderStars = (rating: number) => {
-    return (
-      <div className="flex">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`h-4 w-4 ${
-              i < rating
-                ? 'text-yellow-400 fill-yellow-400'
-                : 'text-gray-300'
-            }`}
-          />
-        ))}
-      </div>
-    );
+    const stars = []
+    const fullStars = Math.floor(rating)
+    const hasHalfStar = rating % 1 >= 0.5
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Star key={`full-${i}`} className="h-4 w-4 fill-primary text-primary" />)
+    }
+
+    if (hasHalfStar) {
+      stars.push(<StarHalf key="half" className="h-4 w-4 text-primary" />)
+    }
+
+    const remainingStars = 5 - Math.ceil(rating)
+    for (let i = 0; i < remainingStars; i++) {
+      stars.push(<Star key={`empty-${i}`} className="h-4 w-4 text-muted-foreground" />)
+    }
+
+    return stars
   };
 
   // Calculate average rating from reviews
@@ -254,9 +257,21 @@ export function LawyerDashboardReviews({ lawyerId }: LawyerDashboardReviewsProps
       {/* Reviews Summary Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Reviews Summary</CardTitle>
+          <CardTitle>{t("lawyer.reviews.title")}</CardTitle>
           <CardDescription>
-            Overview of your client feedback and ratings
+            {reviews.length > 0 ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <div className="flex">{renderStars(Number(calculateAverageRating()))}</div>
+                  <span className="font-medium">{calculateAverageRating()}</span>
+                  <span className="text-muted-foreground">
+                    ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
+                  </span>
+                </div>
+              </>
+            ) : (
+              t("lawyer.reviews.none")
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>

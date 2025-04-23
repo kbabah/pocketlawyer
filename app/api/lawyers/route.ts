@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb as db } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { Lawyer } from '@/types/lawyer';
 
 export async function GET(req: NextRequest) {
   try {
+    const { auth, adminDb } = await getFirebaseAdmin();
+    
+    // Get authentication token from header
+    const authHeader = req.headers.get('authorization');
+    let currentUserId = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decodedToken = await auth.verifyIdToken(token);
+        currentUserId = decodedToken.uid;
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        // Don't throw error here, just continue without user context
+      }
+    }
+
     // Get query parameters for filtering
     const { searchParams } = new URL(req.url);
     const specialties = searchParams.getAll('specialties[]'); // Allow multiple specialties
@@ -15,7 +32,7 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0');
 
     // Start with base query for active and verified lawyers
-    let query = db.collection('lawyers')
+    let query = adminDb.collection('lawyers')
       .where('active', '==', true)
       .where('verified', '==', true);
     
@@ -36,6 +53,11 @@ export async function GET(req: NextRequest) {
       id: doc.id,
       ...doc.data()
     })) as Lawyer[];
+
+    // Filter out the current lawyer if authenticated
+    if (currentUserId) {
+      lawyers = lawyers.filter(lawyer => lawyer.userId !== currentUserId);
+    }
     
     // Apply location filters (client-side filtering since Firestore doesn't support nested field queries well)
     if (city || state || country) {

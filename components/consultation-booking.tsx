@@ -75,7 +75,8 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
       const [hours, minutes] = timeSlot.split(':').map(Number)
       const endTime = `${(hours + 1).toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
 
-      const response = await fetch('/api/consultations/book', {
+      // Corrected API endpoint
+      const response = await fetch('/api/consultations', { 
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -83,11 +84,10 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
         },
         body: JSON.stringify({
           lawyerId: lawyer.id,
-          clientId: user.id,
+          // clientId: user.id, // Removed: Backend gets clientId from token
           date: format(date, 'yyyy-MM-dd'),
-          timeSlot: {
-            start: timeSlot,
-            end: endTime
+          timeSlot: { // Send only start time as API calculates end time
+            start: timeSlot 
           },
           timezone,
           consultationType,
@@ -168,7 +168,7 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
           </Select>
 
           <div className="grid grid-cols-3 gap-2">
-            {lawyer.availability.schedule[format(date || new Date(), 'EEEE').toLowerCase()]?.slots.map((slot) => (
+            {lawyer?.availability?.schedule?.[format(date || new Date(), 'EEEE').toLowerCase()]?.slots?.map((slot) => (
               <Button
                 key={slot.start}
                 variant={timeSlot === slot.start ? 'default' : 'outline'}
@@ -179,7 +179,11 @@ export default function ConsultationBooking({ lawyer }: ConsultationBookingProps
                 <Clock className="mr-2 h-4 w-4" />
                 {slot.start}
               </Button>
-            ))}
+            )) || (
+              <div className="col-span-3 text-center text-muted-foreground py-4">
+                No available time slots for this day. Please select another date.
+              </div>
+            )}
           </div>
         </div>
 

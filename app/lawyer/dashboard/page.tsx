@@ -1,227 +1,97 @@
-'use client';
+import { Metadata } from "next"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { LawyerDashboardAvailability } from "@/components/lawyer-dashboard-availability"
+import { LawyerDashboardConsultations } from "@/components/lawyer-dashboard-consultations"
+import { LawyerDashboardReviews } from "@/components/lawyer-dashboard-reviews"
+import { LawyerDashboardProfile } from "@/components/lawyer-dashboard-profile"
+import { getFirebaseAdmin } from "@/lib/firebase-admin"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { LawyerDashboardProfile } from '@/components/lawyer-dashboard-profile';
-import { LawyerDashboardAvailability } from '@/components/lawyer-dashboard-availability';
-import { LawyerDashboardConsultations } from '@/components/lawyer-dashboard-consultations';
-import { LawyerDashboardReviews } from '@/components/lawyer-dashboard-reviews';
-import { Sidebar } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { Loader2, UserCircle, Calendar, MessageSquare, Star, Settings, AlertCircle } from 'lucide-react';
-import { Lawyer } from '@/types/lawyer';
+export const metadata: Metadata = {
+  title: "Lawyer Dashboard",
+  description: "Manage your consultations, availability, and reviews"
+}
 
-export default function LawyerDashboard() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('profile');
-  const [lawyerProfile, setLawyerProfile] = useState<Lawyer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+// Removed redundant getLawyerProfile function, handled in layout
 
-  // Fetch lawyer profile data
-  useEffect(() => {
-    const fetchLawyerProfile = async () => {
-      try {
-        // This would typically be fetched from an API based on the authenticated user
-        const response = await fetch('/api/lawyers/me');
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            // Redirect to registration if lawyer profile doesn't exist
-            router.push('/lawyer/register');
-            return;
-          }
-          
-          if (response.status === 401) {
-            // Redirect to login if not authenticated
-            router.push('/sign-in?redirect=/lawyer/dashboard');
-            return;
-          }
-          
-          throw new Error('Failed to fetch lawyer profile');
-        }
-        
-        const data = await response.json();
-        setLawyerProfile(data);
-      } catch (error) {
-        console.error('Error fetching lawyer profile:', error);
-        setError('Failed to load your profile data. Please try again later.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchLawyerProfile();
-  }, [router]);
+export default async function LawyerDashboardPage() {
+  // Authentication and initial profile checks are handled by the layout
+  // We can assume the user is an authenticated and accepted lawyer here
+  
+  const cookieStore = cookies()
+  const sessionCookie = cookieStore.get('firebase-session')?.value
+  
+  // Still need to get UID for child components, but redirect checks are removed
+  if (!sessionCookie) {
+    // This case should theoretically not be reached due to layout checks
+    redirect('/sign-in') 
+  }
 
-  // Handle tab change
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    // Use Next.js router.replace for tab navigation
-    router.replace(`/lawyer/dashboard?tab=${value}`);
-  };
+  const { auth, adminDb } = await getFirebaseAdmin()
+  let decodedClaims
+  let lawyerProfileData
 
-  // Set initial tab from URL query param on component mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
-    if (tabParam && ['profile', 'availability', 'consultations', 'reviews'].includes(tabParam)) {
-      setActiveTab(tabParam);
+  try {
+    decodedClaims = await auth.verifySessionCookie(sessionCookie)
+    // Fetch profile data needed for child components
+    const lawyerDoc = await adminDb.collection('lawyers').doc(decodedClaims.uid).get()
+    if (!lawyerDoc.exists) {
+       // This case should also not be reached due to layout checks
+      redirect('/lawyers/register')
     }
-  }, []);
+    lawyerProfileData = { id: lawyerDoc.id, ...lawyerDoc.data() }
+    // No need to check status !== 'accepted' here, layout handles it
 
-  // Define navigation items for the sidebar
-  const sidebarNavItems = [
-    {
-      title: "Profile",
-      value: "profile",
-      icon: <UserCircle className="h-5 w-5" />,
-    },
-    {
-      title: "Availability",
-      value: "availability",
-      icon: <Calendar className="h-5 w-5" />,
-    },
-    {
-      title: "Consultations",
-      value: "consultations",
-      icon: <MessageSquare className="h-5 w-5" />,
-    },
-    {
-      title: "Reviews",
-      value: "reviews",
-      icon: <Star className="h-5 w-5" />,
-    },
-    {
-      title: "Settings",
-      value: "settings",
-      icon: <Settings className="h-5 w-5" />,
-    },
-  ];
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading your dashboard...</span>
-      </div>
-    );
+  } catch (error) {
+    console.error('Error verifying session or fetching profile in page:', error)
+    // Redirect handled by layout, but log error if something unexpected happens
+    redirect('/sign-in')
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button className="mt-4" onClick={() => window.location.reload()}>
-          Try Again
-        </Button>
-      </div>
-    );
-  }
-
-  if (!lawyerProfile) {
-    // This should not happen given the redirects in useEffect, but just in case
-    router.replace('/lawyer/register');
-    return null;
+  // Ensure decodedClaims and lawyerProfileData are available
+  if (!decodedClaims || !lawyerProfileData) {
+     console.error('Missing claims or profile data despite layout checks.')
+     redirect('/sign-in')
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-8 lg:space-y-0">
-        {/* Sidebar for desktop */}
-        <aside className="lg:w-1/5 hidden lg:block">
-          <Sidebar className="sticky top-8">
-            <nav className="flex flex-col space-y-1">
-              {sidebarNavItems.map((item) => (
-                <Button
-                  key={item.value}
-                  variant={activeTab === item.value ? "secondary" : "ghost"}
-                  className="justify-start"
-                  onClick={() => handleTabChange(item.value)}
-                >
-                  {item.icon}
-                  <span className="ml-3">{item.title}</span>
-                </Button>
-              ))}
-            </nav>
-          </Sidebar>
-        </aside>
-        
-        {/* Main content */}
-        <div className="flex-1">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold">{lawyerProfile.name}'s Dashboard</h1>
-            {!lawyerProfile.verified && (
-              <Alert variant="warning" className="mt-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Verification in Progress</AlertTitle>
-                <AlertDescription>
-                  Your profile is currently under review. Some features will be limited until your account is verified.
-                </AlertDescription>
-              </Alert>
-            )}
-          </div>
-
-          {/* Mobile navigation */}
-          <Tabs
-            defaultValue="profile"
-            value={activeTab}
-            onValueChange={handleTabChange}
-            className="lg:hidden space-y-6"
-          >
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="profile">My Profile</TabsTrigger>
-              <TabsTrigger value="availability">Schedule</TabsTrigger>
-              <TabsTrigger value="consultations">Consultations</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Dashboard content */}
-          <div className="space-y-8 mt-6">
-            {activeTab === 'profile' && (
-              <LawyerDashboardProfile lawyerProfile={lawyerProfile} />
-            )}
-
-            {activeTab === 'availability' && (
-              <LawyerDashboardAvailability lawyerProfile={lawyerProfile} />
-            )}
-
-            {activeTab === 'consultations' && (
-              <LawyerDashboardConsultations lawyerId={lawyerProfile.id} />
-            )}
-
-            {activeTab === 'reviews' && (
-              <LawyerDashboardReviews lawyerId={lawyerProfile.id} />
-            )}
-
-            {activeTab === 'settings' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Account Settings</CardTitle>
-                  <CardDescription>
-                    Manage your account preferences and settings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Additional account settings will be available soon.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+    <div className="container py-10">
+      <div className="flex flex-col space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Manage your consultations, availability, and client reviews
+          </p>
         </div>
+
+        <Tabs defaultValue="consultations" className="space-y-8">
+          <TabsList>
+            <TabsTrigger value="consultations">Consultations</TabsTrigger>
+            <TabsTrigger value="availability">Availability</TabsTrigger>
+            <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="consultations" className="space-y-4">
+            <LawyerDashboardConsultations lawyerId={decodedClaims.uid} />
+          </TabsContent>
+
+          <TabsContent value="availability" className="space-y-4">
+            {/* Pass the fetched profile data */} 
+            <LawyerDashboardAvailability lawyerProfile={lawyerProfileData} /> 
+          </TabsContent>
+
+          <TabsContent value="reviews" className="space-y-4">
+            <LawyerDashboardReviews lawyerId={decodedClaims.uid} />
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-4">
+             {/* Pass the fetched profile data */} 
+            <LawyerDashboardProfile lawyerProfile={lawyerProfileData} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
-  );
+  )
 }

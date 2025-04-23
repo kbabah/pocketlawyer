@@ -232,7 +232,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Get lawyer ID from params
-  const lawyerId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const lawyerId = params.id; // Removed Array.isArray check
   
   // Fetch lawyer data
   const lawyer = await fetchLawyer(lawyerId);
@@ -251,7 +251,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LawyerProfilePage({ params }: Props) {
   // Get lawyer ID from params
-  const lawyerId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const lawyerId = params.id; // Removed Array.isArray check
   
   // Fetch lawyer data
   const lawyer = await fetchLawyer(lawyerId);

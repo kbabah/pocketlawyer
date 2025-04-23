@@ -1,31 +1,13 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const session = request.cookies.get('firebase-session')
-  
-  // List of public paths that don't require authentication
   const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error']
-  
-  // Public lawyer paths (only directory listing and public profiles)
-  const publicLawyerPaths = ['/lawyers']
+  const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path))
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin')
+  const isLawyerRoute = request.nextUrl.pathname.startsWith('/lawyer/dashboard')
 
-  // Protected paths that require authentication
-  const protectedPaths = [
-    '/api/consultations',
-    '/api/consultations/book',
-    '/profile/consultations'
-  ]
-  
-  const isPublicPath = [...publicPaths, ...publicLawyerPaths].some(path => 
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  const isProtectedPath = protectedPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
-  )
-
-  // Don't require authentication for public paths and static files
   const isStaticResource = 
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/api') ||
@@ -36,24 +18,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Force authentication for protected paths
-  if (isProtectedPath && !session) {
-    const signInUrl = new URL('/sign-in', request.url)
-    signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
-    return NextResponse.redirect(signInUrl)
-  }
-
-  // Special handling for lawyer registration - requires auth
-  if (request.nextUrl.pathname.startsWith('/lawyers/register')) {
-    if (!session) {
-      const signInUrl = new URL('/sign-in', request.url)
-      signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
-      return NextResponse.redirect(signInUrl)
-    }
-    return NextResponse.next()
-  }
-
-  // Handle root path redirection based on auth status
   if (request.nextUrl.pathname === '/') {
     if (!session) {
       return NextResponse.redirect(new URL('/welcome', request.url))
@@ -61,16 +25,68 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // If trying to access protected route without session, redirect to sign-in
   if (!isPublicPath && !session) {
     const signInUrl = new URL('/sign-in', request.url)
     signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
     return NextResponse.redirect(signInUrl)
   }
 
-  // If already authenticated and trying to access auth pages, redirect to root
-  if (session && publicPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
+  if (session && isPublicPath && request.nextUrl.pathname !== '/welcome') {
     return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // Handle lawyer dashboard access
+  if (isLawyerRoute && session) {
+    try {
+      const verifyResponse = await fetch(new URL('/api/auth/verify-lawyer', request.url), {
+        method: 'POST',
+        headers: {
+          'Cookie': `firebase-session=${session.value}`
+        }
+      })
+
+      if (!verifyResponse.ok) {
+        return NextResponse.redirect(new URL('/sign-in', request.url))
+      }
+
+      const { status } = await verifyResponse.json()
+      
+      if (status === 'not_registered') {
+        return NextResponse.redirect(new URL('/lawyers/register', request.url))
+      }
+      
+      if (status !== 'accepted') {
+        return NextResponse.redirect(new URL('/lawyer/pending', request.url))
+      }
+    } catch (error) {
+      console.error('Lawyer verification error:', error)
+      return NextResponse.redirect(new URL('/sign-in', request.url))
+    }
+  }
+
+  // Admin route handling
+  if (isAdminRoute && session) {
+    try {
+      const verifyResponse = await fetch(new URL('/api/auth/verify', request.url), {
+        method: 'POST',
+        headers: {
+          'Cookie': `firebase-session=${session.value}`
+        }
+      })
+
+      if (!verifyResponse.ok) {
+        return NextResponse.redirect(new URL('/sign-in', request.url))
+      }
+
+      const { isAdmin } = await verifyResponse.json()
+      
+      if (!isAdmin) {
+        return NextResponse.redirect(new URL('/', request.url))
+      }
+    } catch (error) {
+      console.error('Admin verification error:', error)
+      return NextResponse.redirect(new URL('/sign-in', request.url))
+    }
   }
 
   return NextResponse.next()

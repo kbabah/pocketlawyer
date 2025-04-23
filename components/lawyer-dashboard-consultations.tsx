@@ -1,719 +1,210 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Calendar } from '@/components/ui/calendar'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
-import { format } from 'date-fns'
-import { CalendarIcon, Clock, MessageSquare, Video, Phone, User, Loader2 } from 'lucide-react'
-import { useLanguage } from '@/contexts/language-context'
-import { toast } from 'sonner'
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import { Calendar, Clock, User, Video, MessageSquare, Phone } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
-// Define consultation types
 interface Consultation {
   id: string
   clientId: string
   clientName: string
-  clientPhoto?: string
   date: string
-  time: string
+  timeSlot: {
+    start: string
+    end: string
+  }
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
   type: 'video' | 'audio' | 'chat' | 'inPerson'
-  status: 'upcoming' | 'completed' | 'cancelled'
-  notes?: string
-  additionalInfo?: string
+  subject: string
+  description?: string
 }
 
-export default function LawyerDashboardConsultations() {
-  const { t } = useLanguage()
+const consultationTypeIcons = {
+  video: Video,
+  audio: Phone,
+  chat: MessageSquare,
+  inPerson: User,
+}
+
+export function LawyerDashboardConsultations({ lawyerId }: { lawyerId: string }) {
   const [consultations, setConsultations] = useState<Consultation[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedConsultation, setSelectedConsultation] = useState<Consultation | null>(null)
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
-  const [cancellationReason, setCancellationReason] = useState('')
-  const [cancelLoading, setCancelLoading] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [notesDialogOpen, setNotesDialogOpen] = useState(false)
-  const [consultationNotes, setConsultationNotes] = useState('')
-  const [savingNotes, setSavingNotes] = useState(false)
+  const { toast } = useToast()
+  const { t } = useLanguage()
 
-  // Fetch consultations
   useEffect(() => {
-    const fetchConsultations = async () => {
-      try {
-        // In a real app, this would call your API
-        // Mock data for demonstration
-        const mockConsultations: Consultation[] = [
-          {
-            id: '1',
-            clientId: 'client-1',
-            clientName: 'John Doe',
-            date: '2025-04-20',
-            time: '10:00',
-            type: 'video',
-            status: 'upcoming'
-          },
-          {
-            id: '2',
-            clientId: 'client-2',
-            clientName: 'Marie Nguyen',
-            date: '2025-04-18',
-            time: '14:30',
-            type: 'inPerson',
-            status: 'upcoming',
-            additionalInfo: 'First consultation about divorce proceedings.'
-          },
-          {
-            id: '3',
-            clientId: 'client-3',
-            clientName: 'Ibrahim Sako',
-            date: '2025-04-15',
-            time: '11:00',
-            type: 'video',
-            status: 'completed',
-            notes: 'Client wants to proceed with business registration. Need to prepare documentation.'
-          },
-          {
-            id: '4',
-            clientId: 'client-4',
-            clientName: 'Claire Takam',
-            date: '2025-04-10',
-            time: '09:15',
-            type: 'audio',
-            status: 'cancelled'
-          }
-        ]
-        
-        setConsultations(mockConsultations)
-      } catch (error) {
-        console.error('Failed to load consultations:', error)
-        toast.error(t('lawyer.consultations.error'))
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchConsultations()
-  }, [t])
+  }, [])
 
-  const handleShowDetails = (consultation: Consultation) => {
-    setSelectedConsultation(consultation)
-    setDetailsOpen(true)
-    
-    // If there are existing notes, pre-fill them
-    if (consultation.notes) {
-      setConsultationNotes(consultation.notes)
-    } else {
-      setConsultationNotes('')
-    }
-  }
-
-  const handleOpenCancelDialog = (consultation: Consultation) => {
-    setSelectedConsultation(consultation)
-    setCancellationReason('')
-    setCancelDialogOpen(true)
-  }
-
-  const handleOpenNotesDialog = () => {
-    if (!selectedConsultation) return
-    setNotesDialogOpen(true)
-  }
-
-  const handleCancelConsultation = async () => {
-    if (!selectedConsultation) return
-    
-    setCancelLoading(true)
+  const fetchConsultations = async () => {
     try {
-      // In a real app, this would be an API call
-      // const response = await fetch(`/api/consultations/${selectedConsultation.id}/cancel`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ reason: cancellationReason })
-      // })
-      
-      // Mock the API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Update the consultation status locally
-      setConsultations(prevConsultations => 
-        prevConsultations.map(c => 
-          c.id === selectedConsultation.id ? { ...c, status: 'cancelled' } : c
-        )
-      )
-      
-      setCancelDialogOpen(false)
-      toast.success(t('lawyer.consultation.cancelled'))
+      const response = await fetch(`/api/lawyers/${lawyerId}/consultations`)
+      if (!response.ok) throw new Error('Failed to fetch consultations')
+
+      const data = await response.json()
+      setConsultations(data)
     } catch (error) {
-      console.error('Failed to cancel consultation:', error)
-      toast.error(t('lawyer.consultation.cancel.error'))
-    } finally {
-      setCancelLoading(false)
-    }
-  }
-
-  const handleSaveNotes = async () => {
-    if (!selectedConsultation) return
-    
-    setSavingNotes(true)
-    try {
-      // In a real app, this would be an API call
-      // const response = await fetch(`/api/consultations/${selectedConsultation.id}/notes`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ notes: consultationNotes })
-      // })
-      
-      // Mock the API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Update the consultation notes locally
-      setConsultations(prevConsultations => 
-        prevConsultations.map(c => 
-          c.id === selectedConsultation.id ? { ...c, notes: consultationNotes } : c
-        )
-      )
-      
-      // Also update the selected consultation
-      setSelectedConsultation({
-        ...selectedConsultation,
-        notes: consultationNotes
+      console.error('Error fetching consultations:', error)
+      toast({
+        variant: "destructive",
+        title: t("error"),
+        description: t("lawyer.consultations.fetch.error")
       })
-      
-      setNotesDialogOpen(false)
-      toast.success(t('lawyer.consultation.notes.saved'))
-    } catch (error) {
-      console.error('Failed to save notes:', error)
-      toast.error(t('lawyer.consultation.notes.error'))
     } finally {
-      setSavingNotes(false)
+      setLoading(false)
     }
   }
 
-  // Filter consultations based on their status
-  const upcomingConsultations = consultations.filter(c => c.status === 'upcoming')
-  const completedConsultations = consultations.filter(c => c.status === 'completed')
-  const cancelledConsultations = consultations.filter(c => c.status === 'cancelled')
+  const updateConsultationStatus = async (consultationId: string, status: string) => {
+    try {
+      const response = await fetch(`/api/consultations/${consultationId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      })
 
-  // Filter consultations for the calendar view
-  const consultationsForDate = (date: Date) => {
-    const dateString = format(date, 'yyyy-MM-dd')
-    return consultations.filter(c => c.date === dateString)
-  }
+      if (!response.ok) throw new Error('Failed to update consultation')
 
-  // Get the appropriate icon for the consultation type
-  const getConsultationTypeIcon = (type: Consultation['type']) => {
-    switch (type) {
-      case 'video':
-        return <Video className="h-4 w-4" />
-      case 'audio':
-        return <Phone className="h-4 w-4" />
-      case 'chat':
-        return <MessageSquare className="h-4 w-4" />
-      case 'inPerson':
-        return <User className="h-4 w-4" />
+      // Update local state
+      setConsultations(prev =>
+        prev.map(consultation =>
+          consultation.id === consultationId
+            ? { ...consultation, status }
+            : consultation
+        )
+      )
+
+      toast({
+        title: t("lawyer.consultation.updated"),
+        description: t("lawyer.consultation.update.success")
+      })
+    } catch (error) {
+      console.error('Error updating consultation:', error)
+      toast({
+        variant: "destructive",
+        title: t("error"),
+        description: t("lawyer.consultation.update.error")
+      })
     }
   }
 
-  // Get the appropriate color for the consultation status
-  const getStatusBadgeVariant = (status: Consultation['status']) => {
-    switch (status) {
-      case 'upcoming':
-        return 'default'
-      case 'completed':
-        return 'secondary'
-      case 'cancelled':
-        return 'destructive'
-    }
-  }
+  const renderConsultationCard = (consultation: Consultation) => {
+    const TypeIcon = consultationTypeIcons[consultation.type]
+    const isUpcoming = new Date(consultation.date) > new Date()
+    const formattedDate = new Date(consultation.date).toLocaleDateString()
 
-  if (loading) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <Card key={consultation.id} className="mb-4">
+        <CardContent className="pt-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <TypeIcon className="h-4 w-4" />
+                <span className="font-medium">{consultation.clientName}</span>
+                <Badge variant={
+                  consultation.status === 'confirmed' ? 'default' :
+                  consultation.status === 'completed' ? 'secondary' :
+                  consultation.status === 'cancelled' ? 'destructive' :
+                  'outline'
+                }>
+                  {consultation.status}
+                </Badge>
+              </div>
+              
+              <div className="text-sm text-muted-foreground space-y-1">
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  {formattedDate}
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-2" />
+                  {consultation.timeSlot.start} - {consultation.timeSlot.end}
+                </div>
+                {consultation.description && (
+                  <p className="mt-2">{consultation.description}</p>
+                )}
+              </div>
+            </div>
+
+            {isUpcoming && consultation.status === 'pending' && (
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateConsultationStatus(consultation.id, 'cancelled')}
+                >
+                  {t("lawyer.consultation.decline")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => updateConsultationStatus(consultation.id, 'confirmed')}
+                >
+                  {t("lawyer.consultation.accept")}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     )
   }
 
+  if (loading) {
+    return <div className="animate-pulse">Loading consultations...</div>
+  }
+
+  const upcomingConsultations = consultations.filter(
+    c => new Date(c.date) > new Date() && c.status !== 'cancelled'
+  )
+  const pastConsultations = consultations.filter(
+    c => new Date(c.date) <= new Date() || c.status === 'cancelled'
+  )
+
   return (
-    <div className="space-y-6">
-      <Tabs defaultValue="list">
-        <TabsList>
-          <TabsTrigger value="list">{t('lawyer.consultations.list.view')}</TabsTrigger>
-          <TabsTrigger value="calendar">{t('lawyer.consultations.calendar.view')}</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="list">
-          <Tabs defaultValue="upcoming" className="mt-4">
-            <TabsList>
-              <TabsTrigger value="upcoming">
-                {t('lawyer.consultations.upcoming')}
-                {upcomingConsultations.length > 0 && (
-                  <Badge className="ml-2">{upcomingConsultations.length}</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="completed">
-                {t('lawyer.consultations.completed')}
-              </TabsTrigger>
-              <TabsTrigger value="cancelled">
-                {t('lawyer.consultations.cancelled')}
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="upcoming" className="mt-4">
-              <div className="grid gap-4">
-                {upcomingConsultations.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-6 text-center text-muted-foreground">
-                      {t('lawyer.consultations.no.upcoming')}
-                    </CardContent>
-                  </Card>
-                ) : (
-                  upcomingConsultations.map((consultation) => (
-                    <Card key={consultation.id} className="overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="flex flex-col md:flex-row justify-between items-start p-6">
-                          <div className="flex items-start gap-4 mb-4 md:mb-0">
-                            <Avatar>
-                              <AvatarImage 
-                                src={consultation.clientPhoto} 
-                                alt={consultation.clientName} 
-                              />
-                              <AvatarFallback>
-                                {consultation.clientName.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h3 className="font-medium">{consultation.clientName}</h3>
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                {getConsultationTypeIcon(consultation.type)}
-                                {t(`consultation.type.${consultation.type}`)}
-                              </p>
-                              <div className="flex items-center gap-4 mt-1">
-                                <p className="text-sm flex items-center gap-1">
-                                  <CalendarIcon className="h-3 w-3" />
-                                  {consultation.date}
-                                </p>
-                                <p className="text-sm flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {consultation.time}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={() => handleShowDetails(consultation)}>
-                              View Details
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleOpenCancelDialog(consultation)}
-                            >
-                              Cancel Consultation
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="completed" className="mt-4">
-              <div className="grid gap-4">
-                {completedConsultations.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-6 text-center text-muted-foreground">
-                      {t('lawyer.consultations.no.completed')}
-                    </CardContent>
-                  </Card>
-                ) : (
-                  completedConsultations.map((consultation) => (
-                    <Card key={consultation.id}>
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start">
-                          <div className="flex items-start gap-4 mb-4 md:mb-0">
-                            <Avatar>
-                              <AvatarImage 
-                                src={consultation.clientPhoto} 
-                                alt={consultation.clientName} 
-                              />
-                              <AvatarFallback>
-                                {consultation.clientName.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h3 className="font-medium">{consultation.clientName}</h3>
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                {getConsultationTypeIcon(consultation.type)}
-                                {t(`consultation.type.${consultation.type}`)}
-                              </p>
-                              <div className="flex items-center gap-4 mt-1">
-                                <p className="text-sm flex items-center gap-1">
-                                  <CalendarIcon className="h-3 w-3" />
-                                  {consultation.date}
-                                </p>
-                                <p className="text-sm flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {consultation.time}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <Button size="sm" onClick={() => handleShowDetails(consultation)}>
-                            View Details
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="cancelled" className="mt-4">
-              <div className="grid gap-4">
-                {cancelledConsultations.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-6 text-center text-muted-foreground">
-                      {t('lawyer.consultations.no.cancelled')}
-                    </CardContent>
-                  </Card>
-                ) : (
-                  cancelledConsultations.map((consultation) => (
-                    <Card key={consultation.id} className="border-destructive/20">
-                      <CardContent className="p-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start">
-                          <div className="flex items-start gap-4 mb-4 md:mb-0">
-                            <Avatar>
-                              <AvatarImage 
-                                src={consultation.clientPhoto} 
-                                alt={consultation.clientName} 
-                              />
-                              <AvatarFallback>
-                                {consultation.clientName.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <h3 className="font-medium">{consultation.clientName}</h3>
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                {getConsultationTypeIcon(consultation.type)}
-                                {t(`consultation.type.${consultation.type}`)}
-                              </p>
-                              <div className="flex items-center gap-4 mt-1">
-                                <p className="text-sm flex items-center gap-1">
-                                  <CalendarIcon className="h-3 w-3" />
-                                  {consultation.date}
-                                </p>
-                                <p className="text-sm flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {consultation.time}
-                                </p>
-                              </div>
-                              <Badge className="mt-2" variant="destructive">
-                                {t('lawyer.consultation.cancelled')}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button size="sm" variant="outline" onClick={() => handleShowDetails(consultation)}>
-                            View Details
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
-        
-        <TabsContent value="calendar" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('lawyer.consultations.calendar')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="rounded-md border"
-                // This will highlight days that have consultations
-                modifiers={{
-                  consultation: (date) => consultationsForDate(date).length > 0,
-                }}
-                modifiersStyles={{
-                  consultation: { borderBottom: '2px solid var(--primary)' }
-                }}
-              />
-              
-              {selectedDate && (
-                <div className="mt-6 space-y-4">
-                  <h3 className="font-medium">
-                    {format(selectedDate, 'PPP')}
-                  </h3>
-                  
-                  <div className="grid gap-2">
-                    {consultationsForDate(selectedDate).length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        {t('lawyer.consultations.no.consultations.for.date')}
-                      </p>
-                    ) : (
-                      consultationsForDate(selectedDate).map((consultation) => (
-                        <Card key={consultation.id} className="overflow-hidden">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start">
-                              <div className="space-y-1">
-                                <p className="font-medium">{consultation.clientName}</p>
-                                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {consultation.time}
-                                </p>
-                                <Badge variant={getStatusBadgeVariant(consultation.status)}>
-                                  {t(`lawyer.consultation.status.${consultation.status}`)}
-                                </Badge>
-                              </div>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleShowDetails(consultation)}
-                              >
-                                View Details
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      {/* Consultation Details Dialog */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        {selectedConsultation && (
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{t('lawyer.consultation.details')}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage 
-                    src={selectedConsultation.clientPhoto} 
-                    alt={selectedConsultation.clientName} 
-                  />
-                  <AvatarFallback>
-                    {selectedConsultation.clientName.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-medium">{selectedConsultation.clientName}</h3>
-                  <Badge variant={getStatusBadgeVariant(selectedConsultation.status)}>
-                    {t(`lawyer.consultation.status.${selectedConsultation.status}`)}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-1">{t('consultation.date')}</h4>
-                  <p className="text-sm">{selectedConsultation.date}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-1">{t('consultation.time')}</h4>
-                  <p className="text-sm">{selectedConsultation.time}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-1">{t('consultation.type')}</h4>
-                  <p className="text-sm flex items-center gap-1">
-                    {getConsultationTypeIcon(selectedConsultation.type)}
-                    {t(`consultation.type.${selectedConsultation.type}`)}
-                  </p>
-                </div>
-              </div>
-              
-              {selectedConsultation.additionalInfo && (
-                <div>
-                  <h4 className="text-sm font-medium mb-1">
-                    {t('consultation.additional.info')}
-                  </h4>
-                  <p className="text-sm bg-muted p-3 rounded-md">
-                    {selectedConsultation.additionalInfo}
-                  </p>
-                </div>
-              )}
-              
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <h4 className="text-sm font-medium">{t('lawyer.consultation.notes')}</h4>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={handleOpenNotesDialog}
-                    disabled={selectedConsultation.status === 'cancelled'}
-                  >
-                    {t('lawyer.consultation.edit.notes')}
-                  </Button>
-                </div>
-                {selectedConsultation.notes ? (
-                  <p className="text-sm bg-muted p-3 rounded-md">
-                    {selectedConsultation.notes}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {t('lawyer.consultation.no.notes')}
-                  </p>
-                )}
-              </div>
-              
-              <DialogFooter>
-                {selectedConsultation.status === 'upcoming' && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setDetailsOpen(false)
-                      handleOpenCancelDialog(selectedConsultation)
-                    }}
-                  >
-                    Cancel Consultation
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  onClick={() => setDetailsOpen(false)}
-                >
-                  Close Details
-                </Button>
-              </DialogFooter>
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
-      
-      {/* Cancel Consultation Dialog */}
-      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        {selectedConsultation && (
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('lawyer.consultation.cancel')}</DialogTitle>
-              <DialogDescription>
-                {t('lawyer.consultation.cancel.description')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">{t('lawyer.consultation.with')}</h4>
-                <div className="flex items-center gap-2">
-                  <Avatar>
-                    <AvatarImage 
-                      src={selectedConsultation.clientPhoto} 
-                      alt={selectedConsultation.clientName} 
-                    />
-                    <AvatarFallback>
-                      {selectedConsultation.clientName.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <p>{selectedConsultation.clientName}</p>
-                </div>
-                <p className="mt-1 text-sm">
-                  {selectedConsultation.date} at {selectedConsultation.time}
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="cancellationReason" className="text-sm font-medium">
-                  {t('lawyer.consultation.cancel.reason')}
-                </label>
-                <Textarea
-                  id="cancellationReason"
-                  placeholder={t('lawyer.consultation.cancel.reason.placeholder')}
-                  value={cancellationReason}
-                  onChange={(e) => setCancellationReason(e.target.value)}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => setCancelDialogOpen(false)}
-                >
-                  Keep Consultation
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={handleCancelConsultation}
-                  disabled={cancelLoading}
-                >
-                  {cancelLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Cancelling...
-                    </>
-                  ) : (
-                    'Confirm Cancellation'
-                  )}
-                </Button>
-              </DialogFooter>
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
-      
-      {/* Notes Dialog */}
-      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
-        {selectedConsultation && (
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t('lawyer.consultation.edit.notes')}</DialogTitle>
-              <DialogDescription>
-                {t('lawyer.consultation.notes.description')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Textarea
-                placeholder={t('lawyer.consultation.notes.placeholder')}
-                value={consultationNotes}
-                onChange={(e) => setConsultationNotes(e.target.value)}
-                rows={6}
-              />
-              
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => setNotesDialogOpen(false)}
-                >
-                  Discard Changes
-                </Button>
-                <Button 
-                  onClick={handleSaveNotes}
-                  disabled={savingNotes}
-                >
-                  {savingNotes ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving Notes...
-                    </>
-                  ) : (
-                    'Save Notes'
-                  )}
-                </Button>
-              </DialogFooter>
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("lawyer.consultations.title")}</CardTitle>
+        <CardDescription>{t("lawyer.consultations.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="upcoming" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="upcoming">
+              {t("lawyer.consultations.upcoming")} ({upcomingConsultations.length})
+            </TabsTrigger>
+            <TabsTrigger value="past">
+              {t("lawyer.consultations.past")} ({pastConsultations.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upcoming" className="space-y-4">
+            {upcomingConsultations.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                {t("lawyer.consultations.no.upcoming")}
+              </p>
+            ) : (
+              upcomingConsultations.map(renderConsultationCard)
+            )}
+          </TabsContent>
+
+          <TabsContent value="past" className="space-y-4">
+            {pastConsultations.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                {t("lawyer.consultations.no.past")}
+              </p>
+            ) : (
+              pastConsultations.map(renderConsultationCard)
+            )}
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   )
 }

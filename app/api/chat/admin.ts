@@ -127,25 +127,90 @@ export async function getUserChats(userId: string) {
   // Validate user ID
   if (!userId) throw new Error('User ID is required');
 
-  // Query the search index first for better performance
-  const snapshot = await adminDb
-    .collection('chatSearchIndex')
-    .where('userId', '==', userId)
-    .orderBy('lastUpdated', 'desc')
-    .limit(100)
-    .get();
+  try {
+    // Try the optimized query first (with index)
+    const snapshot = await adminDb
+      .collection('chatSearchIndex')
+      .where('userId', '==', userId)
+      .orderBy('lastUpdated', 'desc')
+      .limit(100)
+      .get();
 
-  // Get full chat data for chats that need it
-  const chatIds = snapshot.docs.map(doc => doc.id);
-  const chatsSnapshot = await adminDb
-    .collection('chats')
-    .where('__name__', 'in', chatIds)
-    .get();
+    // If no chats found, return empty array
+    if (snapshot.empty) {
+      return [];
+    }
 
-  return chatsSnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  })) as (ChatData & { id: string })[];
+    // Get full chat data for chats that need it
+    const chatIds = snapshot.docs.map(doc => doc.id);
+    
+    if (chatIds.length === 0) {
+      return [];
+    }
+
+    // Split into chunks of 10 to avoid potential Firestore limitations
+    const chunkSize = 10;
+    const chatIdsChunks = [];
+    for (let i = 0; i < chatIds.length; i += chunkSize) {
+      chatIdsChunks.push(chatIds.slice(i, i + chunkSize));
+    }
+
+    // Query each chunk and combine results
+    const chatsPromises = chatIdsChunks.map(chunk =>
+      adminDb
+        .collection('chats')
+        .where('__name__', 'in', chunk)
+        .get()
+    );
+
+    const chatsSnapshots = await Promise.all(chatsPromises);
+    
+    // Combine all results and sort by lastUpdated
+    const allChats = chatsSnapshots.flatMap(snapshot => 
+      snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as ChatData & { id: string }))
+    ).sort((a, b) => ((b as ChatData).lastUpdated || (b as ChatData).timestamp) - 
+                     ((a as ChatData).lastUpdated || (a as ChatData).timestamp));
+
+    return allChats;
+  } catch (error: any) {
+    // If the error is about missing index
+    if (error.code === 9 || (error.details && error.details.includes('index'))) {
+      console.warn('Index not ready, falling back to simple query');
+      
+      // Fallback to simple query without ordering
+      const simpleSnapshot = await adminDb
+        .collection('chatSearchIndex')
+        .where('userId', '==', userId)
+        .limit(100)
+        .get();
+
+      if (simpleSnapshot.empty) {
+        return [];
+      }
+
+      const chatIds = simpleSnapshot.docs.map(doc => doc.id);
+      const chatsSnapshot = await adminDb
+        .collection('chats')
+        .where('__name__', 'in', chatIds)
+        .get();
+
+      // Sort in memory instead
+      const chats = chatsSnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as ChatData & { id: string }))
+        .sort((a, b) => (b.lastUpdated || b.timestamp) - (a.lastUpdated || a.timestamp));
+
+      return chats;
+    }
+    
+    // If it's any other error, throw it
+    throw error;
+  }
 }
 
 // Helper functions

@@ -38,6 +38,18 @@ import {
 } from "@/components/ui/sidebar"
 import { toast } from "sonner"
 
+// Add this client button wrapper before the AppSidebar component
+const DeleteButton = ({ onDelete }: { onDelete: () => void }) => {
+  const { t } = useLanguage()
+  return (
+    <AlertDialogAction asChild>
+      <button onClick={onDelete} className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
+        {t("sidebar.delete")}
+      </button>
+    </AlertDialogAction>
+  )
+}
+
 export function AppSidebar() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<{ date: string; id: string } | null>(null)
@@ -228,7 +240,7 @@ export function AppSidebar() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("sidebar.cancel")}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>{t("sidebar.delete")}</AlertDialogAction>
+            <DeleteButton onDelete={confirmDelete} />
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 import { saveChat, updateChat, deleteChat, getChat, getUserChats } from '../admin';
 
@@ -18,10 +18,19 @@ async function verifyAuth(request: Request) {
       throw Object.assign(new Error('Unauthorized - No token'), { status: 401 });
     }
 
-    const decodedToken = await auth.verifySessionCookie(token);
-    return decodedToken.uid;
+    try {
+      const { auth } = await getFirebaseAdmin();
+      const decodedToken = await auth.verifySessionCookie(token);
+      return decodedToken.uid;
+    } catch (authError: any) {
+      console.error('Session verification error:', authError);
+      throw Object.assign(new Error('Invalid or expired session'), { 
+        status: 401,
+        code: authError.code 
+      });
+    }
   } catch (error: any) {
-    throw Object.assign(new Error('Unauthorized'), { 
+    throw Object.assign(new Error(error.message || 'Unauthorized'), { 
       status: error.status || 401,
       code: error.code
     });
@@ -32,9 +41,12 @@ async function verifyAuth(request: Request) {
 function handleApiError(error: any) {
   console.error('Chat API Error:', error);
   
+  // More specific error handling
   const status = error.status || 
                  (error.code === 'permission-denied' ? 403 : 
-                 error.code === 'not-found' ? 404 : 500);
+                  error.code === 'not-found' ? 404 : 
+                  error.code === 'invalid-argument' ? 400 :
+                  error.code?.includes('auth/') ? 401 : 500);
                  
   const message = error.message || 'Internal server error';
   
@@ -42,6 +54,7 @@ function handleApiError(error: any) {
     { 
       error: message,
       code: error.code,
+      status,
       details: process.env.NODE_ENV === 'development' ? error : undefined 
     },
     { status }
@@ -125,25 +138,45 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const chatId = searchParams.get('chatId');
 
-    // If requesting specific chat
-    if (chatId) {
-      const chat = await getChat(chatId);
-      if (!chat) {
-        throw Object.assign(new Error('Chat not found'), { status: 404 });
+    try {
+      // If requesting specific chat
+      if (chatId) {
+        const chat = await getChat(chatId);
+        if (!chat) {
+          throw Object.assign(new Error('Chat not found'), { status: 404 });
+        }
+        
+        // Ensure user can only access their own chats
+        if (chat.userId !== userId) {
+          throw Object.assign(new Error('Unauthorized'), { status: 403 });
+        }
+        
+        return NextResponse.json(chat);
       }
       
-      // Ensure user can only access their own chats
-      if (chat.userId !== userId) {
-        throw Object.assign(new Error('Unauthorized'), { status: 403 });
-      }
-      
-      return NextResponse.json(chat);
-    }
-    
-    // If requesting all user's chats (no chatId provided)
-    const chats = await getUserChats(userId);
-    return NextResponse.json(chats);
+      // If requesting all user's chats (no chatId provided)
+      const chats = await getUserChats(userId);
+      return NextResponse.json(chats);
 
+    } catch (dbError: any) {
+      console.error('Database operation error:', dbError);
+      
+      // If it's an indexing error, return a more helpful message
+      if (dbError.code === 9 || (dbError.details && dbError.details.includes('index'))) {
+        throw Object.assign(new Error('Chat history is being optimized. This may take a few minutes on first use.'), { 
+          status: 503,
+          code: 'index_building',
+          details: 'Firestore index is being created',
+          retryAfter: 60 // Suggest retry after 1 minute
+        });
+      }
+      
+      throw Object.assign(new Error('Service temporarily unavailable'), { 
+        status: 503,
+        code: 'database_error',
+        cause: dbError
+      });
+    }
   } catch (error: any) {
     return handleApiError(error);
   }

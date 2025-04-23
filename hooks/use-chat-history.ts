@@ -35,12 +35,45 @@ export function useChatHistory(userId: string | undefined) {
 
   const handleApiError = (error: ApiError, operation: string) => {
     console.error(`Chat history ${operation} error:`, error);
-    const message = error.status === 404 ? 'Chat not found' :
-                   error.status === 403 ? 'Unauthorized access' :
-                   error.message || `Failed to ${operation}`;
+    let message;
+    
+    if (error.status === 401) {
+      message = 'Please sign in to access your chat history';
+    } else if (error.status === 403) {
+      message = 'You do not have permission to access this chat';
+    } else if (error.status === 404) {
+      message = 'Chat not found';
+    } else if (error.status === 503) {
+      message = 'Service temporarily unavailable. Please try again.';
+    } else {
+      message = `Failed to ${operation} chat history. Please try again.`;
+    }
+    
     setError(message);
     toast.error(message);
     return null;
+  };
+
+  const fetchWithRetry = async (url: string, options: RequestInit = {}, retries = 3, delay = 1000) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, options);
+        if (response.ok || response.status === 404) {
+          return response;
+        }
+        
+        // If we get a 503 or other error, wait and retry
+        if (i < retries - 1) {
+          await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+          continue;
+        }
+        return response;
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+      }
+    }
+    throw new Error('Failed to fetch after retries');
   };
 
   useEffect(() => {
@@ -49,14 +82,19 @@ export function useChatHistory(userId: string | undefined) {
       return;
     }
 
+    let mounted = true;
     const loadChatHistory = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/chat/manage?userId=${userId}`);
+        const response = await fetchWithRetry(`/api/chat/manage?userId=${userId}`);
+        if (!mounted) return;
+
         if (!response.ok) {
-          throw Object.assign(new Error('Failed to fetch chat history'), {
-            status: response.status
+          const errorData = await response.json().catch(() => ({}));
+          throw Object.assign(new Error(errorData.error || 'Failed to fetch chat history'), {
+            status: response.status,
+            code: errorData.code
           });
         }
         
@@ -64,6 +102,8 @@ export function useChatHistory(userId: string | undefined) {
         if (!Array.isArray(chats)) {
           throw new Error('Invalid chat history format');
         }
+
+        if (!mounted) return;
 
         const history: ChatHistory = {};
         chats.forEach((chat: ChatSession & { userId: string }) => {
@@ -86,14 +126,19 @@ export function useChatHistory(userId: string | undefined) {
 
         setChatHistory(history);
       } catch (error: any) {
-        handleApiError(error, 'loading');
-        setChatHistory({});
+        if (mounted) {
+          handleApiError(error, 'loading');
+          setChatHistory({});
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadChatHistory();
+    return () => { mounted = false; };
   }, [userId]);
 
   const saveChat = async (messages: Message[]): Promise<string | null> => {
