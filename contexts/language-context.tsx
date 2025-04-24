@@ -108,7 +108,7 @@ const translations: Translations = {
     "chat.messages.remaining": "{count} messages remaining. Sign in for unlimited access.",
     "chat.input.placeholder": "Ask a legal question...",
     "chat.send": "Send",
-    "chat.search.placeholder": "Search the web...",
+    "chat.search.placeholder": "search", // Updated placeholder
     "chat.search": "Search",
 
     // Chat errors
@@ -259,7 +259,7 @@ const translations: Translations = {
     "chat.messages.remaining": "{count} messages restants. Connectez-vous pour un accès illimité.",
     "chat.input.placeholder": "Posez une question juridique...",
     "chat.send": "Envoyer",
-    "chat.search.placeholder": "Rechercher sur le web...",
+    "chat.search.placeholder": "search", // Updated placeholder
     "chat.search": "Rechercher",
 
     // Chat errors
