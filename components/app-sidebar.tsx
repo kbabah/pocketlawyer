@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { ThemeSwitcher } from "@/components/theme-switcher" // Import ThemeSwitcher
 import { useChatHistory } from "@/hooks/use-chat-history"
 import { FeedbackDialog } from "@/components/feedback-dialog" // Import FeedbackDialog
 import { 
@@ -115,7 +116,9 @@ export function AppSidebar() {
                 PocketLawyer <span className="ml-1">🇨🇲</span>
               </h2>
             </div>
-            <LanguageSwitcher />
+            <div className="flex items-center gap-1">
+              <ThemeSwitcher /> {/* Keep only theme switcher */}
+            </div>
           </div>
         </SidebarHeader>
         

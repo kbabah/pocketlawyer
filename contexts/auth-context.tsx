@@ -47,10 +47,11 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialAuthChecked, setInitialAuthChecked] = useState(false);
 
-  // Handle redirect after auth state change
+  // Handle redirect after INITIAL auth state change only
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !initialAuthChecked) {
       // Get callback URL if exists
       const callbackUrl = searchParams.get("callbackUrl");
       
@@ -59,12 +60,17 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          // Redirect to the main chat interface
-          router.replace("/");
+          // Only redirect to the main chat interface on initial login
+          // Not on profile updates or other auth state changes
+          const currentPath = window.location.pathname;
+          if (currentPath === "/sign-in" || currentPath === "/sign-up") {
+            router.replace("/");
+          }
         }
+        setInitialAuthChecked(true);
       }, 100);
     }
-  }, [user, loading, router, searchParams]);
+  }, [user, loading, router, searchParams, initialAuthChecked]);
 
   useEffect(() => {
     // Set session persistence

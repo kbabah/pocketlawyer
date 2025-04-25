@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { MessageSquare, Search, Shield, Scale, FileText } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { ThemeSwitcher } from "@/components/theme-switcher" // Import ThemeSwitcher
 
 export default function Welcome() {
   const { t } = useLanguage()
@@ -21,7 +22,10 @@ export default function Welcome() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <LanguageSwitcher />
+            <div className="flex items-center gap-1">
+              <ThemeSwitcher /> {/* Add ThemeSwitcher component */}
+              <LanguageSwitcher />
+            </div>
             <Link href="/sign-in">
               <Button variant="ghost">{t("auth.signin")}</Button>
             </Link>
@@ -33,35 +37,24 @@ export default function Welcome() {
       </header>
 
       <main>
-        <section className="relative py-0">
-          <div className="relative h-[500px] w-full overflow-hidden">
-            <Image
-              src="/images/african-law-cover.png"
-              alt="African legal system"
-              fill
-              priority
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/90 to-background/60 dark:from-background/95 dark:to-background/70">
-              <div className="container h-full flex flex-col justify-center items-center text-center">
-                <div className="max-w-3xl space-y-6">
-                  <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                    <span className="text-primary">{t("welcome.hero.title")}</span>
-                  </h1>
-                  <p className="text-xl text-muted-foreground mx-auto">{t("welcome.hero.subtitle")}</p>
-                  <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
-                    <Link href="/sign-up">
-                      <Button size="lg" className="px-8">
-                        {t("welcome.get.started")}
-                      </Button>
-                    </Link>
-                    <Link href="/sign-in">
-                      <Button size="lg" variant="outline" className="px-8">
-                        {t("auth.signin")}
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+        <section className="relative py-12 bg-primary/5">
+          <div className="container h-[400px] flex flex-col justify-center items-center text-center">
+            <div className="max-w-3xl space-y-6">
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+                <span className="text-primary">{t("welcome.hero.title")}</span>
+              </h1>
+              <p className="text-xl text-muted-foreground mx-auto">{t("welcome.hero.subtitle")}</p>
+              <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
+                <Link href="/sign-up">
+                  <Button size="lg" className="px-8">
+                    {t("welcome.get.started")}
+                  </Button>
+                </Link>
+                <Link href="/sign-in">
+                  <Button size="lg" variant="outline" className="px-8">
+                    {t("auth.signin")}
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
