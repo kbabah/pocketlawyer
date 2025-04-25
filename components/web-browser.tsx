@@ -33,6 +33,9 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
     if (currentUrl) {
       setHistory(prev => [...prev.slice(0, historyIndex + 1), currentUrl])
       setHistoryIndex(prev => prev + 1)
+    } else {
+      setHistory([])
+      setHistoryIndex(0)
     }
     setCurrentUrl(url)
   }

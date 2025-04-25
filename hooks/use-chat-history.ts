@@ -57,7 +57,10 @@ export function useChatHistory(userId: string | undefined) {
   }, [userId]);
 
   const saveChat = async (messages: Message[]) => {
-    if (!userId || messages.length === 0) return null;
+    if (!userId || messages.length === 0) {
+      console.warn("Cannot save chat: missing userId or no messages");
+      return null;
+    }
 
     try {
       const title = messages[0].content.slice(0, 30) + (messages[0].content.length > 30 ? '...' : '');
@@ -68,15 +71,40 @@ export function useChatHistory(userId: string | undefined) {
         timestamp: Date.now(),
       };
 
+      console.log("Attempting to save chat:", { userId, messageCount: messages.length });
       const response = await fetch('/api/chat/manage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chatData),
       });
 
-      if (!response.ok) throw new Error('Failed to save chat');
-      const { id } = await response.json();
-      return id;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error(`Failed to save chat: ${response.status}`, data);
+        throw new Error(`Failed to save chat: ${data.error || response.statusText}`);
+      }
+      
+      console.log(`Chat saved successfully with ID: ${data.id}`);
+      
+      // Update local state with the new chat
+      const date = new Date().toISOString().split('T')[0];
+      const updatedHistory = { ...chatHistory };
+      
+      if (!updatedHistory[date]) {
+        updatedHistory[date] = [];
+      }
+      
+      updatedHistory[date].unshift({
+        id: data.id,
+        title,
+        messages,
+        timestamp: Date.now(),
+      });
+      
+      setChatHistory(updatedHistory);
+      
+      return data.id;
     } catch (error) {
       console.error('Error saving chat:', error);
       return null;
@@ -130,6 +158,53 @@ export function useChatHistory(userId: string | undefined) {
     }
   };
 
+  const renameChat = async (chatId: string, newTitle: string) => {
+    if (!userId || !newTitle.trim()) return;
+
+    const originalTitle = chatHistory[Object.keys(chatHistory).find(date => chatHistory[date].some(chat => chat.id === chatId)) || '']?.find(chat => chat.id === chatId)?.title;
+
+    // Optimistic UI update
+    const updatedHistory = { ...chatHistory };
+    let updated = false;
+    Object.keys(updatedHistory).forEach((date) => {
+      const chatIndex = updatedHistory[date].findIndex((chat) => chat.id === chatId);
+      if (chatIndex !== -1) {
+        updatedHistory[date][chatIndex] = { ...updatedHistory[date][chatIndex], title: newTitle.trim() };
+        updated = true;
+      }
+    });
+    if (updated) {
+      setChatHistory(updatedHistory);
+    }
+
+    try {
+      const response = await fetch('/api/chat/manage', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, title: newTitle.trim() }),
+      });
+
+      if (!response.ok) throw new Error('Failed to rename chat');
+      // No need to update state again if successful
+
+    } catch (error) {
+      console.error('Error renaming chat:', error);
+      // Revert optimistic update on error
+      if (updated && originalTitle) {
+        const revertedHistory = { ...chatHistory };
+         Object.keys(revertedHistory).forEach((date) => {
+          const chatIndex = revertedHistory[date].findIndex((chat) => chat.id === chatId);
+          if (chatIndex !== -1) {
+            revertedHistory[date][chatIndex] = { ...revertedHistory[date][chatIndex], title: originalTitle };
+          }
+        });
+        setChatHistory(revertedHistory);
+      }
+      // Optionally show an error toast
+      // toast.error("Failed to rename chat"); 
+    }
+  };
+
   const deleteChat = async (chatId: string) => {
     if (!userId) return;
 
@@ -162,5 +237,6 @@ export function useChatHistory(userId: string | undefined) {
     saveChat,
     updateChat,
     deleteChat,
+    renameChat, // Export renameChat
   };
 }

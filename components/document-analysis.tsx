@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useIsMobile } from "@/hooks/use-mobile" // Import mobile hook
 
 interface DocumentAnalysisProps {
   onAnalysisComplete: (question: string, answer: string) => void
@@ -17,8 +19,10 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
   const [text, setText] = useState("")
   const [question, setQuestion] = useState("")
   const [answer, setAnswer] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false) // Specific loading state for extraction
+  const [isAnalyzing, setIsAnalyzing] = useState(false) // Specific loading state for analysis
   const [error, setError] = useState("")
+  const isMobile = useIsMobile() // Add mobile detection
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFile(e.target.files?.[0] || null)
@@ -29,7 +33,7 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
 
   const handleExtract = async () => {
     if (!file) return
-    setLoading(true)
+    setIsExtracting(true) // Set extracting state
     setError("")
     setText("")
     setAnswer("")
@@ -66,15 +70,16 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
       console.error("Document extraction error:", err)
       setError(err.message || "Failed to extract text from document")
     } finally {
-      setLoading(false)
+      setIsExtracting(false) // Clear extracting state
     }
   }
 
   const handleAnalyze = async () => {
     if (!text || !question) return
-    setLoading(true)
+    setIsAnalyzing(true) // Set analyzing state
     setError("")
-    setAnswer("")
+    // Keep the previous answer visible until the new one arrives, or clear it if you prefer
+    // setAnswer("") 
     
     try {
       const res = await fetch("/api/document/analyze", {
@@ -93,45 +98,53 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
     } catch (err: any) {
       setError(err.message || "Failed to analyze document")
     } finally {
-      setLoading(false)
+      setIsAnalyzing(false) // Clear analyzing state
     }
   }
 
+  const isLoading = isExtracting || isAnalyzing; // Combined loading state for disabling inputs
+
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-bold mb-2">{t("document.analyze") || "Document Analysis"}</h3>
+    <div className="space-y-4 px-2 sm:px-4">
+      <h3 className="text-xl font-semibold mb-2">{t("document.analyze") || "Document Analysis"}</h3>
       
-      <div className="border rounded p-4">
+      <div className="border rounded p-3 sm:p-4">
         <h4 className="text-sm font-medium mb-2">{t("document.select") || "Select Document"}</h4>
         
-        {/* File size limit information */}
-        <div className="text-xs text-muted-foreground mb-3 bg-muted p-2 rounded flex items-start">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 mt-0.5"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+        {/* Improved dark mode support for info box */}
+        <div className="text-xs text-muted-foreground mb-3 bg-muted p-2 rounded flex items-start dark:bg-slate-800 dark:border dark:border-slate-700">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 mt-0.5 flex-shrink-0 text-blue-500"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
           <div>
             <p className="font-medium">File Size Limit: 1MB maximum</p>
-            <p>Only PDF files are supported. Large documents may take longer to process.</p>
+            {!isMobile && <p>Only PDF files are supported. Large documents may take longer to process.</p>}
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2 items-start">
+        {/* Stack vertically on mobile, side-by-side on larger screens */}
+        <div className="flex flex-col gap-2">
           <div className="w-full">
-            <label htmlFor="file-upload" className="block mb-1 text-xs">Select PDF document:</label>
+            <label htmlFor="file-upload" className="block mb-1 text-xs font-medium">{t("document.select.label") || "Select PDF document:"}</label>
             <Input 
               id="file-upload"
               type="file" 
               accept="application/pdf" 
               onChange={handleFileChange} 
               className="mb-2"
+              disabled={isLoading}
+              aria-describedby="file-upload-description"
             />
+            <p id="file-upload-description" className="text-xs text-muted-foreground">
+              {isMobile ? "PDF only (max 1MB)" : t("document.select.description") || "Only PDF files up to 1MB are supported."}
+            </p>
           </div>
           <Button 
             onClick={handleExtract} 
-            disabled={!file || loading}
-            className="mt-2 sm:mt-6"
+            disabled={!file || isLoading}
+            className="w-full sm:w-auto"
             variant="default"
           >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {loading ? t("document.analyzing") || "Extracting..." : t("document.extract") || "Extract Text"}
+            {isExtracting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isExtracting ? t("document.extracting") || "Extracting..." : t("document.extract") || "Extract Text"}
           </Button>
         </div>
         
@@ -141,48 +154,79 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
           </p>
         )}
       </div>
-      
-      {text && (
-        <div className="border rounded p-4">
-          <h4 className="text-sm font-medium mb-2">{t("document.preview") || "Document Preview"}</h4>
-          <Textarea 
-            value={text.slice(0, 2000) + (text.length > 2000 ? "..." : "")} 
-            readOnly 
-            rows={6} 
-            className="font-mono text-xs"
-          />
-          
-          <div className="mt-4 space-y-2">
-            <h4 className="text-sm font-medium">{t("document.question.prompt") || "Ask a question about this document"}</h4>
-            <Input
-              type="text"
-              value={question}
-              onChange={e => setQuestion(e.target.value)}
-              placeholder={t("document.question.placeholder") || "E.g., What are the key legal points in this document?"}
-              disabled={loading}
-            />
-            <Button 
-              onClick={handleAnalyze} 
-              disabled={!question || loading} 
-              className="w-full"
-            >
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading ? t("document.analyzing") || "Analyzing..." : t("document.analyze") || "Analyze"}
-            </Button>
+
+      {/* Announce loading/content changes */}
+      <div aria-live="polite" aria-busy={isLoading}>
+        {/* Show Skeleton while extracting text - fewer skeletons on mobile */}
+        {isExtracting && (
+          <div className="border rounded p-3 sm:p-4 space-y-2 dark:border-slate-700" role="status" aria-label={t("document.extracting.aria") || "Extracting document text"}>
+            <Skeleton className="h-4 w-1/3" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-4 w-1/2 mt-2" />
+            {!isMobile && (
+              <>
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-2/3" />
+              </>
+            )}
           </div>
-        </div>
-      )}
+        )}
+        
+        {/* Document preview - adjust for mobile */}
+        {!isExtracting && text && (
+          <div className="border rounded p-3 sm:p-4 dark:border-slate-700">
+            <h4 className="text-sm font-medium mb-2">{t("document.preview") || "Document Preview"}</h4>
+            <Textarea 
+              value={text.slice(0, isMobile ? 1000 : 2000) + (text.length > (isMobile ? 1000 : 2000) ? "..." : "")} 
+              readOnly 
+              rows={isMobile ? 4 : 6} 
+              className="font-mono text-xs dark:bg-slate-900"
+            />
+            
+            <div className="mt-3 sm:mt-4 space-y-2">
+              <h4 className="text-sm font-medium">{t("document.question.prompt") || "Ask a question about this document"}</h4>
+              <Input
+                type="text"
+                value={question}
+                onChange={e => setQuestion(e.target.value)}
+                placeholder={isMobile ? "Enter your question..." : t("document.question.placeholder") || "E.g., What are the key legal points in this document?"}
+                disabled={isLoading}
+              />
+              <Button 
+                onClick={handleAnalyze} 
+                disabled={!question || isLoading}
+                className="w-full"
+              >
+                {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isAnalyzing ? t("document.analyzing") || "Analyzing..." : t("document.analyze") || "Analyze"}
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        {/* Show Skeleton while analyzing - fewer items on mobile */}
+        {isAnalyzing && (
+           <div className="bg-muted p-3 sm:p-4 rounded border space-y-2 dark:bg-slate-800 dark:border-slate-700" role="status" aria-label={t("document.analyzing.aria") || "Analyzing document"}>
+             <Skeleton className="h-4 w-1/5 mb-1" />
+             <Skeleton className="h-4 w-full" />
+             {!isMobile && <Skeleton className="h-4 w-full" />}
+             <Skeleton className="h-4 w-3/4" />
+           </div>
+        )}
+
+        {/* Document analysis answer */}
+        {!isAnalyzing && answer && (
+          <div className="bg-muted p-3 sm:p-4 rounded border dark:bg-slate-800 dark:border-slate-700" role="region" aria-label={t("document.answer.aria") || "Analysis Answer"}>
+            <div className="font-semibold mb-2">{t("document.answer") || "Answer"}:</div>
+            <div className="text-sm whitespace-pre-wrap">{answer}</div>
+          </div>
+        )}
+      </div>
       
-      {answer && (
-        <div className="bg-muted p-4 rounded border">
-          <div className="font-semibold mb-2">{t("document.answer") || "Answer"}:</div>
-          <div className="text-sm whitespace-pre-wrap">{answer}</div>
-        </div>
-      )}
-      
+      {/* Error message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded">
-          <div className="font-semibold mb-1">Error:</div>
+        <div role="alert" className="bg-red-50 border border-red-200 text-red-700 p-3 rounded dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+          <div className="font-semibold mb-1">{t("error.title") || "Error"}:</div>
           <div className="text-sm">{error}</div>
         </div>
       )}

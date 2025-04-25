@@ -94,11 +94,11 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     }
     
     // If all methods failed, return a helpful message
-    return "Could not extract readable text from this PDF. It may be an image-based document, encrypted, or contain non-standard text encoding. Please try a different document or a PDF with selectable text. Error code: PDF-TEXT-ERR-001. If this problem persists, contact support with this error code and document details.";
+    return "Could not extract readable text from this PDF. It might be image-based, encrypted, or use non-standard encoding. Please try a different PDF with selectable text.";
     
   } catch (error: any) {
     console.error('PDF processing error:', error.message);
-    return "Failed to extract text from PDF. If you're seeing encoded characters, the document may not contain extractable text.";
+    return "An unexpected error occurred while processing the PDF. Please ensure it's a valid, unencrypted PDF file.";
   }
 }
 
@@ -108,20 +108,20 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null;
     
     if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+      return NextResponse.json({ error: 'No file was selected. Please choose a PDF document to upload.' }, { status: 400 });
     }
 
     // Check file size - enforce 1MB limit
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json({
-        error: 'File size exceeds the 1MB limit. Please upload a smaller document.',
+        error: `The selected file (${(file.size / 1024 / 1024).toFixed(1)}MB) exceeds the 1MB limit. Please upload a smaller document.`,
         success: false
       }, { status: 400 });
     }
 
     // Check file type
     if (!file.type || !file.type.includes('pdf')) {
-      return NextResponse.json({ error: 'Invalid file type. Please upload a PDF document.', success: false }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid file type. Only PDF documents (.pdf) are accepted.', success: false }, { status: 400 });
     }
 
     try {
@@ -131,17 +131,24 @@ export async function POST(req: NextRequest) {
       // Check if it's a valid PDF
       const isPDF = buffer.toString('ascii', 0, 5) === '%PDF-';
       if (!isPDF) {
-        return NextResponse.json({ error: 'The file is not a valid PDF document.', success: false }, { status: 400 });
+        return NextResponse.json({ error: 'The uploaded file does not appear to be a valid PDF document.', success: false }, { status: 400 });
       }
       
       // Process the PDF with OCR-prioritized extraction
       const text = await extractTextFromPDF(buffer);
       
+      // Check if extraction failed based on the specific error messages
+      if (text.startsWith("Could not extract") || text.startsWith("An unexpected error")) {
+        return NextResponse.json({ error: text, success: false }, { status: 500 });
+      }
+      
       return NextResponse.json({ text, success: true });
     } catch (error: any) {
-      return NextResponse.json({ error: `Failed to process PDF: ${error.message}`, success: false }, { status: 500 });
+      console.error('PDF processing internal error:', error);
+      return NextResponse.json({ error: `Failed to process the PDF due to an internal error. Please try again later or contact support if the issue persists.`, success: false }, { status: 500 });
     }
   } catch (outerError: any) {
-    return NextResponse.json({ error: `Server error: ${outerError.message}`, success: false }, { status: 500 });
+    console.error('Server error during form data processing:', outerError);
+    return NextResponse.json({ error: `A server error occurred. Please try again later.`, success: false }, { status: 500 });
   }
 }
