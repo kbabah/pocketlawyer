@@ -17,6 +17,11 @@ export async function updateChat(chatId: string, data: Partial<ChatData>) {
   await adminDb.collection('chats').doc(chatId).update(data);
 }
 
+// Add the missing updateChatTitle function
+export async function updateChatTitle(chatId: string, title: string) {
+  await adminDb.collection('chats').doc(chatId).update({ title });
+}
+
 export async function deleteChat(chatId: string) {
   await adminDb.collection('chats').doc(chatId).delete();
 }

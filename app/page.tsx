@@ -8,7 +8,8 @@ import ChatInterface from "@/components/chat-interface"
 import { useAuth } from "@/contexts/auth-context"
 import { Scale } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
-import { FeedbackDialog } from "@/components/feedback-dialog"
+import { LanguageSwitcher } from "@/components/language-switcher"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -50,7 +51,10 @@ export default function Home() {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <FeedbackDialog />
+            <div className="flex items-center gap-2">
+              <ThemeSwitcher />
+              <LanguageSwitcher />
+            </div>
             <span className="text-sm text-muted-foreground hidden sm:inline-block">{t("welcome.hero.title")}</span>
           </div>
         </header>
