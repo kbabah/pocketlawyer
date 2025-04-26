@@ -18,13 +18,22 @@ import {
   User as FirebaseUser
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { v4 as uuidv4 } from "uuid";
+
+// Define anonymous trial settings
+const MAX_TRIAL_CONVERSATIONS = 10;
+const ANONYMOUS_ID_KEY = "pocketlawyer_anonymous_id";
+const TRIAL_CONVERSATIONS_KEY = "pocketlawyer_trial_conversations";
 
 interface User {
   id: string;
   email: string | null;
   name: string | null;
   profileImage?: string | null;
-  provider: "email" | "google";
+  provider: "email" | "google" | "anonymous";
+  isAnonymous?: boolean;
+  trialConversationsUsed?: number;
+  trialConversationsLimit?: number;
 }
 
 interface AuthContextType {
@@ -37,6 +46,10 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (data: { name?: string; email?: string; photoURL?: string }) => Promise<void>;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  incrementTrialConversations: () => number;
+  isTrialLimitReached: () => boolean;
+  getTrialConversationsRemaining: () => number;
+  clearAnonymousSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,6 +61,73 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [initialAuthChecked, setInitialAuthChecked] = useState(false);
+
+  // Initialize or retrieve anonymous session
+  const initAnonymousSession = () => {
+    // Check for existing anonymous ID
+    let anonymousId = localStorage.getItem(ANONYMOUS_ID_KEY);
+    if (!anonymousId) {
+      anonymousId = uuidv4();
+      localStorage.setItem(ANONYMOUS_ID_KEY, anonymousId);
+      localStorage.setItem(TRIAL_CONVERSATIONS_KEY, "0");
+    }
+    
+    const trialConversationsUsed = parseInt(localStorage.getItem(TRIAL_CONVERSATIONS_KEY) || "0", 10);
+    
+    return {
+      id: anonymousId,
+      email: null,
+      name: "Guest User",
+      provider: "anonymous" as const,
+      isAnonymous: true,
+      trialConversationsUsed,
+      trialConversationsLimit: MAX_TRIAL_CONVERSATIONS
+    };
+  };
+  
+  // Increment conversation count for anonymous users
+  const incrementTrialConversations = (): number => {
+    if (!user?.isAnonymous) return 0;
+    
+    const currentCount = parseInt(localStorage.getItem(TRIAL_CONVERSATIONS_KEY) || "0", 10);
+    const newCount = currentCount + 1;
+    localStorage.setItem(TRIAL_CONVERSATIONS_KEY, newCount.toString());
+    
+    // Update user state
+    setUser(prev => {
+      if (prev && prev.isAnonymous) {
+        return {
+          ...prev,
+          trialConversationsUsed: newCount
+        };
+      }
+      return prev;
+    });
+    
+    return newCount;
+  };
+  
+  // Check if trial limit is reached
+  const isTrialLimitReached = (): boolean => {
+    if (!user?.isAnonymous) return false;
+    
+    const currentCount = parseInt(localStorage.getItem(TRIAL_CONVERSATIONS_KEY) || "0", 10);
+    return currentCount >= MAX_TRIAL_CONVERSATIONS;
+  };
+  
+  // Get remaining trial conversations
+  const getTrialConversationsRemaining = (): number => {
+    if (!user?.isAnonymous) return 0;
+    
+    const currentCount = parseInt(localStorage.getItem(TRIAL_CONVERSATIONS_KEY) || "0", 10);
+    return Math.max(0, MAX_TRIAL_CONVERSATIONS - currentCount);
+  };
+  
+  // Clear anonymous session data
+  const clearAnonymousSession = () => {
+    localStorage.removeItem(ANONYMOUS_ID_KEY);
+    localStorage.removeItem(TRIAL_CONVERSATIONS_KEY);
+  };
 
   // Handle redirect after INITIAL auth state change only
   useEffect(() => {
@@ -89,6 +169,9 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
           },
           body: JSON.stringify({ idToken }),
         });
+        
+        // If user signed in, clear any anonymous session
+        clearAnonymousSession();
 
         const user: User = {
           id: firebaseUser.uid,
@@ -99,7 +182,10 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         };
         setUser(user);
       } else {
-        setUser(null);
+        // No authenticated user, create or use anonymous session
+        const anonymousUser = initAnonymousSession();
+        setUser(anonymousUser);
+        
         // Clear the session cookie
         await fetch('/api/auth/session', { method: 'DELETE' });
       }
@@ -245,6 +331,10 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         resetPassword,
         updateProfile,
         updatePassword,
+        incrementTrialConversations,
+        isTrialLimitReached,
+        getTrialConversationsRemaining,
+        clearAnonymousSession
       }}
     >
       {children}

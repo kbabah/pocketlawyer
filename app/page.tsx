@@ -16,12 +16,8 @@ export default function Home() {
   const { t } = useLanguage()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!loading && !user) {
-      // Redirect to landing page if not logged in
-      router.push("/welcome")
-    }
-  }, [user, loading, router])
+  // No longer redirect to welcome page if not logged in
+  // Instead, we'll handle anonymous users with the trial feature
 
   if (loading) {
     return (
@@ -32,10 +28,6 @@ export default function Home() {
         </div>
       </div>
     )
-  }
-
-  if (!user) {
-    return null // Will redirect in useEffect
   }
 
   return (
@@ -55,6 +47,11 @@ export default function Home() {
               <ThemeSwitcher />
               <LanguageSwitcher />
             </div>
+            {user?.isAnonymous && (
+              <div className="text-sm font-medium text-amber-600 dark:text-amber-500 hidden sm:block">
+                {t("Trial Mode")}: {user.trialConversationsUsed}/{user.trialConversationsLimit} {t("Trial Conversations Used")}
+              </div>
+            )}
             <span className="text-sm text-muted-foreground hidden sm:inline-block">{t("welcome.hero.title")}</span>
           </div>
         </header>

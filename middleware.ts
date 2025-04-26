@@ -22,6 +22,11 @@ export function middleware(request: NextRequest) {
 
   // Handle root path redirection based on auth status
   if (request.nextUrl.pathname === '/') {
+    // Allow trial access when coming from welcome page with trial=true parameter
+    if (request.nextUrl.searchParams.get('trial') === 'true') {
+      return NextResponse.next()
+    }
+    
     if (!session) {
       return NextResponse.redirect(new URL('/welcome', request.url))
     }

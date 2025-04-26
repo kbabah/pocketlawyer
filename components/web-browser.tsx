@@ -143,7 +143,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="search"
-                placeholder={t("search.placeholder")}
+                placeholder={t("Search...") }
                 className="w-full pl-9 pr-4 py-2 rounded-md border border-input bg-background"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -168,7 +168,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
               </div>
             ) : results.length === 0 ? (
               <div className="text-center text-muted-foreground p-4">
-                {t("search.no.results")}
+                {t("No results found.")}
               </div>
             ) : (
               <div className="space-y-4 py-2">
