@@ -19,11 +19,30 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
+import { sendEmail, EmailTemplate } from "@/lib/email-service"; // Import email service
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase"; // Assuming you have a Firestore db export
 
 // Define anonymous trial settings
 const MAX_TRIAL_CONVERSATIONS = 10;
 const ANONYMOUS_ID_KEY = "pocketlawyer_anonymous_id";
 const TRIAL_CONVERSATIONS_KEY = "pocketlawyer_trial_conversations";
+
+// Email preferences interface
+export interface EmailPreferences {
+  systemUpdates: boolean;
+  chatSummaries: boolean;
+  trialNotifications: boolean;
+  marketingEmails: boolean;
+}
+
+// Default email preferences
+const DEFAULT_EMAIL_PREFERENCES: EmailPreferences = {
+  systemUpdates: true,
+  chatSummaries: true,
+  trialNotifications: true,
+  marketingEmails: false,
+};
 
 interface User {
   id: string;
@@ -34,6 +53,7 @@ interface User {
   isAnonymous?: boolean;
   trialConversationsUsed?: number;
   trialConversationsLimit?: number;
+  emailPreferences?: EmailPreferences;
 }
 
 interface AuthContextType {
@@ -50,6 +70,8 @@ interface AuthContextType {
   isTrialLimitReached: () => boolean;
   getTrialConversationsRemaining: () => number;
   clearAnonymousSession: () => void;
+  updateEmailPreferences: (preferences: Partial<EmailPreferences>) => Promise<void>;
+  sendEmailNotification: (template: EmailTemplate, data?: Record<string, any>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -129,6 +151,153 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
     localStorage.removeItem(TRIAL_CONVERSATIONS_KEY);
   };
 
+  // Fetch user's email preferences from Firestore
+  const fetchUserEmailPreferences = async (userId: string): Promise<EmailPreferences> => {
+    try {
+      const userDocRef = doc(db, "users", userId);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists() && userDoc.data()?.emailPreferences) {
+        return userDoc.data().emailPreferences as EmailPreferences;
+      }
+      
+      // Initialize default preferences if none exist
+      await updateDoc(userDocRef, { 
+        emailPreferences: DEFAULT_EMAIL_PREFERENCES 
+      });
+      
+      return DEFAULT_EMAIL_PREFERENCES;
+    } catch (error) {
+      console.error("Error fetching email preferences:", error);
+      return DEFAULT_EMAIL_PREFERENCES;
+    }
+  };
+  
+  // Update user email preferences
+  const updateEmailPreferences = async (preferences: Partial<EmailPreferences>): Promise<void> => {
+    if (!auth.currentUser) {
+      throw new Error("No authenticated user");
+    }
+    
+    try {
+      const userId = auth.currentUser.uid;
+      const userDocRef = doc(db, "users", userId);
+      
+      // Fetch current preferences
+      const userDoc = await getDoc(userDocRef);
+      const currentPreferences = userDoc.exists() && userDoc.data()?.emailPreferences
+        ? userDoc.data().emailPreferences
+        : DEFAULT_EMAIL_PREFERENCES;
+        
+      // Merge with new preferences
+      const updatedPreferences = {
+        ...currentPreferences,
+        ...preferences
+      };
+      
+      // Update in Firestore
+      await updateDoc(userDocRef, {
+        emailPreferences: updatedPreferences
+      });
+      
+      // Update local user state
+      setUser(prev => {
+        if (prev) {
+          return {
+            ...prev,
+            emailPreferences: updatedPreferences
+          };
+        }
+        return prev;
+      });
+    } catch (error: any) {
+      console.error("Error updating email preferences:", error);
+      throw new Error(error.message);
+    }
+  };
+  
+  // Send email notification
+  const sendEmailNotification = async (template: EmailTemplate, data?: Record<string, any>): Promise<boolean> => {
+    if (!user || !user.email) {
+      console.log("Cannot send email: No user or email");
+      return false;
+    }
+    
+    // For anonymous users, only allow trial notifications
+    if (user.isAnonymous && template !== 'trial-reminder') {
+      return false;
+    }
+    
+    try {
+      // Check user preferences for this email type
+      let shouldSend = true;
+      
+      // If user has specific preferences and is not anonymous
+      if (user.emailPreferences && !user.isAnonymous) {
+        switch (template) {
+          case 'system-update':
+            shouldSend = user.emailPreferences.systemUpdates;
+            break;
+          case 'chat-summary':
+            shouldSend = user.emailPreferences.chatSummaries;
+            break;
+          case 'trial-reminder':
+            shouldSend = user.emailPreferences.trialNotifications;
+            break;
+          // Welcome and account verification emails are always sent
+          case 'welcome':
+          case 'account-verification':
+          case 'reset-password':
+            shouldSend = true;
+            break;
+          default:
+            shouldSend = true;
+        }
+      }
+      
+      if (!shouldSend) {
+        console.log(`Email notification skipped due to user preferences: ${template}`);
+        return false;
+      }
+      
+      // Send the email
+      const result = await sendEmail({
+        to: user.email,
+        subject: getEmailSubject(template),
+        template,
+        data: {
+          name: user.name,
+          ...data
+        }
+      });
+      
+      return !!result.success;
+    } catch (error) {
+      console.error("Error sending email notification:", error);
+      return false;
+    }
+  };
+  
+  // Helper function to get email subject based on template
+  const getEmailSubject = (template: EmailTemplate): string => {
+    switch (template) {
+      case 'welcome':
+        return "Welcome to PocketLawyer";
+      case 'reset-password':
+        return "Reset Your PocketLawyer Password";
+      case 'chat-summary':
+        return "Your Chat Summary from PocketLawyer";
+      case 'system-update':
+        return "PocketLawyer System Update";
+      case 'trial-reminder':
+        return "Your PocketLawyer Trial Status";
+      case 'account-verification':
+        return "Verify Your PocketLawyer Account";
+      default:
+        return "PocketLawyer Notification";
+    }
+  };
+
   // Handle redirect after INITIAL auth state change only
   useEffect(() => {
     if (!loading && user && !initialAuthChecked) {
@@ -173,12 +342,23 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         // If user signed in, clear any anonymous session
         clearAnonymousSession();
 
+        // Fetch email preferences for the user
+        let emailPreferences: EmailPreferences | undefined;
+        try {
+          emailPreferences = await fetchUserEmailPreferences(firebaseUser.uid);
+        } catch (error) {
+          console.error("Failed to fetch email preferences:", error);
+          // Use defaults if can't fetch
+          emailPreferences = DEFAULT_EMAIL_PREFERENCES;
+        }
+
         const user: User = {
           id: firebaseUser.uid,
           email: firebaseUser.email,
           name: firebaseUser.displayName,
           profileImage: firebaseUser.photoURL,
-          provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email'
+          provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+          emailPreferences
         };
         setUser(user);
       } else {
@@ -233,6 +413,25 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ idToken }),
+      });
+      
+      // Create user document with default email preferences
+      const userDocRef = doc(db, "users", userCredential.user.uid);
+      await setDoc(userDocRef, {
+        email,
+        name: name || '',
+        createdAt: new Date(),
+        emailPreferences: DEFAULT_EMAIL_PREFERENCES
+      }, { merge: true });
+      
+      // Send welcome email
+      sendEmail({
+        to: email,
+        subject: "Welcome to PocketLawyer",
+        template: "welcome",
+        data: { name: name || 'there' }
+      }).catch(error => {
+        console.error("Error sending welcome email:", error);
       });
 
       // Router push will happen in useEffect after auth state changes
@@ -334,7 +533,9 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         incrementTrialConversations,
         isTrialLimitReached,
         getTrialConversationsRemaining,
-        clearAnonymousSession
+        clearAnonymousSession,
+        updateEmailPreferences,
+        sendEmailNotification
       }}
     >
       {children}
