@@ -19,66 +19,68 @@ export default function TermsPage() {
       <main className="container py-10">
         <div className="max-w-3xl mx-auto space-y-8">
           <div>
-            <h1 className="text-3xl font-bold mb-4">Terms and Conditions</h1>
-            <p className="text-muted-foreground">Last Updated: April 24, 2025</p>
+            <h1 className="text-3xl font-bold mb-4">PocketLawyer User Terms and Conditions</h1>
+            <p className="text-muted-foreground">Last Updated: April 26, 2025</p>
           </div>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">1. Acceptance of Terms</h2>
-            <p>By accessing or using PocketLawyer, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you must not use our service.</p>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">2. Services Description</h2>
-            <p>PocketLawyer provides an AI-powered legal assistant for answering legal questions, analyzing documents, and offering general guidance. We may update, modify, or discontinue features at any time without notice.</p>
-            <p>You acknowledge that the information provided by our AI is for informational purposes only and is not a substitute for professional legal advice.</p>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">3. User Accounts</h2>
-            <p>You must register for an account to access certain features. You agree to provide accurate information and maintain the security of your credentials. You are responsible for all activity under your account and must notify us of any unauthorized use.</p>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">4. User Conduct</h2>
-            <p>Users agree not to:</p>
-            <ul className="list-disc list-inside space-y-1 pl-4">
-              <li>Violate any applicable laws or regulations.</li>
-              <li>Transmit harmful or offensive content.</li>
-              <li>Attempt to disrupt or interfere with the service.</li>
+            <h2 className="text-2xl font-semibold">1. Scope of Service</h2>
+            <ul className="list-disc list-inside pl-4 space-y-1">
+              <li>PocketLawyer provides information and guidance strictly related to the laws and legal procedures of Cameroon.</li>
+              <li>The service helps users understand Cameroonian legal concepts, processes, and requirements, and does not cover laws outside Cameroon.</li>
             </ul>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">5. Intellectual Property</h2>
-            <p>All content, trademarks, and data on PocketLawyer, including text, graphics, logos, and software, are owned by us or our licensors and protected by applicable intellectual property laws.</p>
-            <p>You are granted a limited, non-exclusive license to use the service for personal or internal business purposes only.</p>
+            <h2 className="text-2xl font-semibold">2. No Legal Advice or Representation</h2>
+            <ul className="list-disc list-inside pl-4 space-y-1">
+              <li>The information provided by PocketLawyer is for general informational purposes only.</li>
+              <li>PocketLawyer does not offer legal advice, opinions, or representation, and does not create a lawyer-client relationship.</li>
+              <li>For specific legal advice or representation, consult a qualified lawyer licensed in Cameroon.</li>
+            </ul>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">6. Disclaimer of Warranties</h2>
-            <p>The service is provided "as is" and "as available" without warranties of any kind. We do not guarantee accuracy, reliability, or suitability of information.</p>
-            <p>Your use of PocketLawyer is at your own risk.</p>
+            <h2 className="text-2xl font-semibold">3. User Responsibilities</h2>
+            <ul className="list-disc list-inside pl-4 space-y-1">
+              <li>You are responsible for how you use the information provided by PocketLawyer.</li>
+              <li>Verify any information before relying on it for legal decisions or actions.</li>
+              <li>Do not use PocketLawyer for unlawful purposes or seek advice on non‑Cameroonian legal matters.</li>
+            </ul>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">7. Limitation of Liability</h2>
-            <p>In no event shall PocketLawyer or its affiliates be liable for any indirect, incidental, special, or consequential damages arising out of your use of or inability to use the service.</p>
+            <h2 className="text-2xl font-semibold">4. Limitations and Disclaimers</h2>
+            <ul className="list-disc list-inside pl-4 space-y-1">
+              <li>PocketLawyer strives for accuracy but cannot guarantee completeness or timeliness of all content.</li>
+              <li>We are not liable for any loss or damage resulting from reliance on the information provided.</li>
+              <li>The service may refer you to consult a qualified legal professional when appropriate.</li>
+            </ul>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-2xl font-semibold">5. Privacy and Data Use</h2>
+            <p>PocketLawyer may collect and use information you provide to improve the service and respond to your queries. Your data will be handled per applicable Cameroonian data protection laws.</p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-2xl font-semibold">6. Changes to Terms</h2>
+            <p>PocketLawyer may update or modify these terms at any time. Continued use after changes means you accept the updated terms.</p>
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="text-2xl font-semibold">7. Intellectual Property</h2>
+            <p>All content and materials provided by PocketLawyer are the property of PocketLawyer or its licensors. You may not copy or distribute content without permission.</p>
           </section>
 
           <section className="space-y-4">
             <h2 className="text-2xl font-semibold">8. Governing Law</h2>
-            <p>These Terms are governed by and construed in accordance with the laws of Cameroon, without regard to conflict of law principles.</p>
+            <p>These terms and conditions are governed by the laws of Cameroon.</p>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">9. Changes to Terms</h2>
-            <p>We may modify these Terms at any time. Updated terms will be effective upon posting. Continued use of the service constitutes acceptance of the revised terms.</p>
-          </section>
-
-          <section className="space-y-4">
-            <h2 className="text-2xl font-semibold">10. Contact Information</h2>
-            <p>For questions about these Terms, please contact us at <Link href="/contact" className="text-primary underline">Contact Page</Link>.</p>
+            <h2 className="text-2xl font-semibold">9. Contact and Complaints</h2>
+            <p>If you have questions or complaints about PocketLawyer, contact us via our <Link href="/contact" className="text-primary underline">Contact Page</Link>.</p>
           </section>
 
           <div className="pt-8">
