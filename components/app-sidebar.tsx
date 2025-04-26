@@ -247,7 +247,7 @@ export function AppSidebar() {
                     {t("Trial Access")}
                   </p>
                   <p className="text-xs text-amber-600 dark:text-amber-300/90 mt-1 mb-2.5">
-                    {t(`${getTrialConversationsRemaining()} conversations available`)}
+                    {t('trial.conversations', { count: getTrialConversationsRemaining() })}
                   </p>
                   <Button size="sm" onClick={() => router.push("/sign-up")} className="w-full h-9 font-medium">
                     <UserPlus className="h-3.5 w-3.5 mr-1.5" />
