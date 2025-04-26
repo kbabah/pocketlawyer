@@ -25,7 +25,7 @@ export function FeedbackDialog() {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      toast.error(t("feedback.rating.required"))
+      toast.error(t("Rating is required"))
       return
     }
 
@@ -46,12 +46,12 @@ export function FeedbackDialog() {
         throw new Error("Failed to submit feedback")
       }
 
-      toast.success(t("feedback.success"))
+      toast.success(t("Thank you for your feedback"))
       setIsOpen(false)
       setRating(0)
       setComment("")
     } catch (error) {
-      toast.error(t("feedback.error"))
+      toast.error(t("Failed to submit feedback"))
     } finally {
       setIsSubmitting(false)
     }
@@ -61,12 +61,12 @@ export function FeedbackDialog() {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          {t("feedback.button")}
+          {t("Feedback")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("feedback.title")}</DialogTitle>
+          <DialogTitle>{t("Feedback")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="flex justify-center gap-2">
@@ -82,7 +82,7 @@ export function FeedbackDialog() {
             ))}
           </div>
           <Textarea
-            placeholder={t("feedback.comment.placeholder")}
+            placeholder={t("Enter your feedback...")}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
@@ -91,7 +91,7 @@ export function FeedbackDialog() {
             disabled={isSubmitting}
             className="w-full"
           >
-            {isSubmitting ? t("feedback.submitting") : t("feedback.submit")}
+            {isSubmitting ? t("Submitting...") : t("Submit")}
           </Button>
         </div>
       </DialogContent>

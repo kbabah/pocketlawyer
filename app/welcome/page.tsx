@@ -22,8 +22,8 @@ export default function Welcome() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <ThemeSwitcher /> {/* Add ThemeSwitcher component */}
+            <div className="flex items-center gap-2">
+              <ThemeSwitcher isWelcomePage={true} className="welcome-page-theme-switcher" />
               <LanguageSwitcher />
             </div>
             <Link href="/sign-in">
@@ -45,14 +45,20 @@ export default function Welcome() {
               </h1>
               <p className="text-xl text-muted-foreground mx-auto">{t("welcome.hero.subtitle")}</p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
+                <Link href="/?source=welcome&trial=true">
+                  <Button size="lg" className="px-8 gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    {t("Ask Legal Questions") || "Ask Legal Questions"}
+                  </Button>
+                </Link>
                 <Link href="/sign-up">
-                  <Button size="lg" className="px-8">
-                    {t("welcome.get.started")}
+                  <Button size="lg" variant="outline" className="px-8">
+                    {t("Create Account") || "Create Free Account"}
                   </Button>
                 </Link>
                 <Link href="/sign-in">
-                  <Button size="lg" variant="outline" className="px-8">
-                    {t("auth.signin")}
+                  <Button size="lg" variant="ghost" className="px-8">
+                    {t("auth.signin") || "Sign In"}
                   </Button>
                 </Link>
               </div>
