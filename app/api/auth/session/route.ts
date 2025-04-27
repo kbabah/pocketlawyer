@@ -1,4 +1,4 @@
-import { auth } from '@/lib/firebase-admin'
+import { adminAuth } from '@/lib/firebase-admin'
 import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
@@ -6,11 +6,11 @@ export async function POST(request: Request) {
     const { idToken } = await request.json()
     
     // Verify the ID token
-    const decodedToken = await auth.verifyIdToken(idToken)
+    const decodedToken = await adminAuth.verifyIdToken(idToken)
     
     // Create session cookie
     const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
-    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn })
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn })
     
     // Set the cookie
     const cookieStore = await cookies()

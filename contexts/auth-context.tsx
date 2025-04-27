@@ -19,7 +19,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { v4 as uuidv4 } from "uuid";
-import { sendEmail, EmailTemplate } from "@/lib/email-service"; // Import email service
+import { sendEmail, EmailTemplate } from "@/lib/email-service-client"; // Updated import
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase"; // Assuming you have a Firestore db export
 
@@ -87,12 +87,9 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   // Initialize or retrieve anonymous session
   const initAnonymousSession = () => {
     // Check for existing anonymous ID
-    let anonymousId = localStorage.getItem(ANONYMOUS_ID_KEY);
-    if (!anonymousId) {
-      anonymousId = uuidv4();
-      localStorage.setItem(ANONYMOUS_ID_KEY, anonymousId);
-      localStorage.setItem(TRIAL_CONVERSATIONS_KEY, "0");
-    }
+    let anonymousId = localStorage.getItem(ANONYMOUS_ID_KEY) || uuidv4();
+    localStorage.setItem(ANONYMOUS_ID_KEY, anonymousId);
+    localStorage.setItem(TRIAL_CONVERSATIONS_KEY, "0");
     
     const trialConversationsUsed = parseInt(localStorage.getItem(TRIAL_CONVERSATIONS_KEY) || "0", 10);
     
@@ -104,7 +101,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       isAnonymous: true,
       trialConversationsUsed,
       trialConversationsLimit: MAX_TRIAL_CONVERSATIONS
-    };
+    } as const;
   };
   
   // Increment conversation count for anonymous users
@@ -161,11 +158,23 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         return userDoc.data().emailPreferences as EmailPreferences;
       }
       
-      // Initialize default preferences if none exist
-      await updateDoc(userDocRef, { 
-        emailPreferences: DEFAULT_EMAIL_PREFERENCES 
-      });
+      // Create user document with default preferences if it doesn't exist
+      const userData: {
+        emailPreferences: EmailPreferences;
+        createdAt: Date;
+        email?: string | null;
+        name?: string | null;
+      } = {
+        emailPreferences: DEFAULT_EMAIL_PREFERENCES,
+        createdAt: new Date()
+      };
       
+      if (auth.currentUser) {
+        userData.email = auth.currentUser.email;
+        userData.name = auth.currentUser.displayName;
+      }
+      
+      await setDoc(userDocRef, userData, { merge: true });
       return DEFAULT_EMAIL_PREFERENCES;
     } catch (error) {
       console.error("Error fetching email preferences:", error);
@@ -260,7 +269,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         return false;
       }
       
-      // Send the email
+      // Send the email using the client-side service
       const result = await sendEmail({
         to: user.email,
         subject: getEmailSubject(template),
@@ -271,7 +280,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         }
       });
       
-      return !!result.success;
+      return result.success;
     } catch (error) {
       console.error("Error sending email notification:", error);
       return false;
@@ -444,7 +453,31 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      
+      // Create or update user document
+      const userDocRef = doc(db, "users", result.user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        // Create new user document if it doesn't exist
+        await setDoc(userDocRef, {
+          email: result.user.email,
+          name: result.user.displayName,
+          createdAt: new Date(),
+          emailPreferences: DEFAULT_EMAIL_PREFERENCES
+        });
+        
+        // Send welcome email for new users
+        sendEmail({
+          to: result.user.email!,
+          subject: "Welcome to PocketLawyer",
+          template: "welcome",
+          data: { name: result.user.displayName || 'there' }
+        }).catch(error => {
+          console.error("Error sending welcome email:", error);
+        });
+      }
       // Router push will happen in useEffect after auth state changes
     } catch (error: any) {
       throw new Error(error.message);

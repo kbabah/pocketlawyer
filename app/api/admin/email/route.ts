@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { auth } from '@clerk/nextjs/server';
 import { sendEmail, testEmailService } from '@/lib/email-service';
 import { adminAuth } from '@/lib/firebase-admin';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -20,9 +20,10 @@ async function isAdmin(userId: string): Promise<boolean> {
 // Test the email configuration
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession();
+    const session = await auth();
+    const userId = session.userId;
     
-    if (!session?.user) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
@@ -47,22 +48,12 @@ export async function GET(req: Request) {
 // Send bulk emails (admin only)
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession();
+    const session = await auth();
+    const userId = session.userId;
     
-    if (!session?.user?.email) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    // Get the current user's ID from email
-    const userSnapshot = await getDocs(
-      query(collection(db, 'users'), where('email', '==', session.user.email))
-    );
-    
-    if (userSnapshot.empty) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-    
-    const userId = userSnapshot.docs[0].id;
     
     // Check if the user is an admin
     const adminStatus = await isAdmin(userId);
