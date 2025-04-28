@@ -205,9 +205,9 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       };
       
       // Update in Firestore
-      await updateDoc(userDocRef, {
+      await setDoc(userDocRef, {
         emailPreferences: updatedPreferences
-      });
+      }, { merge: true });
       
       // Update local user state
       setUser(prev => {
