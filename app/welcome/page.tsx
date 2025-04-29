@@ -16,14 +16,14 @@ export default function Welcome() {
     <div className="flex flex-col min-h-screen bg-pattern-light dark:bg-pattern-dark">
       <header className="border-b">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="max-w-[80%] overflow-hidden">
+          <div className="flex items-center gap-2">
+            <div className="min-w-[100px]"> {/* Prevent layout shift */}
               <ThemeLogo 
                 width={250} 
                 height={100} 
                 darkLogoPath="/dark-logo.png" 
                 lightLogoPath="/light-logo.png" 
-                className="flex-shrink-0"
+                className="welcome-page-logo"
               />
             </div>
           </div>

@@ -9,20 +9,29 @@ export function middleware(request: NextRequest) {
   const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error', '/terms', '/privacy', '/contact']
   const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
-  // Don't require authentication for public paths and static files
+  // Enhanced static resource check to include all common static files
   const isStaticResource = 
     request.nextUrl.pathname.startsWith('/_next') ||
     request.nextUrl.pathname.startsWith('/api') ||
     request.nextUrl.pathname.startsWith('/static') ||
-    request.nextUrl.pathname.includes('favicon.ico')
+    request.nextUrl.pathname.includes('.ico') ||
+    request.nextUrl.pathname.includes('.png') ||
+    request.nextUrl.pathname.includes('.svg') ||
+    request.nextUrl.pathname.includes('.jpg') ||
+    request.nextUrl.pathname.includes('.jpeg') ||
+    request.nextUrl.pathname.includes('.gif') ||
+    request.nextUrl.pathname.includes('.webp') ||
+    request.nextUrl.pathname.includes('.pdf') ||
+    request.nextUrl.pathname.includes('.js') ||
+    request.nextUrl.pathname.includes('.css')
 
+  // Always allow access to static resources
   if (isStaticResource) {
     return NextResponse.next()
   }
 
   // Handle root path redirection based on auth status
   if (request.nextUrl.pathname === '/') {
-    // Allow trial access when coming from welcome page with trial=true parameter
     if (request.nextUrl.searchParams.get('trial') === 'true') {
       return NextResponse.next()
     }
@@ -30,7 +39,6 @@ export function middleware(request: NextRequest) {
     if (!session) {
       return NextResponse.redirect(new URL('/welcome', request.url))
     }
-    // If authenticated, allow access to root (which will be the chat interface)
     return NextResponse.next()
   }
 
@@ -51,6 +59,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    // Exclude static files and API routes from middleware processing
+    '/((?!_next/static|_next/image|api|.*\\..*).*)',
   ],
 }

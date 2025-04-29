@@ -28,15 +28,14 @@ export function ThemeLogo({
   const [mounted, setMounted] = useState(false)
   const [imgError, setImgError] = useState(false)
 
-  // Only show the logo after mounting to avoid hydration mismatch
   useEffect(() => {
     setMounted(true)
-  }, [])
+    // Reset error state when theme changes
+    setImgError(false)
+  }, [theme, resolvedTheme])
 
-  // Convert size to pixels if width/height not provided
   const getSize = () => {
     if (typeof size === "number") return size;
-    
     switch (size) {
       case "sm": return 24;
       case "lg": return 40;
@@ -46,23 +45,28 @@ export function ThemeLogo({
   };
 
   const logoSize = getSize();
-  
-  // Use custom dimensions if provided, otherwise use square dimensions from size
   const logoWidth = width || logoSize;
   const logoHeight = height || logoSize;
   
-  // If not mounted yet, render a placeholder with the same dimensions
-  if (!mounted) {
-    return <div style={{ width: logoWidth, height: logoHeight }} />;
-  }
-
   // Determine which logo to show based on the current theme
-  const logoSrc = theme === "dark" || resolvedTheme === "dark"
+  const logoSrc = (theme === "dark" || resolvedTheme === "dark")
     ? darkLogoPath
     : lightLogoPath;
 
-  // If there was an error loading the image, show a fallback
-  if (imgError) {
+  // Log which logo we're trying to load
+  useEffect(() => {
+    if (mounted) {
+      console.info('ThemeLogo: Attempting to load logo:', {
+        theme,
+        resolvedTheme,
+        logoSrc,
+        dimensions: `${logoWidth}x${logoHeight}`
+      });
+    }
+  }, [mounted, theme, resolvedTheme, logoSrc, logoWidth, logoHeight]);
+
+  // Show loading state only if not mounted yet
+  if (!mounted) {
     return (
       <div 
         style={{ 
@@ -70,33 +74,52 @@ export function ThemeLogo({
           height: logoHeight,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center' 
+          justifyContent: 'center'
         }}
-        className={className}
+        className={`${className} logo-container`}
       >
         <Scale 
           size={Math.min(logoWidth, logoHeight) * 0.8} 
-          className="text-primary" 
+          className="text-primary animate-pulse" 
         />
       </div>
     );
   }
 
+  // If mounted, always try to show the image
   return (
-    <div style={{ position: 'relative' }} className={`${className} logo-container`}>
+    <div className={`${className} logo-container relative`}>
       <Image
         src={logoSrc}
         width={logoWidth}
         height={logoHeight}
         alt={alt}
-        onError={() => setImgError(true)}
-        priority
-        style={{
-          maxWidth: '100%',
-          height: 'auto',
-          objectFit: 'contain'
+        onError={() => {
+          console.warn('ThemeLogo: Failed to load logo:', {
+            src: logoSrc,
+            dimensions: `${logoWidth}x${logoHeight}`,
+            theme,
+            resolvedTheme
+          });
+          setImgError(true);
         }}
+        onLoad={() => {
+          console.info('ThemeLogo: Successfully loaded logo:', logoSrc);
+          setImgError(false);
+        }}
+        priority={true}
+        quality={100}
+        className={`max-w-full h-auto object-contain transition-opacity duration-200 ${imgError ? 'opacity-0' : 'opacity-100'}`}
+        sizes="(max-width: 640px) 180px, (max-width: 1024px) 250px, 300px"
       />
+      {imgError && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Scale 
+            size={Math.min(logoWidth, logoHeight) * 0.8} 
+            className="text-primary animate-pulse" 
+          />
+        </div>
+      )}
     </div>
   );
 }
