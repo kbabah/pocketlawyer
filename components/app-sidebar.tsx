@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Scale, MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, Mail } from "lucide-react" 
+import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, Mail } from "lucide-react" 
 import { format } from "date-fns"
 import {
   AlertDialog,
@@ -26,9 +26,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { ThemeSwitcher } from "@/components/theme-switcher" // Import ThemeSwitcher
+import { ThemeSwitcher } from "@/components/theme-switcher"
+import { ThemeLogo } from "@/components/theme-logo" // Import the ThemeLogo component
 import { useChatHistory } from "@/hooks/use-chat-history"
-import { FeedbackDialog } from "@/components/feedback-dialog" // Import FeedbackDialog
+import { FeedbackDialog } from "@/components/feedback-dialog"
 import { 
   Sidebar,
   SidebarHeader,
@@ -44,10 +45,9 @@ export function AppSidebar() {
   const { user, signOut, getTrialConversationsRemaining } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
-  const { chatHistory, loading, deleteChat, renameChat } = useChatHistory(user?.id) // Add renameChat
+  const { chatHistory, loading, deleteChat, renameChat } = useChatHistory(user?.id)
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
 
-  // Keep track of current chat ID
   useEffect(() => {
     const pathParts = window.location.pathname.split('/')
     if (pathParts.includes('chat')) {
@@ -74,7 +74,6 @@ export function AppSidebar() {
       setDeleteDialogOpen(false)
       setItemToDelete(null)
       
-      // If we're currently viewing the deleted chat, redirect to home
       if (window.location.pathname === `/chat/${itemToDelete.id}`) {
         router.push("/")
       }
@@ -116,7 +115,6 @@ export function AppSidebar() {
       .toUpperCase()
   }
 
-  // Group chat history by date more efficiently
   const renderChatHistory = () => {
     if (loading) {
       return (
@@ -159,7 +157,6 @@ export function AppSidebar() {
                   }`}
                 >
                   <div className="flex items-center justify-between px-2 py-1.5">
-                    {/* Chat title - clickable area */}
                     <div 
                       className="flex-1 flex items-center gap-2 cursor-pointer overflow-hidden"
                       onClick={() => router.push(`/chat/${chat.id}`)}
@@ -170,7 +167,6 @@ export function AppSidebar() {
                       </span>
                     </div>
                     
-                    {/* Action buttons - visible on hover or for active item */}
                     <div className={`flex items-center gap-0.5 ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                       <Button
                         variant="ghost"
@@ -214,11 +210,17 @@ export function AppSidebar() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2.5">
-              <SidebarTrigger className="text-primary h-5 w-5" />
-              <h2 className="text-lg font-semibold flex items-center">
-                {t("PocketLawyer")} <span className="ml-1.5 text-xl">🇨🇲</span>
-              </h2>
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <SidebarTrigger className="text-primary h-5 w-5 flex-shrink-0" />
+              <div className="max-w-[70%] overflow-hidden">
+                <ThemeLogo 
+                  width={250} 
+                  height={100} 
+                  darkLogoPath="/dark-logo.png" 
+                  lightLogoPath="/light-logo.png" 
+                  className="flex-shrink-0"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <ThemeSwitcher isWelcomePage={false} />
@@ -237,7 +239,6 @@ export function AppSidebar() {
             <span className="font-medium">{t("Start New Conversation")}</span>
           </Button>
 
-          {/* Trial user notification with improved messaging */}
           {user?.isAnonymous && (
             <div className="mb-5 p-3.5 border border-amber-200 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 rounded-md shadow-sm">
               <div className="flex items-start gap-2.5">
@@ -267,12 +268,10 @@ export function AppSidebar() {
 
         <SidebarFooter>
           <div className="flex flex-col gap-2.5 p-3 border-t border-primary/10">
-            {/* Feedback Button - positioned above user profile */}
             <div>
               <FeedbackDialog /> 
             </div>
             
-            {/* User Profile Section */}
             <div className="flex items-center gap-2">
               {user?.isAnonymous ? (
                 <Button variant="outline" className="flex-1 justify-start gap-2.5 py-2" onClick={() => router.push("/sign-up")}>

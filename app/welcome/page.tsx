@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { MessageSquare, Search, Shield, Scale, FileText } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
-import { ThemeSwitcher } from "@/components/theme-switcher" // Import ThemeSwitcher
+import { ThemeSwitcher } from "@/components/theme-switcher"
+import { ThemeLogo } from "@/components/theme-logo" // Import ThemeLogo
 
 export default function Welcome() {
   const { t } = useLanguage()
@@ -15,11 +16,16 @@ export default function Welcome() {
     <div className="flex flex-col min-h-screen bg-pattern-light dark:bg-pattern-dark">
       <header className="border-b">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Scale className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold flex items-center">
-              {t("app.name")} <span className="ml-1">🇨🇲</span>
-            </span>
+          <div className="flex items-center gap-2 overflow-hidden">
+            <div className="max-w-[80%] overflow-hidden">
+              <ThemeLogo 
+                width={250} 
+                height={100} 
+                darkLogoPath="/dark-logo.png" 
+                lightLogoPath="/light-logo.png" 
+                className="flex-shrink-0"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -159,8 +165,12 @@ export default function Welcome() {
       <footer className="border-t py-6 bg-muted/20">
         <div className="container flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Scale className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{t("app.copyright")}</span>
+            <ThemeLogo 
+              width={250} 
+              height={100} 
+              darkLogoPath="/dark-logo.png" 
+              lightLogoPath="/light-logo.png" 
+            />
           </div>
           <div className="flex gap-6">
             <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">

@@ -5,13 +5,40 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AuthProvider } from "@/contexts/auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
+import { Metadata } from "next"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "PocketLawyer - AI Legal Assistant",
   description: "Get answers to your legal questions with AI assistance",
-  generator: 'v0.dev'
+  generator: 'v0.dev',
+  icons: {
+    icon: [
+      {
+        media: "(prefers-color-scheme: light)",
+        url: "/favicon-light.ico",
+        href: "/favicon-light.ico",
+      },
+      {
+        media: "(prefers-color-scheme: dark)",
+        url: "/favicon-dark.ico",
+        href: "/favicon-dark.ico",
+      },
+    ],
+    apple: [
+      {
+        media: "(prefers-color-scheme: light)",
+        url: "/apple-icon-light.png",
+        href: "/apple-icon-light.png",
+      },
+      {
+        media: "(prefers-color-scheme: dark)",
+        url: "/apple-icon-dark.png",
+        href: "/apple-icon-dark.png",
+      },
+    ],
+  },
 }
 
 export default function RootLayout({
@@ -21,6 +48,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Fallback favicon for browsers that don't support media queries */}
+        <link rel="icon" href="/favicon-dark.ico" />
+      </head>
       <body className={`${inter.className} flex min-h-screen flex-col antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>

@@ -10,6 +10,7 @@ import { Scale } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeSwitcher } from "@/components/theme-switcher"
+import { ThemeLogo } from "@/components/theme-logo" // Import the ThemeLogo component
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -23,7 +24,7 @@ export default function Home() {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-pattern-light dark:bg-pattern-dark">
         <div className="flex flex-col items-center gap-2">
-          <Scale className="h-8 w-8 animate-pulse text-primary" />
+          <ThemeLogo size={32} darkLogoPath="/dark-logo.png" lightLogoPath="/light-logo.png" className="animate-pulse" />
           <p className="text-lg">Loading...</p>
         </div>
       </div>
@@ -35,12 +36,17 @@ export default function Home() {
       <AppSidebar />
       <SidebarInset className="flex flex-col flex-1">
         <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="-ml-1" />
-            <Scale className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold flex items-center">
-              {t("app.name")} <span className="ml-1">🇨🇲</span>
-            </h1>
+          <div className="flex items-center gap-2 overflow-hidden">
+            <SidebarTrigger className="-ml-1 flex-shrink-0" />
+            <div className="max-w-[70%] overflow-hidden">
+              <ThemeLogo 
+                width={250} 
+                height={100} 
+                darkLogoPath="/dark-logo.png" 
+                lightLogoPath="/light-logo.png" 
+                className="flex-shrink-0"
+              />
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -52,7 +58,6 @@ export default function Home() {
                 {t("Trial Mode")}: {user.trialConversationsUsed}/{user.trialConversationsLimit} {t("Trial Conversations Used")}
               </div>
             )}
-            <span className="text-sm text-muted-foreground hidden sm:inline-block">{t("welcome.hero.title")}</span>
           </div>
         </header>
         <div className="flex-1 overflow-auto">
