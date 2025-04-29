@@ -11,8 +11,7 @@ const config = {
   images: {
     unoptimized: true,
   },
-  // Add memory optimization for production builds
-  swcMinify: true,
+  // Memory optimization for production builds
   productionBrowserSourceMaps: false,
   webpack: (config, { isServer }) => {
     // Lower memory usage during build
@@ -22,7 +21,14 @@ const config = {
       runtimeChunk: isServer ? false : 'single',
     }
 
+    // Reduce memory usage by splitting chunks
     if (!isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        maxInitialRequests: 25,
+        minSize: 20000
+      }
+      
       config.resolve = {
         ...config.resolve,
         fallback: {

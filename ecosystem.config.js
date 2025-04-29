@@ -34,7 +34,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         NEXT_TELEMETRY_DISABLED: 1,
-        NODE_OPTIONS: '--max-old-space-size=2048'
+        NODE_OPTIONS: '--max-old-space-size=4096'
       },
       error_file: '/home/ubuntu/.pm2/logs/pocketlawyer-build-error.log',
       out_file: '/home/ubuntu/.pm2/logs/pocketlawyer-build-out.log'
