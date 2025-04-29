@@ -11,7 +11,17 @@ const config = {
   images: {
     unoptimized: true,
   },
+  // Add memory optimization for production builds
+  swcMinify: true,
+  productionBrowserSourceMaps: false,
   webpack: (config, { isServer }) => {
+    // Lower memory usage during build
+    config.optimization = {
+      ...config.optimization,
+      minimize: true,
+      runtimeChunk: isServer ? false : 'single',
+    }
+
     if (!isServer) {
       config.resolve = {
         ...config.resolve,
