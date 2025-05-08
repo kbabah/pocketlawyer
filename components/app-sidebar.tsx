@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, Mail } from "lucide-react" 
+import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User } from "lucide-react" 
 import { format } from "date-fns"
 import {
   AlertDialog,
@@ -302,12 +302,8 @@ export function AppSidebar() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => router.push("/profile")} className="gap-2">
-                          <Avatar className="h-4 w-4" />
+                          <User className="h-4 w-4" />
                           {t("Profile Settings")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => router.push("/profile/notifications")} className="gap-2">
-                          <Mail className="h-4 w-4" />
-                          {t("Email Preferences")}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={handleSignOut} className="gap-2 text-red-500">

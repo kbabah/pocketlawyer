@@ -1,160 +1,239 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
-import { isAdmin } from "@/lib/utils";
+import { NextRequest, NextResponse } from "next/server";
+import { adminDb as db } from "@/lib/firebase-admin";
+import { cookies } from "next/headers";
+import { adminAuth } from "@/lib/firebase-admin";
 
-export async function GET(req: Request) {
+// Helper function to check admin permissions
+async function isAdmin(req: NextRequest) {
   try {
-    const session = await isAdmin(req);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Attempt to get the Firebase session
+    const sessionCookie = cookies().get("firebase-session")?.value;
+    
+    if (!sessionCookie) {
+      console.log("No session cookie found");
+      return false;
+    }
+    
+    // Verify the session
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie);
+    const uid = decodedClaims.uid;
+    
+    // Check custom claims
+    if (decodedClaims.admin === true) {
+      return true;
+    }
+    
+    // Check Firestore role
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      if (userData?.role === "admin" || userData?.isAdmin === true) {
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error checking admin status:", error);
+    return false;
+  }
+}
+
+// GET /api/admin/email/analytics - Get email analytics data
+export async function GET(req: NextRequest) {
+  try {
+    // Check admin permissions
+    if (!await isAdmin(req)) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
     }
 
-    const { searchParams } = new URL(req.url);
-    const period = searchParams.get('period') || '30days'; // '7days', '30days', '90days', 'alltime'
+    // Get the period from the URL if present
+    const searchParams = req.nextUrl.searchParams;
+    const period = searchParams.get('period') || 'month'; // Default to month
     
-    // Calculate date ranges
+    // Calculate date ranges based on period
     const now = new Date();
-    let startDate = new Date();
+    let startDate: Date;
     
     switch (period) {
-      case '7days':
+      case 'week':
+        startDate = new Date(now);
         startDate.setDate(now.getDate() - 7);
         break;
-      case '30days':
-        startDate.setDate(now.getDate() - 30);
+      case 'month':
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 1);
         break;
-      case '90days':
-        startDate.setDate(now.getDate() - 90);
+      case 'quarter':
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 3);
         break;
-      case 'alltime':
-        startDate = new Date(2020, 0, 1); // Far in the past
+      case 'year':
+        startDate = new Date(now);
+        startDate.setFullYear(now.getFullYear() - 1);
         break;
+      default:
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 1); // Default to month
     }
     
-    // Get all emails in date range
-    const emailsSnapshot = await db
-      .collection('emailTracking')
-      .where('sentAt', '>=', startDate)
-      .get();
-    
-    const emails = emailsSnapshot.docs.map(doc => doc.data());
-    
-    // Get all campaigns in date range
-    const campaignsSnapshot = await db
-      .collection('emailCampaigns')
-      .where('createdAt', '>=', startDate)
+    // Fetch campaign and email data for analytics
+    const campaignsSnapshot = await db.collection("emailCampaigns")
+      .where("createdAt", ">=", startDate)
       .get();
       
-    const campaigns = campaignsSnapshot.docs.map(doc => doc.data());
+    // Calculate metrics
+    const totalCampaigns = campaignsSnapshot.size;
+    let totalRecipients = 0;
+    let totalSent = 0;
+    let totalOpens = 0;
+    let totalClicks = 0;
+    let totalBounces = 0;
     
-    // Calculate summary metrics
-    const totalEmails = emails.length;
-    const totalOpened = emails.filter(email => email.opened).length;
-    const totalClicked = emails.filter(email => email.clicked).length;
-    const totalCampaigns = campaigns.length;
-    
-    // Calculate daily metrics for charts
-    const dailyData = calculateDailyMetrics(emails, startDate);
-    
-    // Calculate template performance
-    const templatePerformance = calculateTemplatePerformance(emails);
-    
-    // Calculate campaign performance
-    const campaignPerformance = campaigns.map(campaign => ({
-      id: campaign.id,
-      name: campaign.name,
-      subject: campaign.subject,
-      totalSent: campaign.totalCount || 0,
-      delivered: campaign.sentCount || 0,
-      failed: campaign.failedCount || 0,
-      template: campaign.template
-    })).sort((a, b) => b.totalSent - a.totalSent).slice(0, 10);
-
-    return NextResponse.json({
-      summary: {
-        totalEmails,
-        totalOpened,
-        totalClicked,
-        totalCampaigns,
-        openRate: totalEmails > 0 ? (totalOpened / totalEmails) * 100 : 0,
-        clickRate: totalEmails > 0 ? (totalClicked / totalEmails) * 100 : 0,
-        clickToOpenRate: totalOpened > 0 ? (totalClicked / totalOpened) * 100 : 0,
-      },
-      dailyData,
-      templatePerformance,
-      campaignPerformance
+    // Process each campaign
+    campaignsSnapshot.forEach(doc => {
+      const campaign = doc.data();
+      totalRecipients += campaign.estimatedRecipientCount || 0;
+      totalSent += campaign.sentCount || 0;
+      totalOpens += campaign.openCount || 0;
+      totalClicks += campaign.clickCount || 0;
+      totalBounces += campaign.bounceCount || 0;
     });
+    
+    // Calculate engagement rates
+    const openRate = totalSent > 0 ? (totalOpens / totalSent) * 100 : 0;
+    const clickRate = totalOpens > 0 ? (totalClicks / totalOpens) * 100 : 0;
+    const bounceRate = totalSent > 0 ? (totalBounces / totalSent) * 100 : 0;
+    
+    // Fetch template usage data
+    const templatesSnapshot = await db.collection("emailTemplates").get();
+    const templateUsage = [] as { id: string, name: string, usageCount: number }[];
+    
+    templatesSnapshot.forEach(doc => {
+      const template = doc.data();
+      templateUsage.push({
+        id: doc.id,
+        name: template.name || 'Unnamed Template',
+        usageCount: template.usageCount || 0
+      });
+    });
+    
+    // Sort by usage count, descending
+    templateUsage.sort((a, b) => b.usageCount - a.usageCount);
+    
+    // Generate time series data for email activity
+    const timeSeriesData = [] as { date: string, sent: number, opens: number, clicks: number }[];
+    
+    // Create a map for dates
+    const dateMap = new Map<string, { sent: number, opens: number, clicks: number }>();
+    
+    // Determine interval and format based on period
+    let dateFormat: 'day' | 'week' | 'month' = 'day';
+    if (period === 'year') {
+      dateFormat = 'month';
+    } else if (period === 'quarter') {
+      dateFormat = 'week';
+    }
+    
+    // Initialize dateMap with zero values for all dates in the range
+    let currentDate = new Date(startDate);
+    while (currentDate <= now) {
+      let dateKey: string;
+      
+      if (dateFormat === 'day') {
+        dateKey = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      } else if (dateFormat === 'week') {
+        // Start of the week (Sunday)
+        const weekStart = new Date(currentDate);
+        weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+        dateKey = weekStart.toISOString().split('T')[0];
+      } else { // month
+        dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+      }
+      
+      dateMap.set(dateKey, { sent: 0, opens: 0, clicks: 0 });
+      
+      // Move to next interval
+      if (dateFormat === 'day') {
+        currentDate.setDate(currentDate.getDate() + 1);
+      } else if (dateFormat === 'week') {
+        currentDate.setDate(currentDate.getDate() + 7);
+      } else { // month
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+    }
+    
+    // Populate with actual data from emailEvents collection
+    const emailEventsSnapshot = await db.collection("emailEvents")
+      .where("timestamp", ">=", startDate)
+      .get();
+      
+    emailEventsSnapshot.forEach(doc => {
+      const event = doc.data();
+      if (!event.timestamp) return;
+      
+      const eventDate = event.timestamp.toDate();
+      let dateKey: string;
+      
+      if (dateFormat === 'day') {
+        dateKey = eventDate.toISOString().split('T')[0];
+      } else if (dateFormat === 'week') {
+        const weekStart = new Date(eventDate);
+        weekStart.setDate(eventDate.getDate() - eventDate.getDay());
+        dateKey = weekStart.toISOString().split('T')[0];
+      } else { // month
+        dateKey = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+      }
+      
+      // Update counts based on event type
+      const dateData = dateMap.get(dateKey);
+      if (dateData) {
+        if (event.type === 'sent') dateData.sent += 1;
+        else if (event.type === 'open') dateData.opens += 1;
+        else if (event.type === 'click') dateData.clicks += 1;
+      }
+    });
+    
+    // Convert map to array
+    dateMap.forEach((value, key) => {
+      timeSeriesData.push({
+        date: key,
+        sent: value.sent,
+        opens: value.opens,
+        clicks: value.clicks
+      });
+    });
+    
+    // Sort by date
+    timeSeriesData.sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Prepare the analytics response
+    const analytics = {
+      period,
+      summary: {
+        totalCampaigns,
+        totalRecipients,
+        totalSent,
+        totalOpens,
+        totalClicks,
+        totalBounces,
+        openRate: parseFloat(openRate.toFixed(2)),
+        clickRate: parseFloat(clickRate.toFixed(2)),
+        bounceRate: parseFloat(bounceRate.toFixed(2)),
+      },
+      templateUsage: templateUsage.slice(0, 5), // Top 5 templates
+      timeSeriesData,
+    };
+
+    return NextResponse.json(analytics);
   } catch (error) {
-    console.error('Failed to fetch email analytics:', error);
-    return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
+    console.error("Error fetching email analytics:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch analytics data" },
+      { status: 500 }
+    );
   }
-}
-
-function calculateDailyMetrics(emails: any[], startDate: Date) {
-  const dailyData: Record<string, { sent: number, opened: number, clicked: number }> = {};
-  
-  // Initialize all days in range
-  const dateRangeEnd = new Date();
-  for (let d = new Date(startDate); d <= dateRangeEnd; d.setDate(d.getDate() + 1)) {
-    const dateKey = formatDate(d);
-    dailyData[dateKey] = { sent: 0, opened: 0, clicked: 0 };
-  }
-  
-  // Populate with actual data
-  emails.forEach(email => {
-    if (!email.sentAt) return;
-    
-    const sentDate = formatDate(email.sentAt.toDate());
-    
-    if (dailyData[sentDate]) {
-      dailyData[sentDate].sent++;
-      
-      if (email.opened) {
-        dailyData[sentDate].opened++;
-      }
-      
-      if (email.clicked) {
-        dailyData[sentDate].clicked++;
-      }
-    }
-  });
-  
-  // Convert to array for charting
-  return Object.entries(dailyData).map(([date, metrics]) => ({
-    date,
-    ...metrics
-  })).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-}
-
-function calculateTemplatePerformance(emails: any[]) {
-  const templates: Record<string, { total: number, opened: number, clicked: number }> = {};
-  
-  emails.forEach(email => {
-    const template = email.template || 'unknown';
-    
-    if (!templates[template]) {
-      templates[template] = { total: 0, opened: 0, clicked: 0 };
-    }
-    
-    templates[template].total++;
-    
-    if (email.opened) {
-      templates[template].opened++;
-    }
-    
-    if (email.clicked) {
-      templates[template].clicked++;
-    }
-  });
-  
-  return Object.entries(templates).map(([template, metrics]) => ({
-    template,
-    totalSent: metrics.total,
-    openRate: metrics.total > 0 ? (metrics.opened / metrics.total) * 100 : 0,
-    clickRate: metrics.total > 0 ? (metrics.clicked / metrics.total) * 100 : 0
-  })).sort((a, b) => b.totalSent - a.totalSent);
-}
-
-function formatDate(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }

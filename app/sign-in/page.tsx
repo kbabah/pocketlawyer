@@ -38,7 +38,7 @@ function SignInContent() {
 
     try {
       await signIn(email, password)
-      router.push(callbackUrl)
+      // Redirect is now handled by auth context
     } catch (error: any) {
       toast.error(error.message)
     } finally {
