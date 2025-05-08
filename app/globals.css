@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 20 14.3% 4.1%;
 
-    --primary: 24 96% 39%; /* Earthy orange/terracotta */
+    --primary: 22 96% 48%; /* Updated to #ec6307 */
     --primary-foreground: 60 9.1% 97.8%;
 
     --secondary: 42 87% 55%; /* Golden yellow */
@@ -36,12 +36,12 @@
 
     --sidebar-background: 36 33% 97%;
     --sidebar-foreground: 20 14.3% 4.1%;
-    --sidebar-primary: 24 96% 39%;
+    --sidebar-primary: 22 96% 48%; /* Updated to #ec6307 */
     --sidebar-primary-foreground: 60 9.1% 97.8%;
     --sidebar-accent: 36 33% 92%;
     --sidebar-accent-foreground: 20 14.3% 4.1%;
     --sidebar-border: 20 5.9% 90%;
-    --sidebar-ring: 24 96% 39%;
+    --sidebar-ring: 22 96% 48%; /* Updated to #ec6307 */
   }
 
   .dark {
@@ -54,7 +54,7 @@
     --popover: 20 14.3% 4.1%;
     --popover-foreground: 60 9.1% 97.8%;
 
-    --primary: 24 96% 39%;
+    --primary: 22 96% 48%; /* Updated to #ec6307 */
     --primary-foreground: 60 9.1% 97.8%;
 
     --secondary: 42 87% 55%;
@@ -75,12 +75,12 @@
 
     --sidebar-background: 20 14.3% 4.1%;
     --sidebar-foreground: 60 9.1% 97.8%;
-    --sidebar-primary: 24 96% 39%;
+    --sidebar-primary: 22 96% 48%; /* Updated to #ec6307 */
     --sidebar-primary-foreground: 60 9.1% 97.8%;
     --sidebar-accent: 12 6.5% 15.1%;
     --sidebar-accent-foreground: 60 9.1% 97.8%;
     --sidebar-border: 12 6.5% 15.1%;
-    --sidebar-ring: 24 96% 39%;
+    --sidebar-ring: 22 96% 48%; /* Updated to #ec6307 */
   }
 }
 

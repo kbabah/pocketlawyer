@@ -5,6 +5,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Add the API key verification function that's missing
+export function verifyApiKey(apiKey: string | null): boolean {
+  // For development, you can allow any key or no key
+  if (process.env.NODE_ENV === 'development') {
+    return true;
+  }
+  
+  // In production, verify against a stored secret
+  const validApiKey = process.env.SCHEDULER_API_KEY;
+  return apiKey === validApiKey;
+}
+
 export async function extractTextFromPDF(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -58,3 +70,13 @@ export async function extractTextFromPDF(file: File): Promise<string> {
     reader.readAsArrayBuffer(file)
   })
 }
+
+
+
+// To Keep Your Emails Running Smoothly:
+// Set up a recurring job to call your scheduler endpoint regularly. Since you're likely using Vercel for deployment, add this to your vercel.json file:
+// Add a SCHEDULER_API_KEY environment variable in your production environment for security. For example:
+
+// Call the scheduler with the API key header in production by using:
+
+// By implementing these changes, your scheduled emails should now process correctly and not get stuck in the "processing" status.

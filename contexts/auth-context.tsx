@@ -307,26 +307,25 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
     }
   };
 
-  // Handle redirect after INITIAL auth state change only
+  // Handle redirect after auth state change
   useEffect(() => {
     if (!loading && user && !initialAuthChecked) {
       // Get callback URL if exists
       const callbackUrl = searchParams.get("callbackUrl");
       
-      // Use a short timeout to ensure the auth state is fully processed
-      setTimeout(() => {
-        if (callbackUrl) {
-          router.push(callbackUrl);
-        } else {
-          // Only redirect to the main chat interface on initial login
-          // Not on profile updates or other auth state changes
-          const currentPath = window.location.pathname;
-          if (currentPath === "/sign-in" || currentPath === "/sign-up") {
-            router.replace("/");
-          }
+      // Immediately handle the redirect without timeout
+      if (callbackUrl) {
+        console.log("Redirecting to callback URL:", callbackUrl);
+        router.push(callbackUrl);
+      } else {
+        // Redirect to main chat interface on sign-in/sign-up
+        const currentPath = window.location.pathname;
+        if (currentPath === "/sign-in" || currentPath === "/sign-up") {
+          console.log("Redirecting from auth page to home");
+          router.push("/");
         }
-        setInitialAuthChecked(true);
-      }, 100);
+      }
+      setInitialAuthChecked(true);
     }
   }, [user, loading, router, searchParams, initialAuthChecked]);
 

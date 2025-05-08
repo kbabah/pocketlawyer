@@ -9,14 +9,12 @@ import { useAuth } from "@/contexts/auth-context";
 import { useLanguage } from "@/contexts/language-context";
 import { toast } from "sonner";
 import { Bell, Mail, BellOff, Info } from "lucide-react";
-import { testEmailService } from "@/lib/email-service";
 
 export default function NotificationsPage() {
   const { user, updateEmailPreferences, sendEmailNotification } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
-  const [testingSend, setTestingSend] = useState(false);
   const [preferences, setPreferences] = useState({
     systemUpdates: true,
     chatSummaries: true,
@@ -58,40 +56,6 @@ export default function NotificationsPage() {
       toast.error(t("Failed to update email preferences"));
     } finally {
       setSaving(false);
-    }
-  };
-  
-  const sendTestEmail = async () => {
-    if (!user || !user.email) {
-      toast.error(t("You need to be signed in to send test email"));
-      return;
-    }
-    
-    try {
-      setTestingSend(true);
-      
-      // Use the test API endpoint instead of the context method
-      const response = await fetch('/api/email/test', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: user.email }),
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        toast.success(t("Test email sent successfully. Check your inbox."));
-      } else {
-        console.error("Email test failed:", result.error);
-        toast.error(t("Failed to send test email. Check console for details."));
-      }
-    } catch (error) {
-      console.error("Failed to send test email:", error);
-      toast.error(t("Failed to send test email"));
-    } finally {
-      setTestingSend(false);
     }
   };
 
@@ -203,33 +167,6 @@ export default function NotificationsPage() {
           </Button>
           <Button onClick={savePreferences} disabled={saving}>
             {saving ? t("Saving...") : t("Save Preferences")}
-          </Button>
-        </CardFooter>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">{t("Test Email Delivery")}</CardTitle>
-          <CardDescription>
-            {t("Send a test email to verify your configuration")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 flex gap-3 items-start">
-            <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              {t("A test email will be sent to your registered email address. Check your inbox and spam folder if you don't see it.")}
-            </p>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            variant="outline" 
-            onClick={sendTestEmail} 
-            disabled={testingSend}
-            className="ml-auto"
-          >
-            {testingSend ? t("Sending...") : t("Send Test Email")}
           </Button>
         </CardFooter>
       </Card>

@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Scale, Loader2 } from "lucide-react"
+import { Scale, Loader2, Shield } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { doc, getDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 export default function Profile() {
   const { user, updateProfile, updatePassword } = useAuth()
@@ -19,6 +21,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [isAdmin, setIsAdmin] = useState(false)
 
   // Profile form state
   const [name, setName] = useState(user?.name || "")
@@ -32,8 +35,23 @@ export default function Profile() {
   useEffect(() => {
     if (!user) {
       router.push("/sign-in")
+    } else {
+      // Check if the user is an admin
+      const checkAdminStatus = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.id));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setIsAdmin(userData?.role === "admin" || userData?.isAdmin === true);
+          }
+        } catch (err) {
+          console.error("Error checking admin status:", err);
+        }
+      };
+      
+      checkAdminStatus();
     }
-  }, [user, router])
+  }, [user, router]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,6 +112,18 @@ export default function Profile() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {isAdmin && (
+              <div className="mb-6">
+                <Button 
+                  onClick={() => router.push('/admin')}
+                  className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  Go To Admin
+                </Button>
+              </div>
+            )}
+            
             <Tabs defaultValue="profile" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="profile">Profile</TabsTrigger>

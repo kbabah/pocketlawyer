@@ -46,7 +46,7 @@ function SignUpContent() {
 
     try {
       await signUp(email, password, name)
-      router.push(callbackUrl)
+      // Redirect is now handled by auth context
     } catch (error: any) {
       toast.error(error.message)
     } finally {

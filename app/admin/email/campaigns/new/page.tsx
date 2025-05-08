@@ -1,870 +1,879 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Mail,
-  Calendar,
-  Plus,
-  X,
-  Upload,
-  Clock,
-  Send,
-  ArrowLeft,
-  Users,
-} from "lucide-react";
 import { toast } from "sonner";
-import { EmailTemplate } from "@/lib/email-service";
+import { 
+  ArrowLeft, 
+  CalendarIcon, 
+  Clock, 
+  FileUp, 
+  LayoutTemplate, 
+  Loader2, 
+  Plus, 
+  Search,
+  SendHorizonal, 
+  Users, 
+  X
+} from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { format } from "date-fns";
+import * as z from "zod";
 
-const EMAIL_TEMPLATES = [
-  { id: "newsletter", label: "Newsletter" },
-  { id: "legal-alert", label: "Legal Alert" },
-  { id: "document-shared", label: "Document Share" },
-  { id: "weekly-summary", label: "Weekly Summary" },
-  { id: "custom", label: "Custom Email" },
+// Define form schema with zod
+const campaignSchema = z.object({
+  name: z.string().min(3, {
+    message: "Campaign name must be at least 3 characters.",
+  }),
+  subject: z.string().min(1, {
+    message: "Subject is required.",
+  }),
+  templateId: z.string({
+    required_error: "Please select a template.",
+  }),
+  recipientType: z.enum(["all", "segment", "custom", "file"]),
+  segment: z.string().optional(),
+  customRecipients: z.string().optional(),
+  scheduledFor: z.date().optional(),
+  testEmail: z.string().email().optional(),
+});
+
+const userSegments = [
+  { id: "active", name: "Active Users" },
+  { id: "inactive", name: "Inactive Users (30+ days)" },
+  { id: "trial", name: "Trial Users" },
+  { id: "premium", name: "Premium Users" },
+  { id: "new", name: "New Users (Last 7 days)" }
 ];
-
-interface Recipient {
-  email: string;
-  name?: string;
-}
 
 export default function NewCampaignPage() {
   const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [subject, setSubject] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
-  const [templateData, setTemplateData] = useState<Record<string, any>>({});
-  const [customHtml, setCustomHtml] = useState("");
-  const [scheduledFor, setScheduledFor] = useState<Date | null>(null);
-  const [recipients, setRecipients] = useState<Recipient[]>([]);
-  const [uploadedRecipients, setUploadedRecipients] = useState<Recipient[]>([]);
-  const [recipientEmail, setRecipientEmail] = useState("");
-  const [recipientName, setRecipientName] = useState("");
-  const [sendNow, setSendNow] = useState(true);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [recipientCount, setRecipientCount] = useState<number | null>(null);
+  const [isCountingRecipients, setIsCountingRecipients] = useState(false);
+  const [fileUploading, setFileUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const handleBack = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    } else {
-      router.push("/admin/email");
-    }
-  };
+  // Initialize form with react-hook-form
+  const form = useForm<z.infer<typeof campaignSchema>>({
+    resolver: zodResolver(campaignSchema),
+    defaultValues: {
+      name: "",
+      subject: "",
+      templateId: "",
+      recipientType: "all",
+      segment: "",
+      customRecipients: "",
+      scheduledFor: undefined,
+      testEmail: "",
+    },
+  });
 
-  const handleNext = () => {
-    // Validate current step
-    if (step === 1) {
-      if (!name || !subject || !selectedTemplate) {
-        toast.error("Please fill in all required fields");
-        return;
-      }
-    } else if (step === 2) {
-      if (recipients.length === 0) {
-        toast.error("Please add at least one recipient");
-        return;
-      }
-    }
+  // Watch for form value changes
+  const recipientType = form.watch("recipientType");
+  const segment = form.watch("segment");
+  const customRecipients = form.watch("customRecipients");
+  const templateId = form.watch("templateId");
+  const scheduledFor = form.watch("scheduledFor");
 
-    if (step < 3) {
-      setStep(step + 1);
-    } else {
-      setShowConfirmDialog(true);
-    }
-  };
-
-  const addRecipient = () => {
-    if (!recipientEmail) {
-      toast.error("Email is required");
-      return;
-    }
-
-    if (!recipientEmail.includes('@')) {
-      toast.error("Invalid email format");
-      return;
-    }
-
-    const newRecipient = {
-      email: recipientEmail,
-      name: recipientName || undefined,
-    };
-
-    setRecipients([...recipients, newRecipient]);
-    setRecipientEmail("");
-    setRecipientName("");
-  };
-
-  const removeRecipient = (index: number) => {
-    const newRecipients = [...recipients];
-    newRecipients.splice(index, 1);
-    setRecipients(newRecipients);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
-
-    // Read uploaded CSV file
-    const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      if (!event.target?.result) return;
-
+  // Fetch template data
+  useEffect(() => {
+    async function fetchTemplates() {
       try {
-        const content = event.target.result as string;
-        const rows = content.split('\n');
-        const uploadedRecipients: Recipient[] = [];
-
-        rows.forEach((row, index) => {
-          if (!row.trim()) return;
-          const [email, name] = row.split(',').map(val => val.trim());
-
-          if (email && email.includes('@')) {
-            uploadedRecipients.push({
-              email,
-              name: name || undefined
-            });
-          }
-        });
-
-        setUploadedRecipients(uploadedRecipients);
-        toast.success(`Found ${uploadedRecipients.length} valid recipients`);
+        setIsLoadingTemplates(true);
+        const response = await fetch("/api/admin/email/templates");
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch templates");
+        }
+        
+        const data = await response.json();
+        setTemplates(data.templates || []);
       } catch (error) {
-        toast.error("Error parsing CSV file. Make sure the format is correct.");
+        console.error("Failed to fetch templates:", error);
+        toast.error("Failed to load email templates");
+      } finally {
+        setIsLoadingTemplates(false);
       }
-    };
+    }
+    
+    fetchTemplates();
+  }, []);
 
-    reader.readAsText(file);
-  };
+  // Update selected template when templateId changes
+  useEffect(() => {
+    if (templateId && templates.length > 0) {
+      const template = templates.find(t => t.id === templateId);
+      setSelectedTemplate(template || null);
+    } else {
+      setSelectedTemplate(null);
+    }
+  }, [templateId, templates]);
 
-  const handleRecipientImport = () => {
-    if (uploadedRecipients.length) {
-      setRecipients([...recipients, ...uploadedRecipients]);
-      setUploadedRecipients([]);
-      toast.success("Recipients imported successfully");
+  // Get recipient count when recipient selection changes
+  useEffect(() => {
+    if (recipientType === "all" || (recipientType === "segment" && segment)) {
+      countRecipients();
+    } else if (recipientType === "custom" && customRecipients) {
+      // Count custom recipients (simple email count)
+      const emails = customRecipients.split(/[\s,;]+/).filter(email => 
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+      );
+      setRecipientCount(emails.length);
+    } else if (recipientType === "file" && uploadedFile) {
+      // We don't know the exact count from the file yet
+      setRecipientCount(null);
+    } else {
+      setRecipientCount(null);
+    }
+  }, [recipientType, segment, customRecipients, uploadedFile]);
+
+  // Count recipients based on selection
+  const countRecipients = async () => {
+    try {
+      setIsCountingRecipients(true);
+      
+      let endpoint = "/api/admin/email/recipients/count";
+      if (recipientType === "segment" && segment) {
+        endpoint += `?segment=${segment}`;
+      }
+      
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        throw new Error("Failed to count recipients");
+      }
+      
+      const data = await response.json();
+      setRecipientCount(data.count);
+    } catch (error) {
+      console.error("Failed to count recipients:", error);
+      toast.error("Failed to count recipients");
+      setRecipientCount(null);
+    } finally {
+      setIsCountingRecipients(false);
     }
   };
 
-  const handleAttachmentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
+  // Handle recipient file upload
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
     
-    const newFiles = Array.from(e.target.files);
-    setAttachments([...attachments, ...newFiles]);
-  };
-
-  const removeAttachment = (index: number) => {
-    const newAttachments = [...attachments];
-    newAttachments.splice(index, 1);
-    setAttachments(newAttachments);
-  };
-
-  const handleTemplateChange = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    
-    // Reset template data when template changes
-    setTemplateData({});
-    setCustomHtml("");
-  };
-
-  const handleTemplateDataChange = (key: string, value: any) => {
-    setTemplateData({
-      ...templateData,
-      [key]: value
-    });
-  };
-
-  const handleCreateCampaign = async () => {
-    if (!name || !subject || !selectedTemplate || recipients.length === 0) {
-      toast.error("Please fill in all required fields");
+    // Validate file type (CSV or Excel)
+    if (!file.name.endsWith('.csv') && !file.name.match(/\.xlsx?$/)) {
+      toast.error("Please upload a CSV or Excel file");
       return;
     }
-
-    setLoading(true);
-
+    
+    setFileUploading(true);
+    setUploadedFile(file);
+    
     try {
-      // Prepare campaign data
-      const campaignData = {
-        name,
-        subject,
-        template: selectedTemplate,
-        recipients,
-        data: templateData,
-        // If sendNow is false, use the scheduled date
-        scheduledFor: !sendNow && scheduledFor ? scheduledFor.toISOString() : undefined,
-      };
+      // Create a FormData object
+      const formData = new FormData();
+      formData.append('file', file);
       
-      // For custom templates, add the HTML content
-      if (selectedTemplate === 'custom') {
-        campaignData.data.htmlContent = customHtml;
+      // Upload the file
+      const response = await fetch('/api/admin/email/recipients/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to upload file");
       }
       
-      // Send campaign creation request
+      const data = await response.json();
+      setRecipientCount(data.validEmails || 0);
+      toast.success(`File uploaded: ${data.validEmails} valid recipients found`);
+    } catch (error) {
+      console.error("Failed to upload recipient file:", error);
+      toast.error("Failed to process recipient file");
+      setUploadedFile(null);
+    } finally {
+      setFileUploading(false);
+    }
+  };
+
+  // Send test email
+  const sendTestEmail = async () => {
+    const testEmail = form.getValues("testEmail");
+    if (!testEmail) {
+      toast.error("Enter a valid test email address");
+      return;
+    }
+    
+    if (!templateId) {
+      toast.error("Select a template first");
+      return;
+    }
+    
+    try {
+      setIsSendingTest(true);
+      
+      const response = await fetch('/api/admin/email/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: testEmail,
+          templateId,
+          subject: form.getValues("subject")
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to send test email");
+      }
+      
+      toast.success(`Test email sent to ${testEmail}`);
+    } catch (error) {
+      console.error("Failed to send test email:", error);
+      toast.error("Failed to send test email");
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
+
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof campaignSchema>) => {
+    // Validate if we have recipients
+    if (recipientCount === 0) {
+      toast.error("No recipients selected for this campaign");
+      return;
+    }
+    
+    if (recipientType === "custom" && (!values.customRecipients || values.customRecipients.trim() === "")) {
+      toast.error("Please enter recipient email addresses");
+      return;
+    }
+    
+    if (recipientType === "file" && !uploadedFile) {
+      toast.error("Please upload a recipient file");
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Prepare recipients data based on recipientType
+      let recipientsData: any = {};
+      
+      if (recipientType === "all") {
+        recipientsData = { type: "all" };
+      } else if (recipientType === "segment" && segment) {
+        recipientsData = { type: "segment", segment };
+      } else if (recipientType === "custom" && values.customRecipients) {
+        const emails = values.customRecipients.split(/[\s,;]+/)
+          .map(email => email.trim())
+          .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+        recipientsData = { type: "custom", emails };
+      } else if (recipientType === "file" && uploadedFile) {
+        recipientsData = { type: "file", fileName: uploadedFile.name };
+      }
+      
+      // Submit campaign creation request
       const response = await fetch('/api/admin/email/campaigns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(campaignData),
+        body: JSON.stringify({
+          name: values.name,
+          subject: values.subject,
+          templateId: values.templateId,
+          recipients: recipientsData,
+          scheduledFor: values.scheduledFor?.toISOString(),
+        }),
       });
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to create campaign');
+        throw new Error(error.message || "Failed to create campaign");
       }
       
-      const result = await response.json();
-      
-      if (result.success) {
-        toast.success(sendNow 
-          ? "Campaign sent successfully!"
-          : "Campaign scheduled successfully!");
-        
-        router.push('/admin/email');
-      } else {
-        throw new Error('Failed to create campaign');
-      }
+      toast.success("Email campaign created successfully");
+      router.push("/admin/email");
     } catch (error) {
-      console.error('Campaign creation error:', error);
-      toast.error(String(error) || 'Failed to create campaign');
+      console.error("Failed to create campaign:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to create campaign");
     } finally {
-      setLoading(false);
-      setShowConfirmDialog(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="container py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handleBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">New Email Campaign</h1>
-            <p className="text-muted-foreground">
-              Create and send a new campaign to your users.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="py-1.5">
-            Step {step} of 3
-          </Badge>
+      <div className="flex items-center gap-2 mb-6">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">New Email Campaign</h1>
+          <p className="text-muted-foreground">
+            Create and schedule a new email campaign.
+          </p>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left sidebar - Steps */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle>Campaign Setup</CardTitle>
-              <CardDescription>
-                Complete these steps to create your campaign
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div 
-                className={`flex items-center p-3 rounded-md gap-3 border ${
-                  step === 1 ? 'bg-primary/10 border-primary' : 'border-transparent'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                }`}>
-                  1
-                </div>
-                <div>
-                  <div className="font-medium">Campaign Details</div>
-                  <div className="text-sm text-muted-foreground">Set name, subject and content</div>
-                </div>
-              </div>
-              
-              <div 
-                className={`flex items-center p-3 rounded-md gap-3 border ${
-                  step === 2 ? 'bg-primary/10 border-primary' : 'border-transparent'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                }`}>
-                  2
-                </div>
-                <div>
-                  <div className="font-medium">Recipients</div>
-                  <div className="text-sm text-muted-foreground">Who will receive this email</div>
-                </div>
-              </div>
-              
-              <div 
-                className={`flex items-center p-3 rounded-md gap-3 border ${
-                  step === 3 ? 'bg-primary/10 border-primary' : 'border-transparent'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  step >= 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                }`}>
-                  3
-                </div>
-                <div>
-                  <div className="font-medium">Schedule & Review</div>
-                  <div className="text-sm text-muted-foreground">When to send and final review</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main content - Current step */}
-        <div className="md:col-span-2">
-          {/* Step 1: Campaign Details */}
-          {step === 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Campaign Details</CardTitle>
-                <CardDescription>
-                  Set up the basic information about your campaign
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Campaign Name</Label>
-                  <Input
-                    id="name"
-                    placeholder="e.g. April Newsletter"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Internal name for this campaign (not visible to recipients)
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Email Subject</Label>
-                  <Input
-                    id="subject"
-                    placeholder="e.g. Important Updates from PocketLawyer"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label>Email Template</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {EMAIL_TEMPLATES.map((template) => (
-                      <div
-                        key={template.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                          selectedTemplate === template.id
-                            ? "border-primary bg-primary/5"
-                            : "hover:border-primary/50"
-                        }`}
-                        onClick={() => handleTemplateChange(template.id as EmailTemplate)}
-                      >
-                        <div className="font-medium">{template.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Template-specific fields */}
-                {selectedTemplate && selectedTemplate !== 'custom' && (
-                  <div className="space-y-4 border rounded-lg p-4">
-                    <h3 className="font-medium">Template Content</h3>
-                    
-                    {/* Newsletter fields */}
-                    {selectedTemplate === 'newsletter' && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="title">Newsletter Title</Label>
-                          <Input
-                            id="title"
-                            placeholder="April 2025 Legal Updates"
-                            value={templateData.title || ''}
-                            onChange={(e) => handleTemplateDataChange('title', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="content">Newsletter Content</Label>
-                          <Textarea
-                            id="content"
-                            placeholder="HTML content for your newsletter..."
-                            rows={5}
-                            value={templateData.content || ''}
-                            onChange={(e) => handleTemplateDataChange('content', e.target.value)}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-2">
-                            <Label htmlFor="callToAction.text">Button Text</Label>
-                            <Input
-                              id="callToAction.text"
-                              placeholder="Read More"
-                              value={templateData.callToAction?.text || ''}
-                              onChange={(e) => 
-                                handleTemplateDataChange('callToAction', {
-                                  ...templateData.callToAction || {},
-                                  text: e.target.value
-                                })
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="callToAction.link">Button Link</Label>
-                            <Input
-                              id="callToAction.link"
-                              placeholder="https://pocketlawyer.com/blog"
-                              value={templateData.callToAction?.link || ''}
-                              onChange={(e) => 
-                                handleTemplateDataChange('callToAction', {
-                                  ...templateData.callToAction || {},
-                                  link: e.target.value
-                                })
-                              }
-                            />
-                          </div>
-                        </div>
-                      </>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Campaign details */}
+            <div className="space-y-6 md:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Campaign Details</CardTitle>
+                  <CardDescription>
+                    Basic information about your email campaign
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Campaign Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Monthly Newsletter - May" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-
-                    {/* Legal Alert fields */}
-                    {selectedTemplate === 'legal-alert' && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="alertType">Alert Type</Label>
-                          <Select 
-                            value={templateData.alertType || 'Legal Update'}
-                            onValueChange={(value) => handleTemplateDataChange('alertType', value)}
-                          >
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Your Monthly Legal Update" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          This is what recipients will see in their inbox.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="templateId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email Template</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select alert type" />
+                              <SelectValue placeholder="Select a template" />
                             </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {isLoadingTemplates ? (
+                              <div className="flex items-center justify-center p-4">
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                <span>Loading templates...</span>
+                              </div>
+                            ) : templates.length === 0 ? (
+                              <div className="p-4 text-center">
+                                <p className="text-sm text-muted-foreground">No templates found.</p>
+                                <Button 
+                                  size="sm" 
+                                  variant="link" 
+                                  className="mt-2"
+                                  type="button"
+                                  onClick={() => router.push('/admin/email/templates/new')}
+                                >
+                                  Create a template first
+                                </Button>
+                              </div>
+                            ) : (
+                              templates.map(template => (
+                                <SelectItem key={template.id} value={template.id}>
+                                  {template.name}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="scheduledFor"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Schedule Sending (Optional)</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={`w-full justify-start text-left font-normal ${!field.value ? "text-muted-foreground" : ""}`}
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {field.value ? (
+                                  format(field.value, "PPP p")
+                                ) : (
+                                  "Send immediately"
+                                )}
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                            <div className="p-3 border-t">
+                              <div className="flex justify-between items-center">
+                                <div className="text-sm">
+                                  Time:
+                                </div>
+                                <select 
+                                  className="text-sm border rounded p-1"
+                                  onChange={(e) => {
+                                    const time = e.target.value;
+                                    if (time && field.value) {
+                                      const [hours, minutes] = time.split(':').map(Number);
+                                      const newDate = new Date(field.value);
+                                      newDate.setHours(hours);
+                                      newDate.setMinutes(minutes);
+                                      field.onChange(newDate);
+                                    }
+                                  }}
+                                  defaultValue={field.value ? 
+                                    `${field.value.getHours().toString().padStart(2, '0')}:${field.value.getMinutes().toString().padStart(2, '0')}` : 
+                                    "12:00"
+                                  }
+                                >
+                                  {Array.from({ length: 24 }).map((_, hour) => (
+                                    Array.from({ length: 4 }).map((_, minuteIdx) => {
+                                      const minute = minuteIdx * 15;
+                                      return (
+                                        <option 
+                                          key={`${hour}-${minute}`} 
+                                          value={`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`}
+                                        >
+                                          {hour.toString().padStart(2, '0')}:{minute.toString().padStart(2, '0')}
+                                        </option>
+                                      );
+                                    })
+                                  )).flat()}
+                                </select>
+                              </div>
+                              
+                              {field.value && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="mt-2"
+                                  onClick={() => field.onChange(undefined)}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Clear
+                                </Button>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription>
+                          {field.value ? (
+                            <div className="flex items-center text-muted-foreground">
+                              <Clock className="mr-1 h-3 w-3" />
+                              Campaign will be sent {format(field.value, "EEEE, MMMM d 'at' h:mm a")}
+                            </div>
+                          ) : (
+                            "Campaign will be sent immediately when created"
+                          )}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+              
+              {/* Test email */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Test Your Campaign</CardTitle>
+                  <CardDescription>
+                    Send a test email to verify your template
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="testEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Test Email Address</FormLabel>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input placeholder="your@email.com" {...field} />
+                          </FormControl>
+                          <Button 
+                            type="button" 
+                            onClick={sendTestEmail}
+                            disabled={isSendingTest || !field.value || !templateId}
+                            size="sm"
+                          >
+                            {isSendingTest ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Sending...
+                              </>
+                            ) : "Send Test"}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+            
+            {/* Recipients and preview */}
+            <div className="md:col-span-2 space-y-6">
+              {/* Recipients */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Campaign Recipients</CardTitle>
+                  <CardDescription>
+                    Select who will receive this email campaign
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="recipientType"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Select Recipients</FormLabel>
+                        <FormControl>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div 
+                              className={`border rounded-md p-4 cursor-pointer transition-colors ${
+                                field.value === 'all' ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'
+                              }`}
+                              onClick={() => form.setValue('recipientType', 'all')}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Checkbox checked={field.value === 'all'} />
+                                <div className="font-medium">All Users</div>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Send to all active users in the system
+                              </p>
+                            </div>
+                            
+                            <div 
+                              className={`border rounded-md p-4 cursor-pointer transition-colors ${
+                                field.value === 'segment' ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'
+                              }`}
+                              onClick={() => form.setValue('recipientType', 'segment')}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Checkbox checked={field.value === 'segment'} />
+                                <div className="font-medium">User Segment</div>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Send to a specific user segment
+                              </p>
+                            </div>
+                            
+                            <div 
+                              className={`border rounded-md p-4 cursor-pointer transition-colors ${
+                                field.value === 'custom' ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'
+                              }`}
+                              onClick={() => form.setValue('recipientType', 'custom')}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Checkbox checked={field.value === 'custom'} />
+                                <div className="font-medium">Custom Recipients</div>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Enter specific email addresses
+                              </p>
+                            </div>
+                            
+                            <div 
+                              className={`border rounded-md p-4 cursor-pointer transition-colors ${
+                                field.value === 'file' ? 'bg-primary/5 border-primary' : 'hover:bg-muted/50'
+                              }`}
+                              onClick={() => form.setValue('recipientType', 'file')}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Checkbox checked={field.value === 'file'} />
+                                <div className="font-medium">Upload File</div>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Upload a CSV or Excel file with email addresses
+                              </p>
+                            </div>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Conditional fields based on recipient type */}
+                  {recipientType === 'segment' && (
+                    <FormField
+                      control={form.control}
+                      name="segment"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Select Segment</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a user segment" />
+                              </SelectTrigger>
+                            </FormControl>
                             <SelectContent>
-                              <SelectItem value="Legal Update">Legal Update</SelectItem>
-                              <SelectItem value="Regulatory Change">Regulatory Change</SelectItem>
-                              <SelectItem value="Court Decision">Court Decision</SelectItem>
-                              <SelectItem value="Compliance Alert">Compliance Alert</SelectItem>
-                              <SelectItem value="Law Change">Law Change</SelectItem>
+                              {userSegments.map(segment => (
+                                <SelectItem key={segment.id} value={segment.id}>
+                                  {segment.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="headline">Alert Headline</Label>
-                          <Input
-                            id="headline"
-                            placeholder="New Employment Law Coming into Effect"
-                            value={templateData.headline || ''}
-                            onChange={(e) => handleTemplateDataChange('headline', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="alertContent">Alert Content</Label>
-                          <Textarea
-                            id="alertContent"
-                            placeholder="Details about the legal update..."
-                            rows={4}
-                            value={templateData.alertContent || ''}
-                            onChange={(e) => handleTemplateDataChange('alertContent', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="actionRequired">Action Required</Label>
-                          <Input
-                            id="actionRequired"
-                            placeholder="Leave blank if no action is required"
-                            value={templateData.actionRequired || ''}
-                            onChange={(e) => handleTemplateDataChange('actionRequired', e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="link">Link to Details</Label>
-                          <Input
-                            id="link"
-                            placeholder="https://pocketlawyer.com/alerts/details"
-                            value={templateData.link || ''}
-                            onChange={(e) => handleTemplateDataChange('link', e.target.value)}
-                          />
-                        </div>
-                      </>
-                    )}
-                    
-                    {/* Add other template specific fields here */}
-                  </div>
-                )}
-                
-                {/* Custom HTML editor */}
-                {selectedTemplate === 'custom' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="customHtml">Custom HTML Content</Label>
-                    <Textarea
-                      id="customHtml"
-                      placeholder="<h1>Your custom HTML content here</h1>"
-                      rows={10}
-                      value={customHtml}
-                      onChange={(e) => setCustomHtml(e.target.value)}
-                      className="font-mono text-sm"
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label>Attachments</Label>
-                  <div className="border rounded-md p-4">
-                    {attachments.length > 0 && (
-                      <div className="mb-4 space-y-2">
-                        {attachments.map((file, i) => (
-                          <div 
-                            key={`${file.name}-${i}`}
-                            className="flex items-center justify-between border rounded p-2"
-                          >
-                            <div className="flex items-center gap-2 truncate">
-                              <div className="text-sm truncate">{file.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                ({Math.round(file.size / 1024)} KB)
-                              </div>
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => removeAttachment(i)}
+                  )}
+                  
+                  {recipientType === 'custom' && (
+                    <FormField
+                      control={form.control}
+                      name="customRecipients"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Enter Email Addresses</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Enter email addresses separated by commas, spaces, or new lines"
+                              className="min-h-[120px] font-mono text-sm"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Example: user@example.com, another@example.com
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  
+                  {recipientType === 'file' && (
+                    <div className="space-y-4">
+                      <div>
+                        <FormLabel>Upload Recipient File</FormLabel>
+                        <div className="mt-1">
+                          <div className="border border-dashed rounded-md p-6 text-center">
+                            <input
+                              type="file"
+                              id="recipients-file"
+                              className="hidden"
+                              accept=".csv,.xlsx,.xls"
+                              onChange={handleFileUpload}
+                              disabled={fileUploading}
+                            />
+                            <label 
+                              htmlFor="recipients-file"
+                              className="cursor-pointer flex flex-col items-center justify-center"
                             >
-                              <X className="h-4 w-4" />
-                            </Button>
+                              {fileUploading ? (
+                                <>
+                                  <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mb-2" />
+                                  <p className="text-muted-foreground">Uploading file...</p>
+                                </>
+                              ) : uploadedFile ? (
+                                <>
+                                  <FileUp className="h-10 w-10 text-primary mb-2" />
+                                  <p className="font-medium">{uploadedFile.name}</p>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    Click to change file
+                                  </p>
+                                </>
+                              ) : (
+                                <>
+                                  <FileUp className="h-10 w-10 text-muted-foreground mb-2" />
+                                  <p className="font-medium">Click to upload a file</p>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    CSV or Excel files with email column
+                                  </p>
+                                </>
+                              )}
+                            </label>
                           </div>
-                        ))}
-                        <Separator className="my-4" />
-                      </div>
-                    )}
-                    
-                    <div className="text-center">
-                      <Label htmlFor="attachment" className="cursor-pointer">
-                        <div className="border border-dashed rounded-md p-6 text-center hover:bg-muted/50 transition-colors">
-                          <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                          <p className="text-sm font-medium">Drop files or click to upload</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            PDF, Word, Excel, and image files supported
+                          <p className="text-sm text-muted-foreground mt-2">
+                            File should have a column named "email" or "email_address"
                           </p>
                         </div>
-                        <Input 
-                          id="attachment" 
-                          type="file" 
-                          className="hidden" 
-                          onChange={handleAttachmentUpload}
-                        />
-                      </Label>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={handleBack}>
-                  Cancel
-                </Button>
-                <Button onClick={handleNext}>
-                  Continue
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {/* Step 2: Recipients */}
-          {step === 2 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Recipients</CardTitle>
-                <CardDescription>
-                  Choose who should receive this email campaign
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="border rounded-md p-4">
-                  <h3 className="font-medium mb-4">Add Recipients</h3>
+                  )}
                   
-                  <div className="space-y-4">
-                    {/* Add individual recipients */}
-                    <div className="space-y-2">
-                      <Label htmlFor="recipientEmail">Email Address</Label>
-                      <div className="flex space-x-2">
-                        <Input
-                          id="recipientEmail"
-                          placeholder="user@example.com"
-                          value={recipientEmail}
-                          onChange={(e) => setRecipientEmail(e.target.value)}
-                        />
-                        <Input
-                          id="recipientName"
-                          placeholder="Name (optional)"
-                          value={recipientName}
-                          onChange={(e) => setRecipientName(e.target.value)}
-                        />
-                        <Button 
-                          variant="outline"
-                          onClick={addRecipient}
-                          className="shrink-0"
-                          type="button"
-                        >
-                          <Plus className="h-4 w-4 mr-1" /> Add
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    {/* Import from CSV */}
-                    <div className="space-y-2">
-                      <Label>Import Recipients from CSV</Label>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Upload a CSV file with email,name format (name is optional)
-                      </p>
-                      
-                      <div className="flex space-x-2">
-                        <Input 
-                          type="file" 
-                          accept=".csv" 
-                          onChange={handleFileUpload}
-                        />
-                        <Button 
-                          variant="outline"
-                          onClick={handleRecipientImport}
-                          disabled={uploadedRecipients.length === 0}
-                          className="shrink-0"
-                        >
-                          Import
-                        </Button>
+                  {/* Recipient summary */}
+                  <div className="bg-muted/50 p-4 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-muted-foreground" />
+                        <p className="font-medium">Recipients</p>
                       </div>
                       
-                      {uploadedRecipients.length > 0 && (
-                        <div className="text-sm text-muted-foreground mt-2">
-                          {uploadedRecipients.length} recipients found in file
+                      {isCountingRecipients ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="text-muted-foreground">Counting...</span>
+                        </div>
+                      ) : recipientCount !== null ? (
+                        <div className="bg-primary/10 text-primary font-medium px-2 py-1 rounded text-sm">
+                          {recipientCount.toLocaleString()} recipients
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground text-sm">
+                          Select recipients
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-                
-                <div className="border rounded-md p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium">Recipient List</h3>
-                    <div className="text-sm text-muted-foreground">
-                      {recipients.length} recipients
-                    </div>
-                  </div>
-                  
-                  {recipients.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="mx-auto h-10 w-10 mb-2 opacity-25" />
-                      <p>No recipients added yet</p>
+                </CardContent>
+              </Card>
+              
+              {/* Template Preview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Template Preview</CardTitle>
+                  <CardDescription>
+                    Preview how your email will look
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!selectedTemplate ? (
+                    <div className="text-center py-8 border rounded-md">
+                      <div className="text-muted-foreground mb-2">
+                        {isLoadingTemplates ? (
+                          <Loader2 className="h-10 w-10 animate-spin mx-auto mb-4" />
+                        ) : (
+                          <LayoutTemplate className="h-10 w-10 mx-auto mb-4" />
+                        )}
+                      </div>
+                      <p className="font-medium">
+                        {isLoadingTemplates ? "Loading templates..." : "Select a template to preview"}
+                      </p>
                     </div>
                   ) : (
-                    <div className="max-h-[300px] overflow-y-auto space-y-1">
-                      {recipients.map((recipient, i) => (
-                        <div 
-                          key={i} 
-                          className="flex items-center justify-between rounded-md border px-3 py-2"
-                        >
-                          <div>
-                            <div className="font-medium">{recipient.email}</div>
-                            {recipient.name && (
-                              <div className="text-sm text-muted-foreground">
-                                {recipient.name}
-                              </div>
-                            )}
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => removeRecipient(i)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={handleBack}>
-                  Back
-                </Button>
-                <Button onClick={handleNext} disabled={recipients.length === 0}>
-                  Continue
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {/* Step 3: Schedule & Review */}
-          {step === 3 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Schedule & Review</CardTitle>
-                <CardDescription>
-                  Set when to send your campaign and review details
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="border rounded-md p-4 space-y-4">
-                  <h3 className="font-medium">Delivery Options</h3>
-                  
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <Send className="h-4 w-4" />
-                      <Label htmlFor="sendNow" className="cursor-pointer">
-                        Send immediately
-                      </Label>
-                    </div>
-                    <Switch
-                      id="sendNow"
-                      checked={sendNow}
-                      onCheckedChange={setSendNow}
-                    />
-                  </div>
-                  
-                  {!sendNow && (
-                    <div className="space-y-2 pt-2">
-                      <Label>Schedule For</Label>
-                      <DateTimePicker 
-                        date={scheduledFor} 
-                        setDate={setScheduledFor}
-                        granularity="minute"
-                        disabled={false}
+                    <div className="border rounded-md overflow-hidden">
+                      <div className="bg-muted/50 p-2 border-b">
+                        <div className="font-medium">{form.watch("subject") || "Email Subject"}</div>
+                      </div>
+                      <iframe
+                        srcDoc={selectedTemplate.htmlContent}
+                        title="Template Preview"
+                        className="w-full border-0"
+                        style={{ height: "400px" }}
                       />
                     </div>
                   )}
-                </div>
-                
-                <div className="border rounded-md p-4">
-                  <h3 className="font-medium mb-4">Review Campaign</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm text-muted-foreground">Campaign Name</div>
-                        <div className="font-medium">{name}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Template</div>
-                        <div className="font-medium">
-                          {EMAIL_TEMPLATES.find(t => t.id === selectedTemplate)?.label || 'None'}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Subject</div>
-                        <div className="font-medium">{subject}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Recipients</div>
-                        <div className="font-medium">{recipients.length}</div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Delivery</div>
-                        <div className="font-medium">
-                          {sendNow 
-                            ? 'Immediately after submission' 
-                            : scheduledFor 
-                              ? `Scheduled for ${scheduledFor.toLocaleString()}`
-                              : 'Not scheduled'
-                          }
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-sm text-muted-foreground">Attachments</div>
-                        <div className="font-medium">
-                          {attachments.length ? `${attachments.length} files` : 'None'}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-muted/50 p-4 rounded-md">
-                      <div className="text-sm text-muted-foreground mb-2">Note</div>
-                      <p className="text-sm">
-                        Please review all details carefully. Once sent, emails cannot be recalled.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={handleBack}>
-                  Back
-                </Button>
-                <Button onClick={handleNext} disabled={!sendNow && !scheduledFor}>
-                  {sendNow ? 'Send Now' : 'Schedule Campaign'}
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-        </div>
-      </div>
-      
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm {sendNow ? 'Send' : 'Schedule'}</DialogTitle>
-            <DialogDescription>
-              {sendNow 
-                ? `This will immediately send your email to ${recipients.length} recipients.`
-                : `This will schedule your email for ${scheduledFor?.toLocaleString()} to ${recipients.length} recipients.`
-              }
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <div className="font-medium">{subject}</div>
-            <div className="text-sm text-muted-foreground">
-              Campaign: {name}
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    type="submit"
+                    className="ml-auto"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Campaign...
+                      </>
+                    ) : scheduledFor ? (
+                      <>
+                        <Clock className="mr-2 h-4 w-4" />
+                        Schedule Campaign
+                      </>
+                    ) : (
+                      <>
+                        <SendHorizonal className="mr-2 h-4 w-4" />
+                        Create Campaign
+                      </>
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)} disabled={loading}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateCampaign} disabled={loading}>
-              {loading ? 'Processing...' : sendNow ? 'Confirm & Send' : 'Confirm & Schedule'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </form>
+      </Form>
     </div>
   );
 }
