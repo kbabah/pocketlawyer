@@ -3,22 +3,13 @@ if (typeof window !== 'undefined') {
   throw new Error('email-service.ts should only be imported from server-side code');
 }
 
-import AWS from 'aws-sdk';
+import { ServerClient } from 'postmark';
 import crypto from 'crypto';
 import { db } from './firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import * as nodemailer from 'nodemailer';
-import * as mailComposer from 'nodemailer/lib/mail-composer';
 
-// Explicitly configure AWS credentials from environment variables
-AWS.config.update({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
-
-// Create SES client
-const ses = new AWS.SES();
+// Initialize Postmark client
+const client = new ServerClient(process.env.POSTMARK_SERVER_TOKEN || '');
 
 // Email template types
 export type EmailTemplate = 
@@ -148,7 +139,7 @@ async function storeInitialTrackingData(
 }
 
 /**
- * Send email using AWS SES
+ * Send email using Postmark
  */
 export async function sendEmail({ 
   to, 
@@ -205,96 +196,42 @@ export async function sendEmail({
         await storeInitialTrackingData(emailId, recipient, subject, template, campaignId);
       }
     }
-    
-    // Prepare email parameters
-    const emailParams: AWS.SES.SendEmailRequest = {
-      Source: process.env.EMAIL_FROM || 'notifications@pocketlawyer.cm',
-      Destination: {
-        ToAddresses: Array.isArray(to) ? to : [to],
-      },
-      Message: {
-        Subject: {
-          Data: subject,
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Html: {
-            Data: htmlContent,
-            Charset: 'UTF-8',
-          },
-          Text: {
-            Data: stripHtml(htmlContent),
-            Charset: 'UTF-8',
-          },
-        },
-      },
+
+    // Format attachments for Postmark
+    const postmarkAttachments = attachments.map(att => ({
+      Name: att.filename,
+      Content: Buffer.isBuffer(att.content) 
+        ? att.content.toString('base64') 
+        : typeof att.content === 'string' 
+          ? Buffer.from(att.content).toString('base64') 
+          : att.content.toString('base64'),
+      ContentType: att.contentType
+    }));
+
+    // Set up email to send
+    const messageData = {
+      From: process.env.EMAIL_FROM || 'notifications@pocketlawyer.cm',
+      To: Array.isArray(to) ? to.join(',') : to,
+      Subject: subject,
+      HtmlBody: htmlContent,
+      TextBody: stripHtml(htmlContent),
+      MessageStream: process.env.POSTMARK_MESSAGE_STREAM || 'outbound',
+      Attachments: postmarkAttachments.length > 0 ? postmarkAttachments : undefined
     };
-    
-    // Handle attachments if any
-    if (attachments.length > 0) {
-      // If we have attachments, use SendRawEmail instead
-      const rawEmailParams = await buildRawEmail(
-        Array.isArray(to) ? to : [to],
-        process.env.EMAIL_FROM || 'notifications@pocketlawyer.cm',
-        subject,
-        htmlContent,
-        stripHtml(htmlContent),
-        attachments
-      );
-      
-      const result = await ses.sendRawEmail(rawEmailParams).promise();
-      return { 
-        success: true, 
-        messageId: result.MessageId,
-        emailId
-      };
-    }
-    
-    // Send standard email (no attachments)
-    const result = await ses.sendEmail(emailParams).promise();
+
+    // Send email via Postmark
+    console.log(`Sending email via Postmark to ${Array.isArray(to) ? to.join(', ') : to}`);
+    const response = await client.sendEmail(messageData);
+
     return { 
       success: true, 
-      messageId: result.MessageId,
+      messageId: response.MessageID,
       emailId
     };
   } catch (error) {
     console.error('Email sending failed:', error);
     return { success: false, error };
   }
-}
-
-/**
- * Build raw email with attachments
- */
-async function buildRawEmail(
-  to: string[],
-  from: string,
-  subject: string,
-  htmlBody: string,
-  textBody: string,
-  attachments: EmailAttachment[]
-): Promise<AWS.SES.SendRawEmailRequest> {
-  // Use the imported mailComposer directly instead of requiring it
-  const mail = new mailComposer({
-    from,
-    to,
-    subject,
-    html: htmlBody,
-    text: textBody,
-    attachments: attachments.map(attachment => ({
-      filename: attachment.filename,
-      content: attachment.content,
-      contentType: attachment.contentType
-    }))
-  });
-  
-  const message = await mail.compile().build();
-  
-  return {
-    RawMessage: {
-      Data: message
-    }
-  };
 }
 
 /**
@@ -456,7 +393,6 @@ function getEmailTemplate(template: EmailTemplate, data?: Record<string, any>): 
             ${data?.link ? `
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${data.link}" style="background-color: #dc3545; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px;">View Details</a>
-              </div>
             ` : ''}
           </div>
           ${getEmailFooter()}

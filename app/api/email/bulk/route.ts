@@ -1,17 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import AWS from 'aws-sdk';
 import { adminDb } from '../../../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { EmailTemplate } from '../../../../lib/email-service-client';
-
-// Configure AWS SES
-AWS.config.update({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
-
-const ses = new AWS.SES();
+import { sendBulkEmails } from '@/lib/email-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,57 +41,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // For immediate sending, we'll call the send API for each recipient
-    // This approach allows for personalization and better tracking
-    const results = await Promise.allSettled(
-      recipients.map(async (recipient: { email: string; name?: string }) => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/email/send`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            to: recipient.email,
-            subject,
-            template,
-            data: {
-              ...data,
-              name: recipient.name || '',
-              email: recipient.email
-            },
-            attachments,
-            trackingEnabled: true,
-            campaignId
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to send email to ${recipient.email}`);
-        }
-        
-        return await response.json();
-      })
-    );
-    
-    // Count successes and failures
-    const sent = results.filter(result => result.status === 'fulfilled').length;
-    const failed = results.filter(result => result.status === 'rejected').length;
-    
-    // Save campaign statistics if campaignId is provided
-    if (campaignId) {
-      await adminDb.collection('emailCampaigns').doc(campaignId).update({
-        sentCount: sent,
-        failedCount: failed,
-        completedAt: Timestamp.now(),
-        status: 'completed'
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      sent,
-      failed
+    // Send bulk emails using the email service
+    const result = await sendBulkEmails({
+      recipients,
+      subject,
+      template,
+      data,
+      campaignId,
+      attachments
     });
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Bulk email sending failed:', error);
     return NextResponse.json(

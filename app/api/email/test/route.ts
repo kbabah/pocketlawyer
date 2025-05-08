@@ -3,7 +3,6 @@ import { sendEmail } from "@/lib/email-service";
 
 export async function POST(req: Request) {
   try {
-    // Get email from request
     const { email } = await req.json();
     
     if (!email) {
@@ -15,23 +14,37 @@ export async function POST(req: Request) {
     
     // Debug environment variables
     console.log("Email Service Environment Check:");
-    console.log(`AWS_REGION=${process.env.AWS_REGION}`);
-    console.log(`EMAIL_FROM=${process.env.EMAIL_FROM}`);
-    console.log(`AWS_ACCESS_KEY_ID=${process.env.AWS_ACCESS_KEY_ID?.substring(0, 5)}...`); // Log only part of sensitive data
-    console.log(`AWS_SECRET_ACCESS_KEY exists: ${!!process.env.AWS_SECRET_ACCESS_KEY}`);
+    console.log(`POSTMARK_SERVER_TOKEN exists: ${!!process.env.POSTMARK_SERVER_TOKEN}`);
+    console.log(`EMAIL_FROM: ${process.env.EMAIL_FROM}`);
     
     // Try to send a test email
     const result = await sendEmail({
       to: email,
-      subject: "PocketLawyer Email Test",
-      template: "welcome",
-      data: { name: "Test User" }
+      subject: "PocketLawyer Postmark Test",
+      template: "custom",
+      data: { 
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="padding: 20px; text-align: center; background-color: #f8f9fa;">
+              <h1>Test Email from PocketLawyer</h1>
+            </div>
+            <div style="padding: 20px;">
+              <p>This is a test email sent using Postmark.</p>
+              <p>If you're seeing this email, the Postmark integration is working correctly!</p>
+            </div>
+          </div>
+        `
+      }
     });
     
     if (!result.success) {
       console.error("Test email failed:", result.error);
       return NextResponse.json(
-        { success: false, message: "Failed to send test email", error: result.error },
+        { 
+          success: false, 
+          message: "Failed to send test email", 
+          error: result.error 
+        },
         { status: 500 }
       );
     }

@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import AWS from 'aws-sdk';
 import crypto from 'crypto';
 import { adminDb } from '../../../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import * as nodemailer from 'nodemailer';
-import * as mailComposer from 'nodemailer/lib/mail-composer';
 import { EmailTemplate, SendEmailParams } from '../../../../lib/email-service-client';
 import admin from '@/lib/firebase-admin';
-
-// Explicitly configure AWS credentials from environment variables
-AWS.config.update({
-  region: process.env.AWS_REGION,
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-});
-
-// Create SES client
-const ses = new AWS.SES();
+import { sendEmail } from '@/lib/email-service';
 
 /**
  * Generate a unique email ID for tracking
@@ -31,8 +19,6 @@ function generateEmailId(): string {
 function addTrackingPixel(htmlContent: string, emailId: string): string {
   const trackingPixelUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/email/tracking/pixel/${emailId}`;
   const trackingPixel = `<img src="${trackingPixelUrl}" width="1" height="1" alt="" style="display:none;" />`;
-  
-  // Add before closing body tag
   return htmlContent.replace('</body>', `${trackingPixel}</body>`);
 }
 
@@ -166,143 +152,25 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-/**
- * Build raw email with attachments
- */
-async function buildRawEmail(
-  to: string[],
-  from: string,
-  subject: string,
-  htmlBody: string,
-  textBody: string,
-  attachments: any[]
-): Promise<AWS.SES.SendRawEmailRequest> {
-  // Use mailComposer directly 
-  const mail = new mailComposer({
-    from,
-    to,
-    subject,
-    html: htmlBody,
-    text: textBody,
-    attachments: attachments.map(attachment => ({
-      filename: attachment.filename,
-      content: Buffer.isBuffer(attachment.content) 
-        ? attachment.content 
-        : Buffer.from(attachment.content, 'base64'),
-      contentType: attachment.contentType
-    }))
-  });
-  
-  const message = await mail.compile().build();
-  
-  return {
-    RawMessage: {
-      Data: message
-    }
-  };
-}
-
 export async function POST(req: NextRequest) {
   try {
     const params: SendEmailParams = await req.json();
     const { to, subject, template, data, attachments = [], trackingEnabled = true, campaignId, scheduledFor } = params;
-    
-    // If scheduled for future, queue the email and return
-    if (scheduledFor && new Date(scheduledFor) > new Date()) {
-      const queuedEmail = {
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        template,
-        data,
-        attachments: attachments.map(att => ({
-          filename: att.filename,
-          content: att.content,
-          contentType: att.contentType
-        })),
-        trackingEnabled,
-        campaignId,
-        scheduledFor: Timestamp.fromDate(new Date(scheduledFor)),
-        status: 'scheduled',
-        createdAt: Timestamp.now()
-      };
-      
-      const docRef = await adminDb.collection('scheduledEmails').add(queuedEmail);
-      return NextResponse.json({ 
-        success: true, 
-        scheduled: true,
-        emailId: docRef.id
-      });
-    }
 
-    // Generate tracking ID if tracking enabled
-    const emailId = trackingEnabled ? generateEmailId() : undefined;
-    
-    // Get HTML content for the template
-    let htmlContent = getEmailTemplate(template, data);
-    
-    // Add tracking if enabled
-    if (trackingEnabled && emailId) {
-      htmlContent = addTrackingPixel(htmlContent, emailId);
-      htmlContent = addLinkTracking(htmlContent, emailId);
-      
-      // Store tracking data for each recipient
-      const recipients = Array.isArray(to) ? to : [to];
-      for (const recipient of recipients) {
-        await storeInitialTrackingData(emailId, recipient, subject, template, campaignId);
-      }
-    }
-    
-    // Prepare email parameters
-    const emailParams: AWS.SES.SendEmailRequest = {
-      Source: process.env.EMAIL_FROM || 'notifications@pocketlawyer.cm',
-      Destination: {
-        ToAddresses: Array.isArray(to) ? to : [to],
-      },
-      Message: {
-        Subject: {
-          Data: subject,
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Html: {
-            Data: htmlContent,
-            Charset: 'UTF-8',
-          },
-          Text: {
-            Data: stripHtml(htmlContent),
-            Charset: 'UTF-8',
-          },
-        },
-      },
-    };
-    
-    // Handle attachments if any
-    if (attachments.length > 0) {
-      // If we have attachments, use SendRawEmail instead
-      const rawEmailParams = await buildRawEmail(
-        Array.isArray(to) ? to : [to],
-        process.env.EMAIL_FROM || 'notifications@pocketlawyer.cm',
-        subject,
-        htmlContent,
-        stripHtml(htmlContent),
-        attachments
-      );
-      
-      const result = await ses.sendRawEmail(rawEmailParams).promise();
-      return NextResponse.json({ 
-        success: true, 
-        messageId: result.MessageId,
-        emailId
-      });
-    }
-    
-    // Send standard email (no attachments)
-    const result = await ses.sendEmail(emailParams).promise();
-    return NextResponse.json({ 
-      success: true, 
-      messageId: result.MessageId,
-      emailId
+    // Route handling now moved to email-service.ts
+    // This API endpoint now just forwards the request to the email service
+    const result = await sendEmail({
+      to,
+      subject,
+      template,
+      data,
+      attachments,
+      trackingEnabled,
+      campaignId,
+      scheduledFor
     });
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Email sending failed:', error);
     return NextResponse.json(
@@ -310,29 +178,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-/**
- * Render email template with data
- */
-async function renderEmailTemplate(template: string, data: Record<string, any>): Promise<string> {
-  // In a real implementation, you might use a templating engine like Handlebars or EJS
-  // For this example, we'll use a simple placeholder replacement
-  
-  // Get template from Firestore or other source
-  const templateDoc = await admin.firestore().collection('emailTemplates').doc(template).get();
-  
-  if (!templateDoc.exists) {
-    throw new Error(`Email template '${template}' not found`);
-  }
-  
-  let html = templateDoc.data()?.html || '';
-  
-  // Replace placeholders with actual data
-  Object.entries(data).forEach(([key, value]) => {
-    const regex = new RegExp(`{{${key}}}`, 'g');
-    html = html.replace(regex, String(value));
-  });
-  
-  return html;
 }
