@@ -72,8 +72,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     const template = {
       id: templateDoc.id,
       ...templateDoc.data(),
-      createdAt: templateDoc.data()?.createdAt?.toDate().toISOString(),
-      updatedAt: templateDoc.data()?.updatedAt?.toDate().toISOString(),
+      createdAt: convertTimestampToISOString(templateDoc.data()?.createdAt),
+      updatedAt: convertTimestampToISOString(templateDoc.data()?.updatedAt),
     };
 
     return NextResponse.json(template);
