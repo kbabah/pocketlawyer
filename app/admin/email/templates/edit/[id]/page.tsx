@@ -307,7 +307,7 @@ export default function EditTemplatePage() {
                           <Input placeholder="e.g., Welcome to PocketLawyer" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Supports variables like {{'{{'}}name{{'}}'}}
+                          Supports variables like {"{{"} name {"}}"} for dynamic content
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
