@@ -49,14 +49,14 @@ export function AppSidebar() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
 
   useEffect(() => {
-    const pathParts = window.location.pathname.split('/')
-    if (pathParts.includes('chat')) {
-      const id = pathParts[pathParts.length - 1]
+    // Only run on the client side
+    if (typeof window !== 'undefined') {
+      // Read chatId from URL query parameters to determine current chat
+      const params = new URLSearchParams(window.location.search)
+      const id = params.get('chatId')
       setCurrentChatId(id)
-    } else {
-      setCurrentChatId(null)
     }
-  }, [])
+  }, [typeof window !== 'undefined' && window.location.search])
 
   const handleNewChat = () => {
     router.push("/")
@@ -74,7 +74,8 @@ export function AppSidebar() {
       setDeleteDialogOpen(false)
       setItemToDelete(null)
       
-      if (window.location.pathname === `/chat/${itemToDelete.id}`) {
+      // If current chat was deleted, navigate back to home
+      if (typeof window !== 'undefined' && window.location.search.includes(`chatId=${itemToDelete.id}`)) {
         router.push("/")
       }
       toast.success(t("Chat deleted successfully"))
@@ -159,7 +160,7 @@ export function AppSidebar() {
                   <div className="flex items-center justify-between px-2 py-1.5">
                     <div 
                       className="flex-1 flex items-center gap-2 cursor-pointer overflow-hidden"
-                      onClick={() => router.push(`/chat/${chat.id}`)}
+                      onClick={() => router.push(`/?chatId=${chat.id}`)}
                     >
                       <MessageCircle className="h-4 w-4 flex-shrink-0 text-primary/70" />
                       <span className={`text-sm truncate ${isActive ? "font-medium" : ""}`}>
@@ -248,7 +249,7 @@ export function AppSidebar() {
                     {t("Trial Access")}
                   </p>
                   <p className="text-xs text-amber-600 dark:text-amber-300/90 mt-1 mb-2.5">
-                    {t('trial.conversations', { count: getTrialConversationsRemaining() })}
+                    {`${getTrialConversationsRemaining()} ${t('trial.conversations')}`}
                   </p>
                   <Button size="sm" onClick={() => router.push("/sign-up")} className="w-full h-9 font-medium">
                     <UserPlus className="h-3.5 w-3.5 mr-1.5" />

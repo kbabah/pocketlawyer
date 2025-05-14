@@ -16,14 +16,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useLanguage } from "@/contexts/language-context"
 import { useChatHistory } from "@/hooks/use-chat-history"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useParams, useRouter } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { Message } from 'ai'
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Import the windowing library
 import { FixedSizeList as List } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer'
 
 // Import the fuzzy search library
 import Fuse from 'fuse.js'
@@ -86,8 +85,8 @@ export default function ChatInterface() {
   const [error, setError] = useState<string | null>(null) // Add missing error state
   const { user, incrementTrialConversations, isTrialLimitReached, getTrialConversationsRemaining } = useAuth()
   const { t, language } = useLanguage()
-  const params = useParams()
-  const chatId = params?.id as string | undefined
+  const searchParams = useSearchParams()
+  const chatId = searchParams.get('chatId') || undefined
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const router = useRouter()
   const isMobile = useIsMobile()
@@ -145,21 +144,18 @@ export default function ChatInterface() {
     
     return (
       <div className="h-full w-full">
-        <AutoSizer>
-          {({ height, width }) => (
-            <List
-              ref={listRef}
-              height={height}
-              itemCount={messages.length}
-              itemSize={itemSize}
-              width={width}
-              overscanCount={3}
-              className="scrollbar-hide"
-            >
-              {Row}
-            </List>
-          )}
-        </AutoSizer>
+        {/* Fixed dimensions for virtualization to avoid AutoSizer parsing issues */}
+        <List
+          ref={listRef}
+          height={500}
+          itemCount={messages.length}
+          itemSize={itemSize}
+          width={350}
+          overscanCount={3}
+          className="scrollbar-hide"
+        >
+          {Row}
+        </List>
         <div ref={messagesEndRef} />
       </div>
     );
@@ -204,31 +200,7 @@ export default function ChatInterface() {
         }
       }, 100)
   
-      // Save chat if user is authenticated
-      if (!chatId && user?.id && !user?.isAnonymous) {
-        try {
-          // Since useChat hook has not yet updated the messages state at this point,
-          // we need to create our own version of what the new messages array will look like
-          const userMessage = { id: Date.now().toString(), content: userInput, role: 'user' as const }
-          const newMessages = [...messages, userMessage]
-          const newChatId = await saveChat(newMessages)
-          if (newChatId) {
-            router.replace(`/?chatId=${newChatId}`, { scroll: false })
-          }
-        } catch (error) {
-          console.error("Failed to save chat:", error)
-          // Don't show error to user here, as the chat still works
-        }
-      } else if (chatId && user?.id && !user?.isAnonymous) {
-        try {
-          // Wait a bit for messages to update before saving
-          setTimeout(async () => {
-            await updateChat(chatId, messages)
-          }, 500)
-        } catch (error) {
-          console.error("Failed to update chat:", error)
-        }
-      }
+      // Chat persistence is handled in effects based on message changes
       
     } catch (err) {
       console.error('Chat submission error:', err)
@@ -295,6 +267,14 @@ export default function ChatInterface() {
 
     loadExistingChat()
   }, [chatId, user?.id, initialLoadComplete, setMessages, router])
+
+  // Clear messages when starting a new conversation (chatId undefined)
+  useEffect(() => {
+    if (!chatId) {
+      setMessages([])
+      setInitialLoadComplete(false)
+    }
+  }, [chatId, setMessages])
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -439,34 +419,8 @@ export default function ChatInterface() {
     
     // Use virtualization for large message lists
     if (messages.length > 20) {
-      return (
-        <AutoSizer>
-          {({ height, width }) => (
-            <List
-              height={height || 500}
-              width={width || 300}
-              itemCount={messages.length}
-              itemSize={100}
-              overscanCount={5}
-            >
-              {({ index, style }) => {
-                const isHighlighted = searchResults[currentSearchResultIndex] === index;
-                return (
-                  <div style={style} id={`message-${index}`}>
-                    <ChatMessage 
-                      message={messages[index]} 
-                      isMobile={isMobile} 
-                      t={t}
-                      highlight={isHighlighted}
-                      searchTerms={searchIsActive ? highlightTerms : []}
-                    />
-                  </div>
-                );
-              }}
-            </List>
-          )}
-        </AutoSizer>
-      );
+      // Use the dedicated VirtualizedMessageList component for virtualization
+      return <VirtualizedMessageList />;
     }
     
     // Use regular rendering for smaller message lists
@@ -1008,6 +962,25 @@ export default function ChatInterface() {
       localStorage.setItem('hasSeenChatTutorial', 'true');
     }
   }, [showWelcomeTutorial]);
+
+  // Persist chat sessions on message changes
+  useEffect(() => {
+    if (!messages.length || user?.isAnonymous || !user?.id) return;
+
+    if (!chatId) {
+      // New chat: save and update URL
+      saveChat(messages)
+        .then((newId) => {
+          if (newId) {
+            router.replace(`/?chatId=${newId}`, { scroll: false });
+          }
+        })
+        .catch((e) => console.error('Error saving new chat:', e));
+    } else {
+      // Existing chat: update
+      updateChat(chatId, messages).catch((e) => console.error('Error updating chat:', e));
+    }
+  }, [messages, chatId, user?.id]);
 
   return (
     <div className="flex flex-col min-h-full" onKeyDown={handleKeyDown} tabIndex={0}>
