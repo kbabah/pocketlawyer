@@ -215,6 +215,25 @@ export default function AdminDashboard() {
           <TabsContent value="content" className="space-y-4">
             <Card>
               <CardHeader>
+                <CardTitle>Blog Management</CardTitle>
+                <CardDescription>
+                  Create and manage blog posts for your website.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="rounded-md bg-muted p-4">
+                  <p className="text-sm">Manage your blog content, publish new articles, and edit existing posts.</p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={() => router.push("/admin/blog")}>
+                  Manage Blog
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
                 <CardTitle>Content Management</CardTitle>
                 <CardDescription>
                   Manage legal content, templates, and documents.

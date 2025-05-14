@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -11,79 +11,107 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { SearchIcon } from "lucide-react"
+import { Loader2, SearchIcon } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore'
+import { db } from '@/lib/firebase'
+import { toast } from "sonner"
 
-// Sample blog posts data - in a production environment, this would come from a CMS or API
-const blogPosts = [
-  {
-    id: "land-ownership",
-    title: "Guide to Land Ownership in Cameroon",
-    description: "Understanding the complex land tenure system in Cameroon and how to secure your property rights.",
-    date: "2025-05-02",
-    category: "Property Law",
-    tags: ["land rights", "property", "registration"],
-    slug: "land-ownership-cameroon",
-    readTime: "8 min read"
-  },
-  {
-    id: "business-registration",
-    title: "How to Register a Business in Cameroon",
-    description: "Step-by-step guide to legally registering your business entity in accordance with OHADA regulations.",
-    date: "2025-04-18",
-    category: "Business Law",
-    tags: ["business", "registration", "OHADA"],
-    slug: "business-registration-cameroon",
-    readTime: "10 min read"
-  },
-  {
-    id: "employment-rights",
-    title: "Employee Rights Under Cameroonian Labor Code",
-    description: "A comprehensive overview of employee protections, benefits, and obligations under the Labor Code.",
-    date: "2025-03-25",
-    category: "Labor Law",
-    tags: ["employment", "workers", "benefits"],
-    slug: "employee-rights-cameroon",
-    readTime: "12 min read"
-  },
-  {
-    id: "divorce-procedures",
-    title: "Divorce Procedures in Cameroon's Legal System",
-    description: "Understanding the process, requirements, and legal implications of divorce proceedings in Cameroon.",
-    date: "2025-03-10",
-    category: "Family Law",
-    tags: ["divorce", "family", "marriage"],
-    slug: "divorce-procedures-cameroon",
-    readTime: "9 min read"
-  },
-  {
-    id: "inheritance-law",
-    title: "Inheritance Law: Traditional vs. Modern Legal Systems in Cameroon",
-    description: "Navigating the dual legal system when dealing with inheritance and succession matters.",
-    date: "2025-02-15",
-    category: "Inheritance Law",
-    tags: ["inheritance", "succession", "wills"],
-    slug: "inheritance-law-cameroon",
-    readTime: "11 min read"
-  }
-];
+// Define a type for blog posts
+type BlogPost = {
+  id: string;
+  title: string;
+  description?: string;
+  excerpt: string;
+  content: string;
+  date?: string;
+  publishedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  category: string;
+  tags: string[];
+  slug: string;
+  featuredImage?: string;
+  author: {
+    id: string;
+    name: string;
+    image?: string;
+  };
+  published: boolean;
+  readTime?: string;
+};
 
 export default function BlogPage() {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [selectedCategory, setSelectedCategory] = React.useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  const categories = [...new Set(blogPosts.map(post => post.category))];
+  // Fetch blog posts from Firestore
+  useEffect(() => {
+    async function fetchBlogPosts() {
+      try {
+        setLoading(true);
+        // Query only published blog posts
+        const blogQuery = query(
+          collection(db, "blog-posts"), 
+          where("published", "==", true),
+          orderBy("publishedAt", "desc")
+        );
+        
+        const querySnapshot = await getDocs(blogQuery);
+        
+        if (querySnapshot.empty) {
+          setBlogPosts([]);
+          setCategories([]);
+          return;
+        }
+        
+        const posts = querySnapshot.docs.map(doc => {
+          const data = doc.data() as BlogPost;
+          return {
+            ...data,
+            id: doc.id,
+            // Calculate read time based on content length (rough estimate)
+            readTime: `${Math.max(1, Math.round(data.content.length / 1500))} min read`
+          };
+        });
+        
+        setBlogPosts(posts);
+        
+        // Extract unique categories
+        const allCategories = [...new Set(posts.map(post => post.category))];
+        setCategories(allCategories);
+        
+      } catch (err) {
+        console.error("Error fetching blog posts:", err);
+        setError("Failed to load blog posts. Please try again later.");
+        toast.error("Failed to load blog posts");
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchBlogPosts();
+  }, []);
   
   // Filter posts based on search query and category
   const filteredPosts = blogPosts.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                         post.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = 
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesCategory = selectedCategory ? post.category === selectedCategory : true;
     
     return matchesSearch && matchesCategory;
   });
+  
+  // Extract all unique tags for the sidebar
+  const allTags = [...new Set(blogPosts.flatMap(post => post.tags))].slice(0, 10);
   
   return (
     <div className="flex min-h-[100dvh] bg-pattern-light dark:bg-pattern-dark">
@@ -139,105 +167,143 @@ export default function BlogPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Sidebar with categories */}
-              <div className="lg:col-span-1">
-                <div className="bg-card rounded-lg border p-4 sticky top-20">
-                  <h3 className="font-medium mb-3">{t("Categories")}</h3>
-                  <div className="space-y-2">
-                    <button 
-                      className={`block w-full text-left px-2 py-1 rounded hover:bg-accent ${selectedCategory === '' ? 'bg-accent' : ''}`}
-                      onClick={() => setSelectedCategory('')}
-                    >
-                      {t("All Categories")}
-                    </button>
-                    
-                    {categories.map(category => (
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="ml-2 text-muted-foreground">Loading articles...</span>
+              </div>
+            ) : error ? (
+              <div className="bg-destructive/10 text-destructive p-4 rounded-lg text-center">
+                <p>{error}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  variant="outline" 
+                  className="mt-2"
+                >
+                  Try Again
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                {/* Sidebar with categories */}
+                <div className="lg:col-span-1">
+                  <div className="bg-card rounded-lg border p-4 sticky top-20">
+                    <h3 className="font-medium mb-3">{t("Categories")}</h3>
+                    <div className="space-y-2">
                       <button 
-                        key={category} 
-                        className={`block w-full text-left px-2 py-1 rounded hover:bg-accent ${selectedCategory === category ? 'bg-accent' : ''}`}
-                        onClick={() => setSelectedCategory(category)}
+                        className={`block w-full text-left px-2 py-1 rounded hover:bg-accent ${selectedCategory === '' ? 'bg-accent' : ''}`}
+                        onClick={() => setSelectedCategory('')}
                       >
-                        {t(category)}
+                        {t("All Categories")}
                       </button>
-                    ))}
-                  </div>
-                  
-                  <div className="border-t mt-4 pt-4">
-                    <h3 className="font-medium mb-3">{t("Popular Tags")}</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {["property", "business", "family", "employment", "inheritance", "contracts", "OHADA"].map(tag => (
-                        <Badge key={tag} variant="secondary">{t(tag)}</Badge>
+                      
+                      {categories.map(category => (
+                        <button 
+                          key={category} 
+                          className={`block w-full text-left px-2 py-1 rounded hover:bg-accent ${selectedCategory === category ? 'bg-accent' : ''}`}
+                          onClick={() => setSelectedCategory(category)}
+                        >
+                          {t(category)}
+                        </button>
                       ))}
                     </div>
-                  </div>
-                  
-                  <div className="border-t mt-4 pt-4">
-                    <h3 className="font-medium mb-2">{t("Have a Legal Question?")}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{t("Use our AI assistant to get instant answers to your Cameroonian legal questions.")}</p>
-                    <Link href="/">
-                      <Button className="w-full">{t("Chat with PocketLawyer")}</Button>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Main content - article cards */}
-              <div className="lg:col-span-3 space-y-6">
-                {filteredPosts.length > 0 ? (
-                  filteredPosts.map(post => (
-                    <Card key={post.id} className="overflow-hidden">
-                      <Link href={`/blog/${post.slug}`}>
-                        <CardHeader className="pb-3">
-                          <div className="flex justify-between items-start">
-                            <Badge>{t(post.category)}</Badge>
-                            <span className="text-sm text-muted-foreground">{post.readTime}</span>
-                          </div>
-                          <CardTitle className="text-xl md:text-2xl hover:text-primary transition-colors">
-                            {t(post.title)}
-                          </CardTitle>
-                          <CardDescription className="text-base">{t(post.description)}</CardDescription>
-                        </CardHeader>
-                      </Link>
-                      <CardFooter className="border-t pt-4 flex justify-between">
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(post.date).toLocaleDateString('en-US', { 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
-                        </div>
-                        <div className="flex gap-1.5">
-                          {post.tags.slice(0, 3).map(tag => (
-                            <Badge key={tag} variant="outline">{t(tag)}</Badge>
+                    
+                    {allTags.length > 0 && (
+                      <div className="border-t mt-4 pt-4">
+                        <h3 className="font-medium mb-3">{t("Popular Tags")}</h3>
+                        <div className="flex flex-wrap gap-2">
+                          {allTags.map(tag => (
+                            <Badge 
+                              key={tag} 
+                              variant="secondary"
+                              className="cursor-pointer"
+                              onClick={() => setSearchQuery(tag)}
+                            >
+                              {t(tag)}
+                            </Badge>
                           ))}
                         </div>
-                      </CardFooter>
-                    </Card>
-                  ))
-                ) : (
-                  <div className="bg-card rounded-lg border p-8 text-center">
-                    <h3 className="text-lg font-medium mb-2">{t("No articles found")}</h3>
-                    <p className="text-muted-foreground mb-4">{t("Try adjusting your search or category filters")}</p>
-                    <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}>
-                      {t("Reset Filters")}
-                    </Button>
+                      </div>
+                    )}
+                    
+                    <div className="border-t mt-4 pt-4">
+                      <h3 className="font-medium mb-2">{t("Have a Legal Question?")}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">{t("Use our AI assistant to get instant answers to your Cameroonian legal questions.")}</p>
+                      <Link href="/">
+                        <Button className="w-full">{t("Chat with PocketLawyer")}</Button>
+                      </Link>
+                    </div>
                   </div>
-                )}
+                </div>
                 
-                {/* Newsletter signup */}
-                <Card className="mt-10 bg-primary/5">
-                  <CardHeader>
-                    <CardTitle>{t("Subscribe to Our Legal Updates")}</CardTitle>
-                    <CardDescription>{t("Get the latest articles and resources on Cameroonian law delivered to your inbox")}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col sm:flex-row gap-2">
-                    <Input placeholder={t("Enter your email")} className="flex-1" />
-                    <Button>{t("Subscribe")}</Button>
-                  </CardContent>
-                </Card>
+                {/* Main content - article cards */}
+                <div className="lg:col-span-3 space-y-6">
+                  {filteredPosts.length > 0 ? (
+                    filteredPosts.map(post => (
+                      <Card key={post.id} className="overflow-hidden">
+                        <Link href={`/blog/${post.slug}`}>
+                          <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start">
+                              <Badge>{t(post.category)}</Badge>
+                              <span className="text-sm text-muted-foreground">{post.readTime}</span>
+                            </div>
+                            <CardTitle className="text-xl md:text-2xl hover:text-primary transition-colors">
+                              {post.title}
+                            </CardTitle>
+                            <CardDescription className="text-base">{post.excerpt}</CardDescription>
+                          </CardHeader>
+                        </Link>
+                        {post.featuredImage && (
+                          <div className="px-6">
+                            <div className="aspect-video w-full overflow-hidden rounded-md">
+                              <img 
+                                src={post.featuredImage} 
+                                alt={post.title}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <CardFooter className="border-t mt-4 pt-4 flex justify-between">
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </div>
+                          <div className="flex gap-1.5">
+                            {post.tags.slice(0, 3).map(tag => (
+                              <Badge key={tag} variant="outline">{tag}</Badge>
+                            ))}
+                          </div>
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="bg-card rounded-lg border p-8 text-center">
+                      <h3 className="text-lg font-medium mb-2">{t("No articles found")}</h3>
+                      <p className="text-muted-foreground mb-4">{t("Try adjusting your search or category filters")}</p>
+                      <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}>
+                        {t("Reset Filters")}
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {/* Newsletter signup */}
+                  <Card className="mt-10 bg-primary/5">
+                    <CardHeader>
+                      <CardTitle>{t("Subscribe to Our Legal Updates")}</CardTitle>
+                      <CardDescription>{t("Get the latest articles and resources on Cameroonian law delivered to your inbox")}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col sm:flex-row gap-2">
+                      <Input placeholder={t("Enter your email")} className="flex-1" />
+                      <Button>{t("Subscribe")}</Button>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </SidebarInset>

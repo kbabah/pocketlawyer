@@ -25,10 +25,17 @@ export function useChatHistory(userId: string | undefined) {
     const loadChatHistory = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/chat/manage?userId=${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch chat history');
+        console.log(`Fetching chat history for userId: ${userId}`);
+        const response = await fetch(`/api/chat/manage?userId=${encodeURIComponent(userId)}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'No error details available');
+          console.error(`Chat history fetch failed: ${response.status} ${response.statusText}`, errorText);
+          throw new Error(`Failed to fetch chat history: ${response.status} ${response.statusText}`);
+        }
         
         const chats = await response.json();
+        console.log(`Successfully fetched ${chats.length} chats`);
         const history: ChatHistory = {};
 
         chats.forEach((chat: ChatSession & { userId: string }) => {

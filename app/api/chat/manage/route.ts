@@ -111,15 +111,34 @@ export async function GET(request: Request) {
       return NextResponse.json(chat);
     } else if (userId) {
       console.log(`Fetching chats for user: ${userId}`);
-      const chats = await getUserChats(userId);
-      console.log(`Found ${chats.length} chats for user ${userId}`);
-      return NextResponse.json(chats);
+      try {
+        const chats = await getUserChats(userId);
+        console.log(`Found ${chats.length} chats for user ${userId}`);
+        return NextResponse.json(chats);
+      } catch (err: any) {
+        console.error(`Error fetching chats for user ${userId}:`, err);
+        return NextResponse.json(
+          { 
+            error: 'Failed to fetch user chats',
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+            code: err.code 
+          }, 
+          { status: 500 }
+        );
+      }
     }
 
     console.log('Request missing both chatId and userId parameters');
     return NextResponse.json({ error: 'Missing chatId or userId' }, { status: 400 });
   } catch (error: any) {
     console.error('Chat API Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch chat' }, { status: 500 });
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch chat', 
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        code: error.code
+      }, 
+      { status: 500 }
+    );
   }
 }
