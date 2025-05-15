@@ -113,6 +113,66 @@ export default function BlogPage() {
   // Extract all unique tags for the sidebar
   const allTags = [...new Set(blogPosts.flatMap(post => post.tags))].slice(0, 10);
   
+  // Newsletter subscription state
+  const [email, setEmail] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [subscriptionMessage, setSubscriptionMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  
+  // Handle newsletter subscription
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email.trim()) {
+      setSubscriptionMessage({
+        type: "error",
+        text: t("Please enter your email address")
+      });
+      return;
+    }
+    
+    try {
+      setIsSubscribing(true);
+      setSubscriptionMessage(null);
+      
+      const response = await fetch("/api/newsletter/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        setSubscriptionMessage({
+          type: "success",
+          text: t(data.message)
+        });
+        setEmail("");
+        toast.success(t(data.message));
+      } else {
+        setSubscriptionMessage({
+          type: "error",
+          text: t(data.error)
+        });
+        toast.error(t(data.error));
+      }
+    } catch (err) {
+      console.error("Newsletter subscription error:", err);
+      setSubscriptionMessage({
+        type: "error",
+        text: t("Failed to process subscription. Please try again.")
+      });
+      toast.error(t("Failed to process subscription. Please try again."));
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+  
   return (
     <div className="flex min-h-[100dvh] bg-pattern-light dark:bg-pattern-dark">
       <AppSidebar />
@@ -297,9 +357,24 @@ export default function BlogPage() {
                       <CardDescription>{t("Get the latest articles and resources on Cameroonian law delivered to your inbox")}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col sm:flex-row gap-2">
-                      <Input placeholder={t("Enter your email")} className="flex-1" />
-                      <Button>{t("Subscribe")}</Button>
+                      <Input 
+                        placeholder={t("Enter your email")} 
+                        className="flex-1" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
+                      <Button 
+                        onClick={handleSubscribe}
+                        disabled={isSubscribing}
+                      >
+                        {isSubscribing ? t("Subscribing...") : t("Subscribe")}
+                      </Button>
                     </CardContent>
+                    {subscriptionMessage && (
+                      <div className={`mt-2 text-sm ${subscriptionMessage.type === "success" ? "text-success" : "text-destructive"}`}>
+                        {subscriptionMessage.text}
+                      </div>
+                    )}
                   </Card>
                 </div>
               </div>

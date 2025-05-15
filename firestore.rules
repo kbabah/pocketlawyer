@@ -69,5 +69,13 @@ service cloud.firestore {
       // Only admins can create, update, or delete blog posts
       allow create, update, delete: if isAdmin();
     }
+
+    // Allow server-side only access to newsletter subscribers
+    // (The API handles validation, not client-side access)
+    match /newsletter-subscribers/{subscriberId} {
+      // Only admins can read the subscriber list
+      allow read: if isAdmin();
+      // No client-side write access - handled by the server API
+    }
   }
 }

@@ -19,6 +19,7 @@ import {
   Plus,
   ScrollText,
   Send,
+  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -145,6 +146,10 @@ export default function EmailDashboard() {
           <TabsTrigger value="sent">
             <MailCheck className="w-4 h-4 mr-2" />
             Sent
+          </TabsTrigger>
+          <TabsTrigger value="subscribers">
+            <Users className="w-4 h-4 mr-2" />
+            Subscribers
           </TabsTrigger>
         </TabsList>
 
@@ -283,6 +288,10 @@ export default function EmailDashboard() {
         <TabsContent value="sent">
           <SentEmailsList />
         </TabsContent>
+
+        <TabsContent value="subscribers">
+          <SubscribersList />
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -295,4 +304,5 @@ import { EmailTemplatesList } from "./components/templates-list";
 import { EmailCampaignsList } from "./components/campaigns-list";
 import { ScheduledEmailsList } from "./components/scheduled-list";
 import { SentEmailsList } from "./components/sent-list";
+import { SubscribersList } from "./components/subscribers-list";
 import { AlertCircle, Mouse } from "lucide-react";

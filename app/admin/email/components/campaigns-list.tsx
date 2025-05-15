@@ -79,14 +79,15 @@ export function EmailCampaignsList() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to pause campaign");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to pause campaign");
       }
       
       toast.success("Campaign paused successfully");
       fetchCampaigns();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error pausing campaign:", error);
-      toast.error("Failed to pause campaign");
+      toast.error(error.message || "Failed to pause campaign");
     }
   };
 
@@ -97,14 +98,15 @@ export function EmailCampaignsList() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to resume campaign");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to resume campaign");
       }
       
       toast.success("Campaign resumed successfully");
       fetchCampaigns();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resuming campaign:", error);
-      toast.error("Failed to resume campaign");
+      toast.error(error.message || "Failed to resume campaign");
     }
   };
 
@@ -119,14 +121,17 @@ export function EmailCampaignsList() {
       });
       
       if (!response.ok) {
-        throw new Error("Failed to delete campaign");
+        const errorData = await response.json();
+        // Display the more detailed message if available, otherwise fall back to the error
+        const errorMessage = errorData.message || errorData.error || "Failed to delete campaign";
+        throw new Error(errorMessage);
       }
       
       toast.success("Campaign deleted successfully");
       fetchCampaigns();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting campaign:", error);
-      toast.error("Failed to delete campaign");
+      toast.error(error.message || "Failed to delete campaign");
     }
   };
 
