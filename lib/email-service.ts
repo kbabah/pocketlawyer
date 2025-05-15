@@ -23,6 +23,7 @@ export type EmailTemplate =
   | 'legal-alert'
   | 'weekly-summary'
   | 'document-shared'
+  | 'subscription-confirmation'
   | 'custom';
 
 // Email attachment interface
@@ -491,6 +492,39 @@ function getEmailTemplate(template: EmailTemplate, data?: Record<string, any>): 
             <div style="text-align: center; margin: 30px 0;">
               <a href="${data?.documentUrl || process.env.NEXT_PUBLIC_BASE_URL}" style="background-color: #28a745; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px;">View Document</a>
             </div>
+          </div>
+          ${getEmailFooter()}
+        </div>
+      `;
+      
+    case 'subscription-confirmation':
+      return `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+            <h1 style="color: #333;">Legal Updates Subscription Confirmed</h1>
+          </div>
+          <div style="padding: 20px;">
+            <p>Hello ${data?.name || 'there'},</p>
+            
+            <p>Thank you for subscribing to our Legal Updates newsletter! Your subscription has been confirmed.</p>
+            
+            <p>You'll now receive the latest articles, legal insights, and resources on Cameroonian law directly to your inbox. Our goal is to keep you informed about important legal developments that may affect you.</p>
+            
+            <div style="background-color: #f5f5f5; border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0;">
+              <p style="margin-top: 0;"><strong>What to expect:</strong></p>
+              <ul style="padding-left: 20px;">
+                <li>Legal news and updates from Cameroon</li>
+                <li>Practical guides on common legal issues</li>
+                <li>Explanations of new legislation and regulations</li>
+                <li>Tips on protecting your rights and interests</li>
+              </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.NEXT_PUBLIC_BASE_URL}/blog" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px;">Browse Our Legal Resources</a>
+            </div>
+            
+            <p>If you have any questions or need legal assistance, don't hesitate to use our AI-powered chat assistant on our website.</p>
           </div>
           ${getEmailFooter()}
         </div>

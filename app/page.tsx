@@ -6,11 +6,12 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import ChatInterface from "@/components/chat-interface"
 import { useAuth } from "@/contexts/auth-context"
-import { Scale } from "lucide-react"
+import { Scale, BookOpen } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { ThemeLogo } from "@/components/theme-logo" // Import the ThemeLogo component
+import Link from "next/link"
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -49,6 +50,10 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/blog" className="text-sm font-medium hover:text-primary flex items-center gap-1.5">
+              <BookOpen className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("Blog")}</span>
+            </Link>
             <div className="flex items-center gap-2">
               <ThemeSwitcher />
               <LanguageSwitcher />

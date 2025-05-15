@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { MessageSquare, Search, Shield, Scale, FileText } from "lucide-react"
+import { MessageSquare, Search, Shield, Scale, FileText, BookOpen } from "lucide-react"
 import { useLanguage } from "@/contexts/language-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -28,6 +28,14 @@ export default function Welcome() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/blog" className="text-sm font-medium hover:text-primary flex items-center gap-1.5">
+              <BookOpen className="h-4 w-4" />
+              <span>{t("Blog")}</span>
+            </Link>
+            <Link href="/examples" className="text-sm font-medium hover:text-primary flex items-center gap-1.5">
+              <FileText className="h-4 w-4" />
+              <span>{t("Examples")}</span>
+            </Link>
             <div className="flex items-center gap-2">
               <ThemeSwitcher isWelcomePage={true} className="welcome-page-theme-switcher" />
               <LanguageSwitcher />
@@ -173,6 +181,9 @@ export default function Welcome() {
             />
           </div>
           <div className="flex gap-6">
+            <Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">
+              {t("Blog")}
+            </Link>
             <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
               {t("welcome.footer.terms")}
             </Link>

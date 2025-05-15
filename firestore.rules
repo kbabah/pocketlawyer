@@ -9,6 +9,11 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
+    
+    function isAdmin() {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
 
     // Default deny all
     match /{document=**} {
@@ -51,6 +56,26 @@ service cloud.firestore {
     match /email-campaigns/{campaignId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow read, write, update, delete: if isOwner(resource.data.userId);
+    }
+    
+    // Allow public read access to published blog posts and admin write access
+    match /blog-posts/{postId} {
+      allow read: if 
+        // Anyone can read published posts
+        resource.data.published == true || 
+        // Or if they're an admin
+        isAdmin();
+      
+      // Only admins can create, update, or delete blog posts
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Allow server-side only access to newsletter subscribers
+    // (The API handles validation, not client-side access)
+    match /newsletter-subscribers/{subscriberId} {
+      // Only admins can read the subscriber list
+      allow read: if isAdmin();
+      // No client-side write access - handled by the server API
     }
   }
 }

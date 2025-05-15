@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User } from "lucide-react" 
 import { format } from "date-fns"
@@ -27,7 +27,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { ThemeSwitcher } from "@/components/theme-switcher"
-import { ThemeLogo } from "@/components/theme-logo" // Import the ThemeLogo component
+import { ThemeLogo } from "@/components/theme-logo"
 import { useChatHistory } from "@/hooks/use-chat-history"
 import { FeedbackDialog } from "@/components/feedback-dialog"
 import { 
@@ -38,6 +38,7 @@ import {
   SidebarTrigger
 } from "@/components/ui/sidebar"
 import { toast } from "sonner"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export function AppSidebar() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -47,16 +48,43 @@ export function AppSidebar() {
   const router = useRouter()
   const { chatHistory, loading, deleteChat, renameChat } = useChatHistory(user?.id)
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
+  const isMobile = useIsMobile()
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const [sidebarHeight, setSidebarHeight] = useState<number>(0)
+
+  // Calculate available height for the chat history scrollable area
+  useEffect(() => {
+    const calculateHeight = () => {
+      if (!sidebarRef.current) return;
+      
+      const headerHeight = sidebarRef.current.querySelector('[data-sidebar-header]')?.clientHeight || 0;
+      const footerHeight = sidebarRef.current.querySelector('[data-sidebar-footer]')?.clientHeight || 0;
+      const topButtonHeight = 56; // Height of the "Start New Conversation" button
+      const trialInfoHeight = user?.isAnonymous ? 120 : 0; // Approximate height of trial info section
+      
+      // Calculate available space and add some padding
+      const availableHeight = window.innerHeight - headerHeight - footerHeight - topButtonHeight - trialInfoHeight - 40;
+      
+      // Set a minimum height to prevent it from becoming too small
+      setSidebarHeight(Math.max(availableHeight, 300));
+    };
+
+    calculateHeight();
+    
+    // Recalculate on resize
+    window.addEventListener('resize', calculateHeight);
+    return () => window.removeEventListener('resize', calculateHeight);
+  }, [user?.isAnonymous]);
 
   useEffect(() => {
-    const pathParts = window.location.pathname.split('/')
-    if (pathParts.includes('chat')) {
-      const id = pathParts[pathParts.length - 1]
+    // Only run on the client side
+    if (typeof window !== 'undefined') {
+      // Read chatId from URL query parameters to determine current chat
+      const params = new URLSearchParams(window.location.search)
+      const id = params.get('chatId')
       setCurrentChatId(id)
-    } else {
-      setCurrentChatId(null)
     }
-  }, [])
+  }, [typeof window !== 'undefined' && window.location.search])
 
   const handleNewChat = () => {
     router.push("/")
@@ -74,7 +102,8 @@ export function AppSidebar() {
       setDeleteDialogOpen(false)
       setItemToDelete(null)
       
-      if (window.location.pathname === `/chat/${itemToDelete.id}`) {
+      // If current chat was deleted, navigate back to home
+      if (typeof window !== 'undefined' && window.location.search.includes(`chatId=${itemToDelete.id}`)) {
         router.push("/")
       }
       toast.success(t("Chat deleted successfully"))
@@ -137,13 +166,13 @@ export function AppSidebar() {
     return Object.entries(chatHistory)
       .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
       .map(([date, chats], dateIndex) => (
-        <div key={date} className="mb-2">
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur py-1 px-2 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-            <Calendar className="h-3 w-3" />
-            {format(new Date(date), "MMMM d, yyyy")}
+        <div key={date} className="mb-3">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur py-1.5 px-2 text-xs font-medium text-muted-foreground flex items-center gap-1.5 border-b border-border/30">
+            <Calendar className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{format(new Date(date), "MMMM d, yyyy")}</span>
           </div>
           
-          <div className="space-y-1 mt-1 px-1">
+          <div className="space-y-1.5 mt-1.5 px-1">
             {chats.map((chat) => {
               const isActive = currentChatId === chat.id;
               
@@ -156,22 +185,22 @@ export function AppSidebar() {
                       : "hover:bg-secondary/40 dark:hover:bg-secondary/20"
                   }`}
                 >
-                  <div className="flex items-center justify-between px-2 py-1.5">
+                  <div className="flex items-center justify-between px-2 py-2">
                     <div 
                       className="flex-1 flex items-center gap-2 cursor-pointer overflow-hidden"
-                      onClick={() => router.push(`/chat/${chat.id}`)}
+                      onClick={() => router.push(`/?chatId=${chat.id}`)}
                     >
                       <MessageCircle className="h-4 w-4 flex-shrink-0 text-primary/70" />
-                      <span className={`text-sm truncate ${isActive ? "font-medium" : ""}`}>
+                      <span className={`text-sm truncate max-w-[150px] ${isActive ? "font-medium" : ""}`}>
                         {chat.title}
                       </span>
                     </div>
                     
-                    <div className={`flex items-center gap-0.5 ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                    <div className={`flex items-center gap-1 ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
+                        className="h-7 w-7 flex-shrink-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRenameChat(chat.id, chat.title);
@@ -184,13 +213,14 @@ export function AppSidebar() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7"
+                        className="h-7 w-7 flex-shrink-0 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                         onClick={(e) => {
                           e.stopPropagation();
                           const chatDate = new Date(chat.timestamp).toISOString().split('T')[0];
                           handleDeleteChat(chatDate, chat.id);
                         }}
                         aria-label={t("Delete Chat")}
+                        title={t("Delete Chat")}
                       >
                         <Trash2 className="h-3.5 w-3.5 text-red-500" />
                         <span className="sr-only">{t("Delete Chat")}</span>
@@ -207,14 +237,14 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2.5 overflow-hidden">
+      <Sidebar ref={sidebarRef} className="overflow-hidden">
+        <SidebarHeader data-sidebar-header className="border-b border-border/60">
+          <div className="flex items-center justify-between px-3 py-3">
+            <div className="flex items-center gap-2 overflow-hidden">
               <SidebarTrigger className="text-primary h-5 w-5 flex-shrink-0" />
-              <div className="max-w-[70%] overflow-hidden">
+              <div className="max-w-[140px] overflow-hidden">
                 <ThemeLogo 
-                  width={250} 
+                  width={isMobile ? 150 : 250} 
                   height={100} 
                   darkLogoPath="/dark-logo.png" 
                   lightLogoPath="/light-logo.png" 
@@ -222,36 +252,36 @@ export function AppSidebar() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <ThemeSwitcher isWelcomePage={false} />
+            <div className="flex items-center gap-2">
+              <ThemeSwitcher isWelcomePage={false} className="h-8 w-8" />
             </div>
           </div>
         </SidebarHeader>
         
-        <SidebarContent className="px-3 py-2">
+        <SidebarContent className="px-2.5 py-2.5">
           <Button
             variant="outline"
-            className="w-full justify-start gap-2.5 mb-4 py-2.5"
+            className="w-full justify-start gap-2 mb-3 py-2"
             onClick={handleNewChat}
             size="sm"
           >
-            <MessageSquare className="h-4 w-4 text-primary" />
-            <span className="font-medium">{t("Start New Conversation")}</span>
+            <MessageSquare className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="font-medium truncate">{t("Start New Conversation")}</span>
           </Button>
 
           {user?.isAnonymous && (
-            <div className="mb-5 p-3.5 border border-amber-200 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 rounded-md shadow-sm">
-              <div className="flex items-start gap-2.5">
-                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-                <div className="text-sm flex-1">
-                  <p className="font-medium text-amber-700 dark:text-amber-400">
+            <div className="mb-4 p-3 border border-amber-200 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 rounded-md shadow-sm">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-sm flex-1 overflow-hidden">
+                  <p className="font-medium text-amber-700 dark:text-amber-400 truncate">
                     {t("Trial Access")}
                   </p>
-                  <p className="text-xs text-amber-600 dark:text-amber-300/90 mt-1 mb-2.5">
-                    {t('trial.conversations', { count: getTrialConversationsRemaining() })}
+                  <p className="text-xs text-amber-600 dark:text-amber-300/90 mt-1 mb-2 truncate">
+                    {`${getTrialConversationsRemaining()} ${t('trial.conversations')}`}
                   </p>
-                  <Button size="sm" onClick={() => router.push("/sign-up")} className="w-full h-9 font-medium">
-                    <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                  <Button size="sm" onClick={() => router.push("/sign-up")} className="w-full h-8 font-medium text-xs">
+                    <UserPlus className="h-3 w-3 mr-1.5" />
                     {t("Create Free Account")}
                   </Button>
                 </div>
@@ -260,22 +290,29 @@ export function AppSidebar() {
           )}
 
           <div className="relative">
-            <ScrollArea className="h-[calc(100vh-260px)] pr-1">
+            <ScrollArea 
+              className="pr-1 overflow-auto" 
+              style={{ height: `${sidebarHeight}px` }}
+            >
               {renderChatHistory()}
             </ScrollArea>
           </div>
         </SidebarContent>
 
-        <SidebarFooter>
-          <div className="flex flex-col gap-2.5 p-3 border-t border-primary/10">
-            <div>
+        <SidebarFooter data-sidebar-footer className="border-t border-border/60 mt-auto">
+          <div className="flex flex-col gap-2 p-2.5">
+            <div className="flex items-center justify-between">
               <FeedbackDialog /> 
             </div>
             
             <div className="flex items-center gap-2">
               {user?.isAnonymous ? (
-                <Button variant="outline" className="flex-1 justify-start gap-2.5 py-2" onClick={() => router.push("/sign-up")}>
-                  <UserPlus className="h-4 w-4" />
+                <Button 
+                  variant="outline" 
+                  className="flex-1 justify-start gap-2 py-1.5 h-9 text-sm" 
+                  onClick={() => router.push("/sign-up")}
+                >
+                  <UserPlus className="h-3.5 w-3.5 flex-shrink-0" />
                   <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left font-medium">
                     {t("Create Account") || "Create Account"}
                   </span>
@@ -283,22 +320,22 @@ export function AppSidebar() {
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex-1 justify-start gap-2.5 py-2">
-                      <Avatar className="h-6 w-6">
+                    <Button variant="outline" className="flex-1 justify-start gap-2 py-1.5 h-9 text-sm">
+                      <Avatar className="h-5 w-5 flex-shrink-0">
                         <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} />
                         <AvatarFallback>{getUserInitials()}</AvatarFallback>
                       </Avatar>
-                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left">
+                      <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left truncate">
                         {user?.name || t("auth_signin")}
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[240px]">
+                  <DropdownMenuContent align="end" className="w-[220px]">
                     {user ? (
                       <>
                         <DropdownMenuItem className="flex-col items-start px-3 py-2">
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-sm text-muted-foreground mt-0.5">{user.email}</div>
+                          <div className="font-medium truncate w-full">{user.name}</div>
+                          <div className="text-sm text-muted-foreground mt-0.5 truncate w-full">{user.email}</div>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => router.push("/profile")} className="gap-2">
@@ -325,7 +362,7 @@ export function AppSidebar() {
       </Sidebar>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[350px] sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t("Delete Conversation")}
@@ -334,11 +371,11 @@ export function AppSidebar() {
               {t("Are you sure you want to delete this conversation? This action cannot be undone.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel className="mt-0">
               {t("Cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
               {t("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
