@@ -24,6 +24,8 @@ export default function Welcome() {
                 darkLogoPath="/dark-logo.png" 
                 lightLogoPath="/light-logo.png" 
                 className="welcome-page-logo scale-75 sm:scale-90"
+                priority={true}
+                quality={95}
               />
             </div>
           </div>

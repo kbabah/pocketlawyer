@@ -100,7 +100,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
   }, [initialQuery])
 
   return (
-    <div className="h-full flex flex-col pb-16 sm:pb-8">
+    <div className="h-full flex flex-col pb-12 sm:pb-8">
       {currentUrl ? (
         <div className="h-full flex flex-col flex-1">
           {/* Mobile-optimized header */}
