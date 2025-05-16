@@ -8,9 +8,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useLanguage } from "@/contexts/language-context"
 
 export function ThemeSwitcher({ className = "", isWelcomePage = false }) {
-  const { theme, setTheme } = useTheme()
-  const { t } = useLanguage()
   const [mounted, setMounted] = useState(false)
+  const { t } = useLanguage()
+  // Initialize theme context with a default value to prevent undefined
+  const { theme = 'system', setTheme } = useTheme() || { theme: 'system', setTheme: () => {} }
 
   // Only show the theme switcher after mounting to avoid hydration mismatch
   useEffect(() => {
@@ -21,24 +22,16 @@ export function ThemeSwitcher({ className = "", isWelcomePage = false }) {
     return <div className="h-8 w-8" />
   }
 
-  // Create custom click handler to prevent event propagation
   const handleThemeToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // Stop event propagation completely
-    e.stopPropagation();
-    e.preventDefault();
-    e.nativeEvent?.stopImmediatePropagation?.();
-    
-    // Toggle theme
-    setTheme(theme === "dark" ? "light" : "dark");
-    
-    // Return false to prevent any further event bubbling
-    return false;
+    e.preventDefault()
+    e.stopPropagation()
+    setTheme(theme === "dark" ? "light" : "dark")
+    return false
   }
-  
-  // Create separate classes for welcome page vs app sidebar
-  const baseClasses = "h-8 w-8 theme-switcher-btn";
-  const welcomeClasses = isWelcomePage ? "welcome-theme-switcher pointer-events-auto" : "";
-  const combinedClasses = `${baseClasses} ${welcomeClasses} ${className}`;
+
+  const baseClasses = "h-8 w-8 theme-switcher-btn"
+  const welcomeClasses = isWelcomePage ? "welcome-theme-switcher pointer-events-auto" : ""
+  const combinedClasses = `${baseClasses} ${welcomeClasses} ${className}`
 
   return (
     <TooltipProvider>
@@ -50,9 +43,9 @@ export function ThemeSwitcher({ className = "", isWelcomePage = false }) {
             className={combinedClasses}
             style={{ 
               position: "relative", 
-              zIndex: isWelcomePage ? 50 : 10, // Higher z-index on welcome page
-              isolation: "isolate", // Create a new stacking context
-              pointerEvents: "auto" // Ensure clicks are captured by this element only
+              zIndex: isWelcomePage ? 50 : 10,
+              isolation: "isolate",
+              pointerEvents: "auto"
             }}
             onClick={handleThemeToggle}
             onMouseDown={(e) => e.stopPropagation()}

@@ -13,7 +13,7 @@ export default function Welcome() {
   const { t } = useLanguage()
 
   return (
-    <div className="flex flex-col min-h-screen bg-pattern-light dark:bg-pattern-dark">
+    <div className="flex flex-col min-h-screen bg-pattern-light dark:bg-pattern-dark" suppressHydrationWarning>
       <header className="border-b">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">

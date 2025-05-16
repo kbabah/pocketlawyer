@@ -261,18 +261,17 @@ export function AppSidebar() {
         <SidebarContent className="px-2.5 py-2.5">
           <Button
             variant="outline"
-            className="w-full justify-start gap-2 mb-3 py-2"
+            className="w-full justify-start gap-2 mb-3 py-2.5 text-base sm:text-sm min-h-[44px] sm:min-h-0"
             onClick={handleNewChat}
-            size="sm"
           >
-            <MessageSquare className="h-4 w-4 text-primary flex-shrink-0" />
+            <MessageSquare className="h-5 w-5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
             <span className="font-medium truncate">{t("Start New Conversation")}</span>
           </Button>
 
           {user?.isAnonymous && (
             <div className="mb-4 p-3 border border-amber-200 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 rounded-md shadow-sm">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                <AlertTriangle className="h-5 w-5 sm:h-4 sm:w-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="text-sm flex-1 overflow-hidden">
                   <p className="font-medium text-amber-700 dark:text-amber-400 truncate">
                     {t("Trial Access")}
@@ -280,8 +279,12 @@ export function AppSidebar() {
                   <p className="text-xs text-amber-600 dark:text-amber-300/90 mt-1 mb-2 truncate">
                     {`${getTrialConversationsRemaining()} ${t('trial.conversations')}`}
                   </p>
-                  <Button size="sm" onClick={() => router.push("/sign-up")} className="w-full h-8 font-medium text-xs">
-                    <UserPlus className="h-3 w-3 mr-1.5" />
+                  <Button 
+                    size="sm" 
+                    onClick={() => router.push("/sign-up")} 
+                    className="w-full h-9 text-sm font-medium"
+                  >
+                    <UserPlus className="h-4 w-4 mr-1.5" />
                     {t("Create Free Account")}
                   </Button>
                 </div>
@@ -299,8 +302,8 @@ export function AppSidebar() {
           </div>
         </SidebarContent>
 
-        <SidebarFooter data-sidebar-footer className="border-t border-border/60 mt-auto">
-          <div className="flex flex-col gap-2 p-2.5">
+        <SidebarFooter data-sidebar-footer className="border-t border-border/60 mt-auto p-2.5">
+          <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <FeedbackDialog /> 
             </div>
@@ -309,19 +312,19 @@ export function AppSidebar() {
               {user?.isAnonymous ? (
                 <Button 
                   variant="outline" 
-                  className="flex-1 justify-start gap-2 py-1.5 h-9 text-sm" 
+                  className="flex-1 justify-start gap-2 py-2 h-10 sm:h-9 text-base sm:text-sm" 
                   onClick={() => router.push("/sign-up")}
                 >
-                  <UserPlus className="h-3.5 w-3.5 flex-shrink-0" />
+                  <UserPlus className="h-5 w-5 sm:h-4 sm:w-4 flex-shrink-0" />
                   <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left font-medium">
-                    {t("Create Account") || "Create Account"}
+                    {t("Create Account")}
                   </span>
                 </Button>
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex-1 justify-start gap-2 py-1.5 h-9 text-sm">
-                      <Avatar className="h-5 w-5 flex-shrink-0">
+                    <Button variant="outline" className="flex-1 justify-start gap-2 py-2 h-10 sm:h-9 text-base sm:text-sm">
+                      <Avatar className="h-6 w-6 sm:h-5 sm:w-5 flex-shrink-0">
                         <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} />
                         <AvatarFallback>{getUserInitials()}</AvatarFallback>
                       </Avatar>
@@ -331,28 +334,20 @@ export function AppSidebar() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[220px]">
-                    {user ? (
-                      <>
-                        <DropdownMenuItem className="flex-col items-start px-3 py-2">
-                          <div className="font-medium truncate w-full">{user.name}</div>
-                          <div className="text-sm text-muted-foreground mt-0.5 truncate w-full">{user.email}</div>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => router.push("/profile")} className="gap-2">
-                          <User className="h-4 w-4" />
-                          {t("Profile Settings")}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={handleSignOut} className="gap-2 text-red-500">
-                          <Trash2 className="h-3.5 w-3.5" />
-                          {t("Sign Out")}
-                        </DropdownMenuItem>
-                      </>
-                    ) : (
-                      <DropdownMenuItem onSelect={() => router.push("/sign-in")}>
-                        {t("auth_signin")}
-                      </DropdownMenuItem>
-                    )}
+                    <DropdownMenuItem className="flex-col items-start px-3 py-2">
+                      <div className="font-medium truncate w-full">{user.name}</div>
+                      <div className="text-sm text-muted-foreground mt-0.5 truncate w-full">{user.email}</div>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => router.push("/profile")} className="gap-2">
+                      <User className="h-4 w-4" />
+                      {t("Profile Settings")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={handleSignOut} className="gap-2 text-red-500">
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {t("Sign Out")}
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}

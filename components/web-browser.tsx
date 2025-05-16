@@ -103,97 +103,132 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
     <div className="h-full flex flex-col">
       {currentUrl ? (
         <div className="h-full flex flex-col flex-1">
-          <div className="flex items-center gap-2 p-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBack}
-              disabled={historyIndex < 0}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleForward}
-              disabled={historyIndex >= history.length - 1}
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            <div className="flex-1 truncate text-sm">{currentUrl}</div>
+          {/* Mobile-optimized header */}
+          <div className="sticky top-0 z-10 flex items-center gap-2 p-2 sm:p-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleBack}
+                disabled={historyIndex < 0}
+                className="h-9 w-9 sm:h-8 sm:w-8"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleForward}
+                disabled={historyIndex >= history.length - 1}
+                className="h-9 w-9 sm:h-8 sm:w-8"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 truncate text-sm">
+              <span className="hidden sm:inline text-muted-foreground">Viewing: </span>
+              {currentUrl}
+            </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleCloseWebpage}
+              className="h-9 w-9 sm:h-8 sm:w-8"
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
-          <iframe 
-            src={currentUrl} 
-            className="flex-1 w-full border-0 min-h-[85vh]"
-            sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-            referrerPolicy="no-referrer"
-          />
+          
+          {/* Responsive iframe container */}
+          <div className="flex-1 w-full relative">
+            <iframe 
+              src={currentUrl} 
+              className="absolute inset-0 w-full h-full border-0"
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+              referrerPolicy="no-referrer"
+            />
+          </div>
         </div>
       ) : (
         <>
-          <form onSubmit={handleSearch} className="flex-none px-4 pt-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* Mobile-optimized search form */}
+          <form onSubmit={handleSearch} className="sticky top-0 z-10 px-3 sm:px-4 py-3 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+            <div className="relative max-w-2xl mx-auto">
+              <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="search"
-                placeholder={t("Search...") }
-                className="w-full pl-9 pr-4 py-2 rounded-md border border-input bg-background"
+                placeholder={t("Search legal resources...")}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-background text-base sm:text-sm min-h-[44px] sm:min-h-[36px]"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </div>
           </form>
 
-          <ScrollArea className="flex-1 px-4 min-h-[90vh]">
-            {error ? (
-              <div className="text-center text-red-500 p-4">{error}</div>
-            ) : loading ? (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <Card key={i}>
-                    <CardContent className="p-4">
-                      <Skeleton className="h-4 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-1/2 mt-2" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : results.length === 0 ? (
-              <div className="text-center text-muted-foreground p-4">
-                {t("No results found.")}
-              </div>
-            ) : (
-              <div className="space-y-4 py-2">
-                {results.map((result, index) => (
-                  <Card key={index}>
-                    <CardContent className="p-4">
-                      <a
-                        href={result.link}
-                        onClick={(e) => handleClick(e, result.link)}
-                        className="inline-flex items-center gap-2 text-primary hover:underline"
-                      >
-                        <h3 className="font-medium">{result.title}</h3>
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {result.snippet}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground/60">
-                        {result.link}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+          {/* Responsive results area */}
+          <ScrollArea className="flex-1 px-3 sm:px-4">
+            <div className="max-w-2xl mx-auto py-4">
+              {error ? (
+                <div className="text-center p-4 rounded-lg border border-destructive/50 bg-destructive/10">
+                  <p className="text-destructive">{error}</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSearch} 
+                    className="mt-2"
+                  >
+                    {t("Try Again")}
+                  </Button>
+                </div>
+              ) : loading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Card key={i} className="overflow-hidden">
+                      <CardContent className="p-4">
+                        <Skeleton className="h-5 w-3/4 mb-2" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3 mt-2" />
+                        <Skeleton className="h-3 w-1/3 mt-3" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : results.length === 0 ? (
+                query ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-2">{t("No results found")}</p>
+                    <p className="text-sm text-muted-foreground/80">{t("Try different keywords or check your spelling")}</p>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Search className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
+                    <p className="text-muted-foreground">{t("Enter your search query above")}</p>
+                  </div>
+                )
+              ) : (
+                <div className="space-y-4">
+                  {results.map((result, index) => (
+                    <Card key={index} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <a
+                          href={result.link}
+                          onClick={(e) => handleClick(e, result.link)}
+                          className="inline-flex items-center gap-2 group"
+                        >
+                          <h3 className="font-medium text-primary group-hover:underline">{result.title}</h3>
+                          <ExternalLink className="h-4 w-4 text-primary/70" />
+                        </a>
+                        <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                          {result.snippet}
+                        </p>
+                        <p className="mt-2 text-xs text-muted-foreground/60 truncate">
+                          {result.link}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           </ScrollArea>
         </>
       )}
