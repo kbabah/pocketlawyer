@@ -983,7 +983,14 @@ export default function ChatInterface() {
   }, [messages, chatId, user?.id]);
 
   return (
-    <div className="relative flex h-[calc(100vh-4rem)] flex-col items-center justify-between">
+    <div 
+      className="relative flex h-[calc(100vh-4rem)] flex-col items-center justify-between"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      aria-live="polite"
+      role="region"
+      aria-label={t("Chat conversation")}
+    >
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
           {/* Mobile-optimized header with centered tabs */}
