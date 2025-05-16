@@ -986,10 +986,10 @@ export default function ChatInterface() {
     <div className="relative flex h-[calc(100vh-4rem)] flex-col items-center justify-between">
       <TooltipProvider>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
-          {/* Mobile-optimized header */}
+          {/* Mobile-optimized header with centered tabs */}
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center justify-between px-2 sm:px-4 py-2 border-b">
-              <TabsList className="w-full md:w-auto grid grid-cols-3 h-auto p-1 gap-1">
+            <div className="flex items-center justify-center px-2 sm:px-4 py-2 border-b">
+              <TabsList className="w-full max-w-md mx-auto grid grid-cols-3 h-auto p-1 gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <TabsTrigger 
@@ -1090,9 +1090,9 @@ export default function ChatInterface() {
               )}
             </div>
 
-            {/* Mobile-optimized input area */}
-            <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-3 sm:p-4">
-              <form onSubmit={handleSubmit} className="flex gap-2 max-w-5xl mx-auto">
+            {/* Updated input area - positioned at base of page, full width */}
+            <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-3 sm:p-4 w-full">
+              <form onSubmit={handleSubmit} className="flex gap-2 w-full">
                 <Input
                   ref={inputRef}
                   value={input}
@@ -1103,14 +1103,14 @@ export default function ChatInterface() {
                 <Button 
                   type="submit" 
                   disabled={isSubmitting || !input.trim()} 
-                  className="h-11 w-11 sm:h-9 sm:w-9 p-0"
+                  className="h-11 w-11 sm:h-9 sm:w-9 p-0 flex-shrink-0"
                 >
                   <Send className="h-5 w-5 sm:h-4 sm:w-4" />
                 </Button>
               </form>
 
               {user?.isAnonymous && !isTrialLimitReached() && (
-                <div className="text-xs text-center text-muted-foreground mt-2">
+                <div className="text-xs text-muted-foreground mt-2">
                   {getTrialConversationsRemaining()} {t("trial conversations remaining")}. 
                   <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
                     {t("Sign up for unlimited access")}
