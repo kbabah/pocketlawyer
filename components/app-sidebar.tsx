@@ -258,10 +258,10 @@ export function AppSidebar() {
           </div>
         </SidebarHeader>
         
-        <SidebarContent className="px-2.5 py-2.5">
+        <SidebarContent className="px-2 py-2.5">
           <Button
             variant="outline"
-            className="w-full justify-start gap-2 mb-3 py-2.5 text-base sm:text-sm min-h-[44px] sm:min-h-0"
+            className="w-full justify-start gap-2 mb-3 py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]"
             onClick={handleNewChat}
           >
             <MessageSquare className="h-5 w-5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
@@ -282,7 +282,7 @@ export function AppSidebar() {
                   <Button 
                     size="sm" 
                     onClick={() => router.push("/sign-up")} 
-                    className="w-full h-9 text-sm font-medium"
+                    className="w-full h-10 sm:h-9 text-sm font-medium"
                   >
                     <UserPlus className="h-4 w-4 mr-1.5" />
                     {t("Create Free Account")}
@@ -312,7 +312,7 @@ export function AppSidebar() {
               {user?.isAnonymous ? (
                 <Button 
                   variant="outline" 
-                  className="flex-1 justify-start gap-2 py-2 h-10 sm:h-9 text-base sm:text-sm" 
+                  className="flex-1 justify-start gap-2 py-2.5 h-11 sm:h-9 text-base sm:text-sm" 
                   onClick={() => router.push("/sign-up")}
                 >
                   <UserPlus className="h-5 w-5 sm:h-4 sm:w-4 flex-shrink-0" />
@@ -323,7 +323,7 @@ export function AppSidebar() {
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex-1 justify-start gap-2 py-2 h-10 sm:h-9 text-base sm:text-sm">
+                    <Button variant="outline" className="flex-1 justify-start gap-2 py-2.5 h-11 sm:h-9 text-base sm:text-sm">
                       <Avatar className="h-6 w-6 sm:h-5 sm:w-5 flex-shrink-0">
                         <AvatarImage src={user?.profileImage || ""} alt={user?.name || "User"} />
                         <AvatarFallback>{getUserInitials()}</AvatarFallback>
@@ -339,12 +339,12 @@ export function AppSidebar() {
                       <div className="text-sm text-muted-foreground mt-0.5 truncate w-full">{user.email}</div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={() => router.push("/profile")} className="gap-2">
+                    <DropdownMenuItem onSelect={() => router.push("/profile")} className="gap-2 py-2.5">
                       <User className="h-4 w-4" />
                       {t("Profile Settings")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={handleSignOut} className="gap-2 text-red-500">
+                    <DropdownMenuItem onSelect={handleSignOut} className="gap-2 text-red-500 py-2.5">
                       <Trash2 className="h-3.5 w-3.5" />
                       {t("Sign Out")}
                     </DropdownMenuItem>
@@ -367,10 +367,10 @@ export function AppSidebar() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
-            <AlertDialogCancel className="mt-0">
+            <AlertDialogCancel className="mt-0 h-11 sm:h-10">
               {t("Cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700 h-11 sm:h-10">
               {t("Delete")}
             </AlertDialogAction>
           </AlertDialogFooter>

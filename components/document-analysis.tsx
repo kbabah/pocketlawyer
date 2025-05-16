@@ -129,7 +129,7 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
   ];
 
   return (
-    <div className="space-y-4 px-2 sm:px-4">
+    <div className="space-y-4 px-2 sm:px-4 pb-16 sm:pb-8">
       <h3 className="text-xl font-semibold mb-2">{t("document.analyze") || "Document Analysis"}</h3>
       
       <div className="border rounded p-3 sm:p-4">
@@ -158,7 +158,7 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
               type="file" 
               accept="application/pdf" 
               onChange={handleFileChange} 
-              className="mb-2"
+              className="mb-2 h-11 sm:h-9 text-sm"
               disabled={isLoading}
               aria-describedby="file-upload-description"
             />
@@ -172,7 +172,7 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
                id="ocr-language"
                value={ocrLanguage}
                onChange={(e) => setOcrLanguage(e.target.value)}
-               className="w-full px-3 py-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-700"
+               className="w-full px-3 py-2.5 sm:py-2 text-sm border rounded dark:bg-slate-800 dark:border-slate-700 h-11 sm:h-9"
                disabled={isLoading}
              >
                {languageOptions.map(option => (
@@ -193,7 +193,7 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
           <Button 
             onClick={handleExtract} 
             disabled={!file || isLoading}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto h-11 sm:h-10"
             variant="default"
           >
             {isExtracting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -244,11 +244,12 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
                 onChange={e => setQuestion(e.target.value)}
                 placeholder={isMobile ? "Enter your question..." : t("document.question.placeholder") || "E.g., What are the key legal points in this document?"}
                 disabled={isLoading}
+                className="h-11 sm:h-9 text-sm"
               />
               <Button 
                 onClick={handleAnalyze} 
                 disabled={!question || isLoading}
-                className="w-full"
+                className="w-full h-11 sm:h-10"
               >
                 {isAnalyzing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isAnalyzing ? t("document.analyzing") || "Analyzing..." : t("document.analyze") || "Analyze"}

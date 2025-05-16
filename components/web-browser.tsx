@@ -100,7 +100,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
   }, [initialQuery])
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col pb-12 sm:pb-8">
       {currentUrl ? (
         <div className="h-full flex flex-col flex-1">
           {/* Mobile-optimized header */}
@@ -111,7 +111,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
                 size="icon"
                 onClick={handleBack}
                 disabled={historyIndex < 0}
-                className="h-9 w-9 sm:h-8 sm:w-8"
+                className="h-10 w-10 sm:h-8 sm:w-8"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -120,7 +120,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
                 size="icon"
                 onClick={handleForward}
                 disabled={historyIndex >= history.length - 1}
-                className="h-9 w-9 sm:h-8 sm:w-8"
+                className="h-10 w-10 sm:h-8 sm:w-8"
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
@@ -133,7 +133,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
               variant="ghost"
               size="icon"
               onClick={handleCloseWebpage}
-              className="h-9 w-9 sm:h-8 sm:w-8"
+              className="h-10 w-10 sm:h-8 sm:w-8"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -146,6 +146,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
               className="absolute inset-0 w-full h-full border-0"
               sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
               referrerPolicy="no-referrer"
+              title="Web content"
             />
           </div>
         </div>
@@ -158,10 +159,17 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
               <input
                 type="search"
                 placeholder={t("Search legal resources...")}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-input bg-background text-base sm:text-sm min-h-[44px] sm:min-h-[36px]"
+                className="w-full pl-10 pr-4 py-3 sm:py-2 rounded-lg border border-input bg-background text-base sm:text-sm min-h-[46px] sm:min-h-[36px]"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
+              <Button 
+                type="submit" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-10 sm:h-8 px-3 sm:px-2 text-sm"
+                variant="secondary"
+              >
+                {t("Search")}
+              </Button>
             </div>
           </form>
 
@@ -174,7 +182,7 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
                   <Button 
                     variant="outline" 
                     onClick={handleSearch} 
-                    className="mt-2"
+                    className="mt-2 h-10 sm:h-9"
                   >
                     {t("Try Again")}
                   </Button>
