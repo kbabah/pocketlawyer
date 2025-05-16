@@ -17,27 +17,27 @@ export default function Welcome() {
       <header className="border-b">
         <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <div className="min-w-[100px] max-w-[120px] sm:max-w-none"> {/* Prevent layout shift and control mobile size */}
+            <div className="min-w-[90px] max-w-[100px] sm:min-w-[100px] sm:max-w-none"> {/* Reduced width for mobile */}
               <ThemeLogo 
-                width={250} 
-                height={100} 
+                width={200} 
+                height={80} 
                 darkLogoPath="/dark-logo.png" 
                 lightLogoPath="/light-logo.png" 
-                className="welcome-page-logo scale-90 sm:scale-100"
+                className="welcome-page-logo scale-75 sm:scale-90"
               />
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4">
-            {/* Mobile-optimized navigation - Hide text on mobile */}
-            <Link href="/blog" className="text-sm font-medium hover:text-primary flex items-center gap-1.5 p-2 sm:p-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Mobile-optimized navigation with increased spacing */}
+            <Link href="/blog" className="text-sm font-medium hover:text-primary flex items-center gap-1.5 px-2.5 py-1.5 sm:p-0">
               <BookOpen className="h-4 w-4" />
               <span className="hidden sm:inline">{t("Blog")}</span>
             </Link>
-            <Link href="/examples" className="text-sm font-medium hover:text-primary flex items-center gap-1.5 p-2 sm:p-0">
+            <Link href="/examples" className="text-sm font-medium hover:text-primary flex items-center gap-1.5 px-2.5 py-1.5 sm:p-0">
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">{t("Examples")}</span>
             </Link>
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <ThemeSwitcher isWelcomePage={true} className="welcome-page-theme-switcher" />
               <LanguageSwitcher />
             </div>
