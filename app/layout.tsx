@@ -49,11 +49,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Fallback favicon for browsers that don't support media queries */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
         <link rel="icon" href="/favicon-dark.ico" />
       </head>
-      <body className={`${inter.className} flex min-h-screen flex-col antialiased`} suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <body 
+        className={`${inter.className} flex min-h-screen flex-col antialiased`}
+        suppressHydrationWarning
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          storageKey="pocket-lawyer-theme"
+        >
           <LanguageProvider>
             <AuthProvider>
               <SidebarProvider>

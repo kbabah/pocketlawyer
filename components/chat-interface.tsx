@@ -983,232 +983,154 @@ export default function ChatInterface() {
   }, [messages, chatId, user?.id]);
 
   return (
-    <div className="flex flex-col min-h-full" onKeyDown={handleKeyDown} tabIndex={0}>
+    <div className="relative flex h-[calc(100vh-4rem)] flex-col items-center justify-between">
       <TooltipProvider>
-        <Tabs defaultValue="chat" className="flex flex-col flex-1" value={activeTab} onValueChange={setActiveTab}>
-          <div className="sticky top-0 z-10 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="px-2 sm:px-4 py-2 border-b border-primary/10 w-full flex justify-center">
-              <div className="w-full max-w-xl">
-                <TabsList className="grid w-full grid-cols-3 bg-primary/5">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger value="chat" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        {t("Legal Chat")}
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t("Chat with our AI legal assistant")}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger value="web" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                        <Search className="mr-2 h-4 w-4" />
-                        {t("Research")}
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t("Search legal resources and databases")}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TabsTrigger value="document" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                        <FileText className="mr-2 h-4 w-4" />
-                        {t("Documents")}
-                      </TabsTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t("Analyze legal documents")}
-                    </TooltipContent>
-                  </Tooltip>
-                </TabsList>
-              </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
+          {/* Mobile-optimized header */}
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-2 border-b">
+              <TabsList className="w-full md:w-auto grid grid-cols-3 h-auto p-1 gap-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger 
+                      value="chat" 
+                      className="py-2.5 px-3 min-h-[44px] sm:min-h-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      <MessageCircle className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{t("Legal Chat")}</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("Chat with our AI legal assistant")}</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger 
+                      value="web" 
+                      className="py-2.5 px-3 min-h-[44px] sm:min-h-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      <Search className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{t("Web Search")}</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("Search legal resources online")}</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <TabsTrigger 
+                      value="document" 
+                      className="py-2.5 px-3 min-h-[44px] sm:min-h-0 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                    >
+                      <FileText className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">{t("Documents")}</span>
+                    </TabsTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>{t("Analyze legal documents")}</TooltipContent>
+                </Tooltip>
+              </TabsList>
             </div>
           </div>
-          
-          {/* Insert SearchPanel component here */}
-          {activeTab === "chat" && <SearchPanel />}
 
+          {/* Chat content */}
           <TabsContent value="chat" className="flex-1 flex flex-col px-2 sm:px-4 md:px-0">
             {showMessageSearch && (
-              <div className="mx-auto w-full max-w-xl sticky top-16 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 px-1 border-b border-border/40 shadow-sm">
-                <div className="flex items-center gap-2 w-full">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      ref={messageSearchInputRef}
-                      value={messageSearchQuery}
-                      onChange={(e) => setMessageSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          handleMessageSearch()
-                        }
-                      }}
-                      placeholder={t("Search conversation history...")}
-                      className="pl-8 pr-24"
-                      aria-label={t("Search in conversation history")}
-                    />
-                    {searchResults.length > 0 && (
-                      <span className="absolute right-16 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground bg-background/90 px-2 py-0.5 rounded-md">
-                        {currentSearchResultIndex + 1} / {searchResults.length}
-                      </span>
-                    )}
-                    <Button 
-                      size="sm" 
-                      variant="ghost" 
-                      onClick={handleMessageSearch}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-7 px-2"
-                      aria-label={t("Find")}
-                    >
-                      {t("Find")}
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center border-l pl-2 border-border/40">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => navigateSearchResults('previous')}
-                          disabled={searchResults.length === 0}
-                          className="h-8 w-8"
-                        >
-                          <ChevronUp className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        Previous result (Shift+F3)
-                      </TooltipContent>
-                    </Tooltip>
-                    
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => navigateSearchResults('next')}
-                          disabled={searchResults.length === 0}
-                          className="h-8 w-8"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        Next result (F3)
-                      </TooltipContent>
-                    </Tooltip>
-                    
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setShowMessageSearch(false)
-                            setHighlightTerms([])
-                          }}
-                          className="h-8 w-8"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        Close search (Esc)
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+              <div className="sticky top-[57px] z-10 flex items-center gap-2 p-2 bg-background/95 backdrop-blur border-b">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    ref={messageSearchInputRef}
+                    className="pl-8 pr-16"
+                    placeholder={t("Search messages...")}
+                    value={messageSearchQuery}
+                    onChange={(e) => setMessageSearchQuery(e.target.value)}
+                  />
+                  {searchResults.length > 0 && (
+                    <span className="absolute right-16 top-1/2 -translate-y-1/2 text-xs text-muted-foreground bg-background/90 px-2 py-0.5 rounded-md">
+                      {currentSearchResultIndex + 1} / {searchResults.length}
+                    </span>
+                  )}
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={handleMessageSearch}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2"
+                  >
+                    {t("Find")}
+                  </Button>
                 </div>
               </div>
             )}
-            
-            <div className="mx-auto w-full max-w-xl flex-1 flex flex-col chat-container">
-              <ScrollArea className="flex-1 pr-2 sm:pr-4">
-                {/* Use role="log" for chat history container */}
-                <div role="log" className="py-4 space-y-4 sm:space-y-6">
-                  {user?.isAnonymous && isTrialLimitReached() && <TrialLimitAlert />}
-                  
-                  {renderMessages()}
-                  
-                  {/* Add a skeleton loader for initial chat loading */}
-                  {isLoading && messages.length === 0 && (
-                    <div className="space-y-4 pt-4">
-                      <div className="flex items-start gap-3 max-w-xl w-full">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-2 flex-1">
-                          <Skeleton className="h-4 w-3/4" />
-                          <Skeleton className="h-4 w-1/2" />
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 max-w-xl w-full flex-row-reverse">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-2 flex-1 items-end flex flex-col">
-                          <Skeleton className="h-4 w-3/4" />
-                        </div>
-                      </div>
+
+            {/* Messages container */}
+            <div className="flex-1 overflow-y-auto pb-[120px] sm:pb-[88px]">
+              {messages.length === 0 && !isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full text-center px-4 pt-10">
+                  <WelcomeTutorial />
+                </div>
+              ) : (
+                <div className="space-y-4 py-4">
+                  {messages.map((message, index) => (
+                    <ChatMessage
+                      key={message.id}
+                      message={message}
+                      isMobile={isMobile}
+                      t={t}
+                      highlight={index === focusedMessageIndex}
+                      searchTerms={highlightTerms}
+                    />
+                  ))}
+                  {isLoading && (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
-              </ScrollArea>
+              )}
+            </div>
 
-              <div className="py-2 sm:py-4 flex flex-col gap-2 input-area">
-                <form onSubmit={handleSubmit} className="flex items-center gap-2" aria-label="Message form">
-                  <Input
-                    placeholder={isMobile ? "Ask something..." : "Type your message..."}
-                    value={input}
-                    onChange={handleInputChange}
-                    disabled={isLoading || (user?.isAnonymous && isTrialLimitReached())}
-                    className="flex-1 dark:bg-slate-900 dark:border-slate-700"
-                    aria-label={t("Send message")}
-                    aria-required="true"
-                  />
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button 
-                        type="submit" 
-                        disabled={isLoading || (user?.isAnonymous && isTrialLimitReached())} 
-                        size={isMobile ? "sm" : "default"}
-                        aria-label={t("Send message")}
-                        aria-busy={isLoading || isSubmitting}
-                      >
-                        {isLoading ?
-                          (isMobile ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Sending...")) :
-                          (isMobile ? <Send className="h-4 w-4" /> : t("Send"))}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {user?.isAnonymous && isTrialLimitReached() ? (
-                        <p>Trial limit reached. Please sign up.</p>
-                      ) : (
-                        <p>Send your message</p>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
-                </form>
-                {user?.isAnonymous && !isTrialLimitReached() && (
-                  <div className="text-xs text-center text-muted-foreground dark:text-slate-400">
-                    {getTrialConversationsRemaining()} trial conversations remaining. Sign up for unlimited access.
-                  </div>
-                )}
-              </div>
+            {/* Mobile-optimized input area */}
+            <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-3 sm:p-4">
+              <form onSubmit={handleSubmit} className="flex gap-2 max-w-5xl mx-auto">
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder={t("Type your legal question...")}
+                  className="flex-1 min-h-[44px] sm:min-h-[36px] text-base sm:text-sm"
+                />
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !input.trim()} 
+                  className="h-11 w-11 sm:h-9 sm:w-9 p-0"
+                >
+                  <Send className="h-5 w-5 sm:h-4 sm:w-4" />
+                </Button>
+              </form>
+
+              {user?.isAnonymous && !isTrialLimitReached() && (
+                <div className="text-xs text-center text-muted-foreground mt-2">
+                  {getTrialConversationsRemaining()} {t("trial conversations remaining")}. 
+                  <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
+                    {t("Sign up for unlimited access")}
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
 
+          {/* Web search tab */}
           <TabsContent value="web" className="flex-1">
             <WebBrowser query={searchQuery} />
           </TabsContent>
 
+          {/* Document analysis tab */}
           <TabsContent value="document" className="flex-1">
             <DocumentAnalysis onAnalysisComplete={handleDocumentAnalysis} />
           </TabsContent>
         </Tabs>
       </TooltipProvider>
-      <div className="sr-only" aria-live="polite" aria-atomic="true">
-        {announcement}
-      </div>
     </div>
-  )
+  );
 }

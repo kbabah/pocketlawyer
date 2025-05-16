@@ -44,6 +44,101 @@
     --sidebar-ring: 22 96% 48%; /* Updated to #ec6307 */
   }
 
+  /* Optimize for mobile */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    height: -webkit-fill-available;
+  }
+
+  body {
+    height: 100vh;
+    height: -webkit-fill-available;
+    overscroll-behavior-y: none;
+  }
+
+  /* Improve touch targets */
+  @media (max-width: 768px) {
+    button, 
+    [role="button"],
+    input,
+    select,
+    a {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* Adjust spacing for mobile */
+    .mobile-spacing {
+      padding: 1rem;
+    }
+
+    /* Mobile-optimized scrolling */
+    .mobile-scroll {
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .mobile-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Prevent text zoom on orientation change */
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Mobile-specific animations */
+  .mobile-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* Better focus states for touch */
+  @media (hover: none) {
+    :focus {
+      outline: none !important;
+    }
+    
+    :active {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
+
+  /* Mobile navigation improvements */
+  .mobile-nav-item {
+    @apply py-3 px-4;
+  }
+
+  /* Safe area insets support */
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Mobile search optimizations */
+  .mobile-search-active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    background: var(--background);
+  }
+
   .dark {
     --background: 20 14.3% 4.1%;
     --foreground: 60 9.1% 97.8%;
