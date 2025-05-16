@@ -29,7 +29,7 @@ export function ThemeSwitcher({ className = "", isWelcomePage = false }) {
     return false
   }
 
-  const baseClasses = "h-8 w-8 theme-switcher-btn"
+  const baseClasses = "h-9 w-9 sm:h-8 sm:w-8 theme-switcher-btn"
   const welcomeClasses = isWelcomePage ? "welcome-theme-switcher pointer-events-auto" : ""
   const combinedClasses = `${baseClasses} ${welcomeClasses} ${className}`
 
@@ -50,6 +50,8 @@ export function ThemeSwitcher({ className = "", isWelcomePage = false }) {
             onClick={handleThemeToggle}
             onMouseDown={(e) => e.stopPropagation()}
             onMouseUp={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             aria-label={theme === "dark" ? t("theme.switch.light") || "Switch to light theme" : t("theme.switch.dark") || "Switch to dark theme"}
             data-theme-switcher
             data-welcome-page={isWelcomePage ? "true" : "false"}
