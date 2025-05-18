@@ -68,6 +68,7 @@ export default function Home() {
           </div>
         </header>
         <div className="flex-1 overflow-auto">
+          <h1 className="sr-only">Pocket Lawyer - Your AI Legal Assistant</h1>
           <ChatInterface />
         </div>
       </SidebarInset>

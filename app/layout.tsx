@@ -9,10 +9,17 @@ import { Metadata } from "next"
 
 const inter = Inter({ subsets: ["latin"] })
 
+// Base URL for canonical URLs
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pocket-lawyer.com'; 
+
 export const metadata: Metadata = {
   title: "PocketLawyer - AI Legal Assistant",
   description: "Get answers to your legal questions with AI assistance",
   generator: 'v0.dev',
+  metadataBase: new URL(baseUrl),
+  alternates: {
+    canonical: '/',
+  },
   icons: {
     icon: [
       {
@@ -51,6 +58,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
         <link rel="icon" href="/favicon-dark.ico" />
+        {/* The canonical URL will be set by Next.js based on the metadata */}
       </head>
       <body 
         className={`${inter.className} flex min-h-screen flex-col antialiased`}
