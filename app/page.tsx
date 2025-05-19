@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -12,15 +11,15 @@ import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { ThemeLogo } from "@/components/theme-logo" // Import the ThemeLogo component
 import Link from "next/link"
+import { ExampleAIInteractions } from "@/components/example-ai-interactions"
 
 export default function Home() {
   const { user, loading } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
-
+  
   // No longer redirect to welcome page if not logged in
   // Instead, we'll handle anonymous users with the trial feature
-
   if (loading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-pattern-light dark:bg-pattern-dark">
@@ -31,7 +30,10 @@ export default function Home() {
       </div>
     )
   }
-
+  
+  // Check if user is not logged in to show example interactions
+  const showExamples = !user || user.isAnonymous
+  
   return (
     <div className="flex min-h-[100dvh] bg-pattern-light dark:bg-pattern-dark">
       <AppSidebar />
@@ -68,6 +70,17 @@ export default function Home() {
           </div>
         </header>
         <div className="flex-1 overflow-auto">
+          {showExamples && (
+            <div className="w-full max-w-5xl mx-auto px-4 py-8">
+              <h2 className="text-2xl font-bold text-center mb-6">
+                {t("Your AI Legal Assistant for Cameroonian Law")}
+              </h2>
+              <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
+                {t("Get instant answers to your legal questions, browse relevant resources, and access personalized legal guidance powered by AI.")}
+              </p>
+              <ExampleAIInteractions />
+            </div>
+          )}
           <ChatInterface />
         </div>
       </SidebarInset>
