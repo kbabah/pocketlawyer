@@ -1,6 +1,6 @@
 import { MetadataRoute } from 'next';
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pocket-lawyer.com';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pocketlawyer.esq';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   // List all the static pages
