@@ -32,7 +32,7 @@ interface OnboardingProgress {
 
 export function PostRegistrationOnboarding() {
   const { t } = useLanguage()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   
   const [currentStep, setCurrentStep] = useState(0)
@@ -41,41 +41,80 @@ export function PostRegistrationOnboarding() {
   const [showOnboarding, setShowOnboarding] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [debug, setDebug] = useState<any>(null)
 
   // Load onboarding progress from Firestore
   useEffect(() => {
+    if (authLoading) {
+      console.log("Auth is still loading...")
+      return
+    }
+
     if (!user?.id) {
+      console.log("No user ID found, redirecting to sign-in...")
       router.push("/sign-in")
       return
     }
 
     const loadProgress = async () => {
       try {
+        console.log("Loading onboarding progress for user:", user.id)
         setIsLoading(true)
         setError(null)
-        const progressDoc = await getDoc(doc(db, "users", user.id, "onboarding", "progress"))
+
+        // First verify the user document exists
+        const userRef = doc(db, "users", user.id)
+        const userDoc = await getDoc(userRef)
+
+        if (!userDoc.exists()) {
+          console.log("Creating new user document...")
+          await setDoc(userRef, {
+            email: user.email,
+            name: user.name,
+            createdAt: new Date(),
+            lastActive: new Date(),
+            onboardingStarted: true
+          })
+        }
+
+        // Then get onboarding progress
+        const progressRef = doc(db, "users", user.id, "onboarding", "progress")
+        const progressDoc = await getDoc(progressRef)
+        
         if (progressDoc.exists()) {
           const data = progressDoc.data() as OnboardingProgress
+          console.log("Loaded onboarding progress:", data)
           setCompleted(data.completed || {})
           setSkipped(data.skipped || {})
           setCurrentStep(data.lastStep || 0)
+          setDebug({ progressData: data })
           
-          // If onboarding was already finished, redirect to home
           if (data.finishedAt) {
+            console.log("Onboarding already completed, redirecting...")
             router.push("/")
             return
           }
+        } else {
+          console.log("No existing onboarding progress found")
+          // Initialize empty progress
+          await setDoc(progressRef, {
+            completed: {},
+            skipped: {},
+            lastStep: 0,
+            startedAt: Date.now()
+          })
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error loading onboarding progress:", err)
-        setError("Failed to load your progress. Please try refreshing the page.")
+        setError(`Failed to load progress: ${err.message}. Please try refreshing the page.`)
+        setDebug({ error: err })
       } finally {
         setIsLoading(false)
       }
     }
     
     loadProgress()
-  }, [user?.id, router])
+  }, [user?.id, authLoading, router])
 
   // Define the onboarding steps
   const onboardingSteps: OnboardingStep[] = [

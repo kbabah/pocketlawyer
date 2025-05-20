@@ -335,8 +335,8 @@ export function AppSidebar() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[220px]">
                     <DropdownMenuItem className="flex-col items-start px-3 py-2">
-                      <div className="font-medium truncate w-full">{user.name}</div>
-                      <div className="text-sm text-muted-foreground mt-0.5 truncate w-full">{user.email}</div>
+                      <div className="font-medium truncate w-full">{user?.name || t("Guest User")}</div>
+                      <div className="text-sm text-muted-foreground mt-0.5 truncate w-full">{user?.email || t("No email")}</div>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onSelect={() => router.push("/profile")} className="gap-2 py-2.5">
