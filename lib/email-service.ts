@@ -3,9 +3,9 @@ if (typeof window !== 'undefined') {
   throw new Error('email-service.ts should only be imported from server-side code');
 }
 
-import { ServerClient } from 'postmark';
+import { ServerClient, Message, Attachment } from 'postmark';
 import crypto from 'crypto';
-import { db } from './firebase-admin';
+import { adminDb } from './firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
 // Initialize Postmark client
@@ -121,7 +121,7 @@ async function storeInitialTrackingData(
   campaignId?: string
 ): Promise<void> {
   try {
-    await db.collection('emailTracking').doc(emailId).set({
+    await adminDb.collection('emailTracking').doc(emailId).set({
       emailId,
       recipient,
       subject,
@@ -162,7 +162,11 @@ export async function sendEmail({
         data,
         attachments: attachments.map(att => ({
           filename: att.filename,
-          content: att.content.toString('base64'),
+          content: Buffer.isBuffer(att.content) 
+            ? att.content.toString('base64')
+            : typeof att.content === 'string'
+              ? Buffer.from(att.content).toString('base64')
+              : Buffer.from(String(att.content)).toString('base64'),
           contentType: att.contentType
         })),
         trackingEnabled,
@@ -172,7 +176,7 @@ export async function sendEmail({
         createdAt: Timestamp.now()
       };
       
-      const docRef = await db.collection('scheduledEmails').add(queuedEmail);
+      const docRef = await adminDb.collection('scheduledEmails').add(queuedEmail);
       return { 
         success: true, 
         scheduled: true,
@@ -199,18 +203,19 @@ export async function sendEmail({
     }
 
     // Format attachments for Postmark
-    const postmarkAttachments = attachments.map(att => ({
+    const postmarkAttachments: Attachment[] = attachments.map(att => ({
       Name: att.filename,
       Content: Buffer.isBuffer(att.content) 
         ? att.content.toString('base64') 
         : typeof att.content === 'string' 
           ? Buffer.from(att.content).toString('base64') 
-          : att.content.toString('base64'),
-      ContentType: att.contentType
+          : Buffer.from(String(att.content)).toString('base64'),
+      ContentType: att.contentType,
+      ContentID: crypto.randomBytes(16).toString('hex')
     }));
 
     // Set up email to send
-    const messageData = {
+    const messageData: Message = {
       From: process.env.EMAIL_FROM || 'notifications@pocketlawyer.cm',
       To: Array.isArray(to) ? to.join(',') : to,
       Subject: subject,
@@ -546,7 +551,7 @@ function getEmailTemplate(template: EmailTemplate, data?: Record<string, any>): 
       return `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="padding: 20px;">
-            <h1>${subject}</h1>
+            <h1>${data?.subject || 'Notification'}</h1>
             <p>No template content available.</p>
           </div>
           ${getEmailFooter()}
@@ -646,7 +651,7 @@ export async function sendBulkEmails({
         totalCount: recipients.length
       };
       
-      await db.collection('emailCampaigns').doc(campaignId || generateEmailId()).set(campaign);
+      await adminDb.collection('emailCampaigns').doc(campaignId || generateEmailId()).set(campaign);
       
       return {
         success: true,
@@ -677,7 +682,7 @@ export async function sendBulkEmails({
     
     // Update campaign stats if campaignId provided
     if (campaignId) {
-      await db.collection('emailCampaigns').doc(campaignId).update({
+      await adminDb.collection('emailCampaigns').doc(campaignId).update({
         status: 'completed',
         sentCount: sent,
         failedCount: failed,
@@ -708,7 +713,7 @@ export async function processScheduledEmails(): Promise<{ processed: number; suc
     const now = new Date();
     
     // Get all scheduled emails due for sending
-    const scheduledEmailsSnapshot = await db
+    const scheduledEmailsSnapshot = await adminDb
       .collection('scheduledEmails')
       .where('scheduledFor', '<=', Timestamp.fromDate(now))
       .where('status', '==', 'scheduled')
@@ -790,7 +795,7 @@ export async function processScheduledCampaigns(): Promise<{ processed: number; 
     const now = new Date();
     
     // Get all scheduled campaigns due for sending
-    const campaignsSnapshot = await db
+    const campaignsSnapshot = await adminDb
       .collection('emailCampaigns')
       .where('scheduledFor', '<=', Timestamp.fromDate(now))
       .where('status', '==', 'scheduled')
