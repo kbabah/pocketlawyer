@@ -194,8 +194,7 @@ export function LegalTermTooltip({
   termId: string, 
   className?: string 
 }) {
-  const { currentLanguage } = useLanguage();
-  const language = currentLanguage || "en";
+  const { language } = useLanguage();
   const terms = legalTermsDatabase[language] || legalTermsDatabase.en;
   
   // Find the term in the database
@@ -230,8 +229,7 @@ export function LegalTermTooltip({
 
 // Create a hook to get legal terms
 export function useLegalTerms() {
-  const { currentLanguage } = useLanguage();
-  const language = currentLanguage || "en";
+  const { language } = useLanguage();
   
   return {
     terms: legalTermsDatabase[language] || legalTermsDatabase.en,
@@ -258,7 +256,9 @@ export function LegalTermsHighlighter({
     let result: React.ReactNode[] = [text];
     
     sortedTerms.forEach(term => {
-      const termRegex = new RegExp(`\\b${term.term}\\b`, 'gi');
+      // Escape special regex characters in the term
+      const escapedTerm = term.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const termRegex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
       
       result = result.flatMap(item => {
         if (typeof item !== 'string') {
