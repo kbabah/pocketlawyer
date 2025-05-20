@@ -41,12 +41,13 @@ export function PostRegistrationOnboarding() {
   const [showOnboarding, setShowOnboarding] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [debug, setDebug] = useState<any>(null)
+  const DEBUG = process.env.NODE_ENV !== "production"
+  const [debug, setDebug] = useState<any>(DEBUG ? null : undefined)
 
   // Load onboarding progress from Firestore
   useEffect(() => {
     if (authLoading) {
-      console.log("Auth is still loading...")
+      if (DEBUG) console.log("Auth is still loading...")
       return
     }
 
