@@ -101,7 +101,7 @@ export function PostRegistrationOnboarding() {
             completed: {},
             skipped: {},
             lastStep: 0,
-            startedAt: Date.now()
+            startedAt: new Date()
           })
         }
       } catch (err: any) {
