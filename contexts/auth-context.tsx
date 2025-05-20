@@ -344,6 +344,9 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
+          // Clear any existing anonymous session data first
+          clearAnonymousSession();
+          
           // Get the ID token
           const idToken = await firebaseUser.getIdToken();
           

@@ -117,7 +117,7 @@ service cloud.firestore {
 
     // Allow access to blog posts
     match /blog-posts/{postId} {
-      allow read: if true;  // Make blog posts publicly readable
+      allow read: if resource.data.published == true || isAdmin();  // Only published posts are publicly readable
       allow create, update, delete: if isAdmin();
     }
 
