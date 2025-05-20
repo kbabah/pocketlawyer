@@ -311,12 +311,11 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loading && user && !initialAuthChecked) {
       const currentPath = window.location.pathname;
-      const isAuthPage = currentPath === "/sign-in" || currentPath === "/sign-up";
+      const publicPaths = ["/welcome", "/sign-in", "/sign-up", "/terms", "/privacy", "/blog"];
+      const isPublicPage = publicPaths.includes(currentPath);
       
-      // Immediately redirect if on auth page
-      if (isAuthPage) {
-        const callbackUrl = searchParams.get("callbackUrl");
-        router.push(callbackUrl || "/");
+      // Don't redirect if on a public page
+      if (isPublicPage) {
         setInitialAuthChecked(true);
         return;
       }
@@ -344,31 +343,40 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Get the ID token and set session cookie in parallel
-        const [idToken, emailPreferences] = await Promise.all([
-          firebaseUser.getIdToken(),
-          fetchUserEmailPreferences(firebaseUser.uid).catch(() => DEFAULT_EMAIL_PREFERENCES)
-        ]);
+        try {
+          // Clear any existing anonymous session data first
+          clearAnonymousSession();
+          
+          // Get the ID token
+          const idToken = await firebaseUser.getIdToken();
+          
+          // Create a session cookie
+          const response = await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ idToken }),
+          });
 
-        // Set session cookie
-        fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-        }).catch(console.error); // Don't await this
+          if (!response.ok) {
+            throw new Error('Failed to create session');
+          }
 
-        // Clear any anonymous session
-        clearAnonymousSession();
-
-        const user: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName,
-          profileImage: firebaseUser.photoURL,
-          provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
-          emailPreferences
-        };
-        setUser(user);
+          // Now that we have a valid session, set the user state
+          const emailPreferences = await fetchUserEmailPreferences(firebaseUser.uid).catch(() => DEFAULT_EMAIL_PREFERENCES);
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+            profileImage: firebaseUser.photoURL,
+            provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+            emailPreferences
+          });
+        } catch (error) {
+          console.error('Error setting up session:', error);
+          setUser(null);
+        }
       } else {
         // No authenticated user, create or use anonymous session
         const anonymousUser = initAnonymousSession();

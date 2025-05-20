@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/contexts/language-context"
 import { ChevronLeft, Calendar, Clock, Tag } from "lucide-react"
+import { LegalTermsHighlighter } from "@/components/legal-terminology"
 
 export default function BlogPostPage() {
   const { t } = useLanguage();
@@ -88,9 +89,9 @@ export default function BlogPostPage() {
               {/* Article content */}
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 <h2>{t("Overview of Land Tenure in Cameroon")}</h2>
-                <p>
-                  {t("Cameroon's land tenure system is characterized by legal pluralism, with both statutory law and customary law governing land ownership. This dual system can create confusion and conflict over land rights, especially in rural areas where traditional practices remain strong.")}
-                </p>
+                <LegalTermsHighlighter
+                  text={t("Cameroon's land tenure system is characterized by legal pluralism, with both statutory law and customary law governing land ownership. This dual system can create confusion and conflict over land rights, especially in rural areas where traditional practices remain strong.")}
+                />
 
                 <p>
                   {t("The primary legislation governing land ownership in Cameroon includes:")}

@@ -3,15 +3,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAuthenticated() {
-      return request.auth != null;
+      return request.auth != null && request.time != null;
     }
     
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
     function isAdmin() {
       return request.auth != null && 
+        request.time != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
@@ -20,14 +21,32 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Public access rules
+    match /public/{document=**} {
+      allow read: if true;
+    }
+
     // Allow users to manage their profiles and related data
     match /users/{userId} {
+      // Allow any authenticated user to read basic user data
       allow read: if isAuthenticated();
-      allow create, update, delete: if isOwner(userId);
+      
+      // Allow users to create their own document initially
+      allow create: if isAuthenticated() && request.auth.uid == userId && request.time != null;
+      
+      // Allow users to update their own document
+      allow update: if isOwner(userId) && request.time != null;
+      allow delete: if isOwner(userId);
 
       // Allow users to manage their own onboarding progress
       match /onboarding/{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read: if request.auth.uid == userId && request.time != null;
+        allow write: if request.auth.uid == userId && request.time != null;
+      }
+
+      // Allow users to manage their own data in subcollections
+      match /{collection}/{document=**} {
+        allow read, write: if request.auth.uid == userId;
       }
 
       // Allow users to manage their chats
@@ -98,15 +117,13 @@ service cloud.firestore {
 
     // Allow access to blog posts
     match /blog-posts/{postId} {
-      allow read: if 
-        resource.data.published == true || 
-        isAdmin();
+      allow read: if resource.data.published == true || isAdmin();  // Only published posts are publicly readable
       allow create, update, delete: if isAdmin();
     }
 
     // Allow read access to legal terms and privacy policy
     match /legal/{document=**} {
-      allow read: if true;
+      allow read: if true;  // Make legal documents publicly readable
       allow write: if isAdmin();
     }
 
