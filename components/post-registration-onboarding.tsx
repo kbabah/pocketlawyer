@@ -9,6 +9,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MessageSquare, FileText, Search, User, ChevronRight, Check, X } from "lucide-react"
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { sendEmail } from "@/lib/email-service-client"
 
 // Define the onboarding step type
 interface OnboardingStep {
@@ -20,6 +23,13 @@ interface OnboardingStep {
   skipable: boolean
 }
 
+interface OnboardingProgress {
+  completed: Record<string, boolean>
+  skipped: Record<string, boolean>
+  lastStep?: number
+  finishedAt?: number
+}
+
 export function PostRegistrationOnboarding() {
   const { t } = useLanguage()
   const { user } = useAuth()
@@ -29,15 +39,44 @@ export function PostRegistrationOnboarding() {
   const [completed, setCompleted] = useState<Record<string, boolean>>({})
   const [skipped, setSkipped] = useState<Record<string, boolean>>({})
   const [showOnboarding, setShowOnboarding] = useState(true)
-  
-  // Check if this is a new user
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load onboarding progress from Firestore
   useEffect(() => {
-    // In a real implementation, we would check user metadata
-    // For now, we'll just show the onboarding for demonstration
-    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted') === 'true'
-    setShowOnboarding(!hasCompletedOnboarding)
-  }, [])
-  
+    if (!user?.id) {
+      router.push("/sign-in")
+      return
+    }
+
+    const loadProgress = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const progressDoc = await getDoc(doc(db, "users", user.id, "onboarding", "progress"))
+        if (progressDoc.exists()) {
+          const data = progressDoc.data() as OnboardingProgress
+          setCompleted(data.completed || {})
+          setSkipped(data.skipped || {})
+          setCurrentStep(data.lastStep || 0)
+          
+          // If onboarding was already finished, redirect to home
+          if (data.finishedAt) {
+            router.push("/")
+            return
+          }
+        }
+      } catch (err) {
+        console.error("Error loading onboarding progress:", err)
+        setError("Failed to load your progress. Please try refreshing the page.")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    loadProgress()
+  }, [user?.id, router])
+
   // Define the onboarding steps
   const onboardingSteps: OnboardingStep[] = [
     {
@@ -46,7 +85,6 @@ export function PostRegistrationOnboarding() {
       description: t("Your AI-powered legal assistant for Cameroonian law. Let's get you started with a quick tour of the key features."),
       icon: <MessageSquare className="h-8 w-8 text-primary" />,
       action: () => {
-        // Just move to the next step
         handleNext()
       },
       skipable: false
@@ -57,8 +95,7 @@ export function PostRegistrationOnboarding() {
       description: t("Try asking the AI assistant a legal question to see how it works. For example: 'What are the requirements for registering a business in Cameroon?'"),
       icon: <MessageSquare className="h-8 w-8 text-primary" />,
       action: () => {
-        // In a real implementation, this would focus the chat input
-        // For now, we'll just mark it as completed
+        router.push("/")
         handleComplete("ask-question")
       },
       skipable: true
@@ -69,8 +106,7 @@ export function PostRegistrationOnboarding() {
       description: t("You can upload legal documents for analysis. Try uploading a contract, agreement, or other legal document to get insights."),
       icon: <FileText className="h-8 w-8 text-primary" />,
       action: () => {
-        // In a real implementation, this would open the document upload dialog
-        // For now, we'll just mark it as completed
+        router.push("/document-analysis")
         handleComplete("upload-document")
       },
       skipable: true
@@ -81,8 +117,7 @@ export function PostRegistrationOnboarding() {
       description: t("Use the search feature to find specific legal information or browse through categories of legal topics."),
       icon: <Search className="h-8 w-8 text-primary" />,
       action: () => {
-        // In a real implementation, this would focus the search input
-        // For now, we'll just mark it as completed
+        router.push("/search")
         handleComplete("search")
       },
       skipable: true
@@ -93,7 +128,6 @@ export function PostRegistrationOnboarding() {
       description: t("Add more information to your profile to get personalized legal guidance and save your preferences."),
       icon: <User className="h-8 w-8 text-primary" />,
       action: () => {
-        // In a real implementation, this would navigate to the profile page
         router.push("/profile")
         handleComplete("complete-profile")
       },
@@ -108,20 +142,113 @@ export function PostRegistrationOnboarding() {
     return (completedSteps / totalSteps) * 100
   }
   
+  // Save progress to Firestore
+  const saveProgress = async (
+    newCompleted: Record<string, boolean>,
+    newSkipped: Record<string, boolean>,
+    step: number,
+    finished?: boolean
+  ) => {
+    if (!user?.id) return
+
+    try {
+      setError(null)
+      const progress: OnboardingProgress = {
+        completed: newCompleted,
+        skipped: newSkipped,
+        lastStep: step,
+        ...(finished ? { finishedAt: Date.now() } : {})
+      }
+
+      await setDoc(
+        doc(db, "users", user.id, "onboarding", "progress"),
+        progress,
+        { merge: true }
+      )
+
+      // If finished, update user preferences and send welcome email
+      if (finished && user.email) {
+        // Update email preferences and onboarding status
+        await updateDoc(doc(db, "users", user.id), {
+          "emailPreferences.systemUpdates": true,
+          "emailPreferences.chatSummaries": true,
+          "onboardingCompleted": true,
+          "lastActive": new Date()
+        })
+
+        // Send welcome email
+        try {
+          await sendEmail({
+            to: user.email,
+            template: "custom",
+            subject: "Welcome to PocketLawyer - Getting Started Guide",
+            data: {
+              htmlContent: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+                    <h1 style="color: #333;">Welcome to PocketLawyer! 🎉</h1>
+                  </div>
+                  <div style="padding: 20px;">
+                    <p>Hello ${user.name || "there"},</p>
+                    <p>Thanks for completing your onboarding! Here's a summary of what you've accomplished:</p>
+                    <ul>
+                      ${Object.keys(newCompleted).length > 0 
+                        ? Object.keys(newCompleted).map(step => `<li style="margin-bottom: 10px;">✅ ${step}</li>`).join('')
+                        : '<li>No steps completed yet</li>'
+                      }
+                    </ul>
+                    ${Object.keys(newSkipped).length > 0 
+                      ? `<p>You can always come back to complete these steps later:</p>
+                        <ul>
+                          ${Object.keys(newSkipped).map(step => `<li style="margin-bottom: 10px;">⏳ ${step}</li>`).join('')}
+                        </ul>`
+                      : ''
+                    }
+                    <div style="text-align: center; margin: 30px 0;">
+                      <a href="${process.env.NEXT_PUBLIC_BASE_URL}" 
+                         style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px;">
+                        Start Using PocketLawyer
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              `
+            }
+          })
+        } catch (error) {
+          console.error("Failed to send welcome email:", error)
+          // Don't block the completion process if email fails
+        }
+
+        // Redirect to home page after completion
+        router.push("/")
+      }
+    } catch (err) {
+      console.error("Error saving progress:", err)
+      setError("Failed to save your progress. Please try again.")
+      throw err // Re-throw to handle in the calling function
+    }
+  }
+
   // Handle completing a step
-  const handleComplete = (stepId: string) => {
-    setCompleted(prev => ({ ...prev, [stepId]: true }))
+  const handleComplete = async (stepId: string) => {
+    const newCompleted = { ...completed, [stepId]: true }
+    setCompleted(newCompleted)
     
     // Move to the next step if this is the current step
     if (onboardingSteps[currentStep].id === stepId) {
       handleNext()
     }
+
+    await saveProgress(newCompleted, skipped, currentStep)
   }
   
   // Handle skipping a step
-  const handleSkip = () => {
+  const handleSkip = async () => {
     const stepId = onboardingSteps[currentStep].id
-    setSkipped(prev => ({ ...prev, [stepId]: true }))
+    const newSkipped = { ...skipped, [stepId]: true }
+    setSkipped(newSkipped)
+    await saveProgress(completed, newSkipped, currentStep + 1)
     handleNext()
   }
   
@@ -130,17 +257,49 @@ export function PostRegistrationOnboarding() {
     if (currentStep < onboardingSteps.length - 1) {
       setCurrentStep(currentStep + 1)
     } else {
-      // Onboarding completed
       finishOnboarding()
     }
   }
   
   // Handle finishing the onboarding
-  const finishOnboarding = () => {
-    localStorage.setItem('onboardingCompleted', 'true')
+  const finishOnboarding = async () => {
+    await saveProgress(completed, skipped, currentStep, true)
     setShowOnboarding(false)
   }
   
+  // If loading, show loading state
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+            <p className="text-sm text-muted-foreground">Loading your progress...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // If there's an error, show error state with retry button
+  if (error) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex flex-col items-center justify-center py-10">
+            <div className="text-destructive mb-4">
+              <X className="h-8 w-8" />
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   // If onboarding is not shown, return null
   if (!showOnboarding) {
     return null
@@ -175,21 +334,29 @@ export function PostRegistrationOnboarding() {
         
         <CardFooter className="flex justify-between">
           {step.skipable ? (
-            <Button variant="ghost" onClick={handleSkip}>
-              {t("Skip")}
+            <Button 
+              variant="ghost" 
+              onClick={handleSkip}
+              disabled={isLoading}
+            >
+              {isLoading ? "..." : t("Skip")}
             </Button>
           ) : (
-            <div></div> // Empty div to maintain layout
+            <div></div>
           )}
           
-          <Button onClick={step.action}>
-            {currentStep === 0 ? t("Get Started") : 
+          <Button 
+            onClick={step.action}
+            disabled={isLoading}
+          >
+            {isLoading ? "..." : 
+             currentStep === 0 ? t("Get Started") : 
              currentStep === onboardingSteps.length - 1 ? t("Finish") : 
              t("Continue")}
-            {currentStep < onboardingSteps.length - 1 && (
+            {!isLoading && currentStep < onboardingSteps.length - 1 && (
               <ChevronRight className="ml-2 h-4 w-4" />
             )}
-            {currentStep === onboardingSteps.length - 1 && (
+            {!isLoading && currentStep === onboardingSteps.length - 1 && (
               <Check className="ml-2 h-4 w-4" />
             )}
           </Button>

@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const session = request.cookies.get('firebase-session')
 
   // List of public paths that don't require authentication
-  const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error', '/terms', '/privacy', '/contact', '/blog', '/examples']
+  const publicPaths = ['/sign-in', '/sign-up', '/welcome', '/auth/error', '/terms', '/privacy', '/contact', '/blog', '/examples', '/onboarding']
   const isPublicPath = publicPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
   // Enhanced static resource check to include all common static files
@@ -49,11 +49,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl)
   }
 
-  // If already authenticated and trying to access auth pages, redirect to root
+  // Let authenticated users access onboarding even if they already completed it
+  if (request.nextUrl.pathname === '/onboarding' && session) {
+    return NextResponse.next()
+  }
+
+  // If already authenticated and trying to access auth pages, redirect to home
   if (session && isPublicPath && 
-      !request.nextUrl.pathname.startsWith('/welcome') && 
-      !request.nextUrl.pathname.startsWith('/blog') && 
-      !request.nextUrl.pathname.startsWith('/examples')) {
+      (request.nextUrl.pathname === '/sign-in' || 
+       request.nextUrl.pathname === '/sign-up' || 
+       request.nextUrl.pathname === '/welcome')) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 

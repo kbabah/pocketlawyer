@@ -310,22 +310,31 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   // Handle redirect after auth state change
   useEffect(() => {
     if (!loading && user && !initialAuthChecked) {
-      // Get callback URL if exists
-      const callbackUrl = searchParams.get("callbackUrl");
+      const currentPath = window.location.pathname;
+      const isAuthPage = currentPath === "/sign-in" || currentPath === "/sign-up";
       
-      // Immediately handle the redirect without timeout
-      if (callbackUrl) {
-        console.log("Redirecting to callback URL:", callbackUrl);
-        router.push(callbackUrl);
-      } else {
-        // Redirect to main chat interface on sign-in/sign-up
-        const currentPath = window.location.pathname;
-        if (currentPath === "/sign-in" || currentPath === "/sign-up") {
-          console.log("Redirecting from auth page to home");
-          router.push("/");
-        }
+      // Immediately redirect if on auth page
+      if (isAuthPage) {
+        const callbackUrl = searchParams.get("callbackUrl");
+        router.push(callbackUrl || "/");
+        setInitialAuthChecked(true);
+        return;
       }
-      setInitialAuthChecked(true);
+
+      // Check onboarding status asynchronously without blocking redirect
+      if (!user.isAnonymous) {
+        getDoc(doc(db, "users", user.id, "onboarding", "progress"))
+          .then((progressDoc) => {
+            const shouldShowOnboarding = !progressDoc.exists() || !progressDoc.data()?.finishedAt;
+            if (shouldShowOnboarding && currentPath !== "/onboarding") {
+              router.push("/onboarding");
+            }
+          })
+          .catch(console.error)
+          .finally(() => setInitialAuthChecked(true));
+      } else {
+        setInitialAuthChecked(true);
+      }
     }
   }, [user, loading, router, searchParams, initialAuthChecked]);
 
@@ -335,30 +344,21 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Get the ID token
-        const idToken = await firebaseUser.getIdToken();
-        
-        // Set the session cookie via an API endpoint
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idToken }),
-        });
-        
-        // If user signed in, clear any anonymous session
-        clearAnonymousSession();
+        // Get the ID token and set session cookie in parallel
+        const [idToken, emailPreferences] = await Promise.all([
+          firebaseUser.getIdToken(),
+          fetchUserEmailPreferences(firebaseUser.uid).catch(() => DEFAULT_EMAIL_PREFERENCES)
+        ]);
 
-        // Fetch email preferences for the user
-        let emailPreferences: EmailPreferences | undefined;
-        try {
-          emailPreferences = await fetchUserEmailPreferences(firebaseUser.uid);
-        } catch (error) {
-          console.error("Failed to fetch email preferences:", error);
-          // Use defaults if can't fetch
-          emailPreferences = DEFAULT_EMAIL_PREFERENCES;
-        }
+        // Set session cookie
+        fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+        }).catch(console.error); // Don't await this
+
+        // Clear any anonymous session
+        clearAnonymousSession();
 
         const user: User = {
           id: firebaseUser.uid,
@@ -374,8 +374,8 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         const anonymousUser = initAnonymousSession();
         setUser(anonymousUser);
         
-        // Clear the session cookie
-        await fetch('/api/auth/session', { method: 'DELETE' });
+        // Clear the session cookie without waiting
+        fetch('/api/auth/session', { method: 'DELETE' }).catch(console.error);
       }
       setLoading(false);
     });

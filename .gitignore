@@ -28,7 +28,15 @@ next-env.d.ts
 
 .env.local
 .env 
+.env.development
 
 ecosystem.config.js
 
 deploy.sh
+legal-terminology.test.tsx
+legal-terminology-test-plan.md
+test-setup.ts
+test-setup.js
+test-setup.tsx
+test-plan.md
+firestore.rules

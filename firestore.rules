@@ -19,7 +19,63 @@ service cloud.firestore {
     match /{document=**} {
       allow read, write: if false;
     }
-    
+
+    // Allow users to manage their profiles and related data
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isOwner(userId);
+
+      // Allow users to manage their own onboarding progress
+      match /onboarding/{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Allow users to manage their chats
+      match /chats/{document=**} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+      
+      // Allow users to manage their documents
+      match /documents/{document=**} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+
+      // Allow users to manage their notifications
+      match /notifications/{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Allow access to email tracking data
+    match /emailTracking/{emailId} {
+      allow read: if isAuthenticated() && (
+        resource.data.recipient == request.auth.email ||
+        isAdmin()
+      );
+      // Write access only through server
+    }
+
+    // Allow access to scheduled emails
+    match /scheduledEmails/{emailId} {
+      allow read: if isAuthenticated() && (
+        resource.data.to[0] == request.auth.email ||
+        isAdmin()
+      );
+      // Write access only through server
+    }
+
+    // Allow access to email campaigns
+    match /emailCampaigns/{campaignId} {
+      allow read: if isAdmin();
+      // Write access only through server
+    }
+
+    // Allow access to email templates
+    match /emailTemplates/{templateId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
     // Allow both authenticated and anonymous users to create feedback
     match /feedback/{feedbackId} {
       allow create: if 
@@ -28,54 +84,36 @@ service cloud.firestore {
       allow read, write, update, delete: if isOwner(resource.data.userId);
     }
     
-    // Allow authenticated users to read and write their own chats
-    match /chats/{chatId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read, write, update, delete: if isOwner(resource.data.userId);
-    }
-
     // Allow authenticated users to read and write their own documents
     match /documents/{documentId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow read, write, update, delete: if isOwner(resource.data.userId);
     }
 
-    // Allow users to manage their profiles
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write, update, delete: if isOwner(userId);
-    }
-
-    // Allow users to manage their notifications
-    match /notifications/{notificationId} {
+    // Allow authenticated users to read and write their own chats
+    match /chats/{chatId} {
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow read, write, update, delete: if isOwner(resource.data.userId);
     }
 
-    // Allow users to manage their email campaigns
-    match /email-campaigns/{campaignId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read, write, update, delete: if isOwner(resource.data.userId);
-    }
-    
-    // Allow public read access to published blog posts and admin write access
+    // Allow access to blog posts
     match /blog-posts/{postId} {
       allow read: if 
-        // Anyone can read published posts
         resource.data.published == true || 
-        // Or if they're an admin
         isAdmin();
-      
-      // Only admins can create, update, or delete blog posts
       allow create, update, delete: if isAdmin();
     }
 
-    // Allow server-side only access to newsletter subscribers
-    // (The API handles validation, not client-side access)
+    // Allow read access to legal terms and privacy policy
+    match /legal/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Newsletter subscribers - server-side only
     match /newsletter-subscribers/{subscriberId} {
-      // Only admins can read the subscriber list
       allow read: if isAdmin();
-      // No client-side write access - handled by the server API
+      // Write access only through server API
     }
   }
 }
