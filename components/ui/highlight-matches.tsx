@@ -1,86 +1,36 @@
-import React from "react";
+/* Highlight Matches Component */
+"use client"
+
+import * as React from "react"
 
 interface HighlightMatchesProps {
-  text: string;
-  query?: string;
-  terms?: string[];
-  className?: string;
+  text: string
+  terms: string[]
 }
 
-export function HighlightMatches({ text, query, terms, className = "" }: HighlightMatchesProps) {
-  // If terms array is provided, use it instead of query
-  if (terms && terms.length > 0) {
-    // Handle highlighting for multiple terms
-    let highlightedText = <span className={className}>{text}</span>;
-    
-    terms.forEach(term => {
-      if (!term || term.trim() === "") return;
-      
-      const parts = [];
-      const regex = new RegExp(`(${term.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
-      
-      React.Children.forEach(highlightedText.props.children, child => {
-        if (typeof child === 'string') {
-          const segments = child.split(regex);
-          segments.forEach((segment, i) => {
-            const isMatch = segment.toLowerCase() === term.toLowerCase();
-            if (isMatch) {
-              parts.push(
-                <span key={`${term}-${i}`} className="highlight-match bg-yellow-200 dark:bg-yellow-900/70 px-0.5 rounded-sm font-medium">
-                  {segment}
-                </span>
-              );
-            } else {
-              parts.push(segment);
-            }
-          });
-        } else {
-          parts.push(child);
-        }
-      });
-      
-      highlightedText = <span className={className}>{parts}</span>;
-    });
-    
-    return highlightedText;
-  }
+export function HighlightMatches({ text, terms }: HighlightMatchesProps) {
+  if (!terms.length) return <>{text}</>
   
-  // Original implementation for single query
-  if (!query || query.trim() === "") {
-    return <span className={className}>{text}</span>;
-  }
-
-  const parts = text.split(new RegExp(`(${query.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi'));
+  // Create a regex pattern that matches any of the search terms
+  const pattern = new RegExp(`(${terms.map(term => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi')
+  
+  // Split the text by the pattern and create an array of text and matches
+  const parts = text.split(pattern)
   
   return (
-    <span className={className}>
+    <>
       {parts.map((part, i) => {
-        const isMatch = part.toLowerCase() === query.toLowerCase();
+        // Check if this part matches any of the search terms
+        const isMatch = terms.some(term => part.toLowerCase() === term.toLowerCase())
+        
         return isMatch ? (
-          <span key={i} className="highlight-match bg-yellow-200 dark:bg-yellow-900/70 px-0.5 rounded-sm font-medium">
+          <mark key={i} className="bg-yellow-200 dark:bg-yellow-800/50 px-0.5 rounded">
             {part}
-          </span>
+          </mark>
         ) : (
-          <span key={i}>{part}</span>
-        );
+          <React.Fragment key={i}>{part}</React.Fragment>
+        )
       })}
-    </span>
-  );
-}
-
-export function fuzzyMatch(text: string, query: string): boolean {
-  if (!query) return true;
-  
-  const cleanQuery = query.toLowerCase().replace(/\s+/g, '');
-  const cleanText = text.toLowerCase();
-  
-  let queryIndex = 0;
-  
-  for (let i = 0; i < cleanText.length && queryIndex < cleanQuery.length; i++) {
-    if (cleanText[i] === cleanQuery[queryIndex]) {
-      queryIndex++;
-    }
-  }
-  
-  return queryIndex === cleanQuery.length;
+    </>
+  )
 }
