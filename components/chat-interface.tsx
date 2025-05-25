@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar } from "@/components/ui/avatar"
-import { User, Search, Sparkles, Scale, FileText, Send, Loader2, AlertTriangle, UserPlus, MessageCircle, ChevronUp, ChevronDown, X, HelpCircle, BookOpen, Keyboard, Info, ArrowRight, Check } from "lucide-react"
+import { User, Search, Sparkles, Scale, FileText, Send, Loader2, AlertTriangle, UserPlus, MessageCircle, ChevronUp, ChevronDown, X, HelpCircle, BookOpen, Keyboard, Info, ArrowRight, Check, ArrowDown } from "lucide-react"
 import WebBrowser from "@/components/web-browser"
 import DocumentAnalysis from "@/components/document-analysis"
 import { Card } from "@/components/ui/card"
@@ -103,6 +103,8 @@ export default function ChatInterface() {
   const [showWelcomeTutorial, setShowWelcomeTutorial] = useState(true)
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
   const [tutorialStep, setTutorialStep] = useState(0)
+  const [scrollPosition, setScrollPosition] = useState(0)
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false)
 
   const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, setMessages } = useChat({
     api: "/api/chat",
@@ -118,7 +120,8 @@ export default function ChatInterface() {
 
   // Improved virtualized message rendering
   const VirtualizedMessageList = () => {
-    const itemSize = 100; // Adjust based on average message height
+    const itemSize = 120; // Increased for better spacing
+    const containerRef = useRef<HTMLDivElement>(null)
     
     // Add types for Row component props
     interface RowProps {
@@ -131,28 +134,28 @@ export default function ChatInterface() {
       const isHighlighted = searchResults[currentSearchResultIndex] === index;
       
       return (
-        <div style={style} className="py-1" id={`message-${index}`}>
+        <div style={style} className="px-2 sm:px-4 md:px-6" id={`message-${index}`}>
           <ChatMessage 
             message={message} 
             isMobile={isMobile} 
             t={t} 
             highlight={isHighlighted}
+            searchTerms={searchIsActive ? highlightTerms : []}
           />
         </div>
       );
     };
     
     return (
-      <div className="h-full w-full">
-        {/* Fixed dimensions for virtualization to avoid AutoSizer parsing issues */}
+      <div ref={containerRef} className="h-full w-full">
         <List
           ref={listRef}
           height={500}
           itemCount={messages.length}
           itemSize={itemSize}
-          width={350}
-          overscanCount={3}
-          className="scrollbar-hide"
+          width="100%"
+          overscanCount={5}
+          className="scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent"
         >
           {Row}
         </List>
@@ -192,7 +195,12 @@ export default function ChatInterface() {
       
       // Scroll to bottom after user message is added
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        const scrollContainer = document.querySelector('.chat-messages-container')
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
+        } else {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
         
         // If using virtualized list
         if (listRef.current) {
@@ -230,7 +238,12 @@ export default function ChatInterface() {
     } finally {
       setIsSubmitting(false)
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        const scrollContainer = document.querySelector('.chat-messages-container')
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
+        } else {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
       }, 100)
     }
   }
@@ -279,9 +292,13 @@ export default function ChatInterface() {
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messages.length) {
-      const scrollContainer = document.querySelector('.ScrollAreaViewport')
+      // Find the scrollable container
+      const scrollContainer = document.querySelector('.chat-messages-container')
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight
+      } else {
+        // Fallback to messagesEndRef
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }
     }
   }, [messages])
@@ -463,8 +480,16 @@ export default function ChatInterface() {
       const messageElement = document.getElementById(`message-${focusedMessageIndex}`)
       if (messageElement) {
         messageElement.focus()
-        // Ensure the focused message is in view
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        // Ensure the focused message is in view using the chat container
+        const scrollContainer = document.querySelector('.chat-messages-container')
+        if (scrollContainer) {
+          const containerRect = scrollContainer.getBoundingClientRect()
+          const messageRect = messageElement.getBoundingClientRect()
+          const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
+          scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
+        } else {
+          messageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
       }
     }
   }, [focusedMessageIndex])
@@ -617,7 +642,15 @@ export default function ChatInterface() {
         setTimeout(() => {
           const messageEl = document.getElementById(`message-${indices[0]}`)
           if (messageEl) {
-            messageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            const scrollContainer = document.querySelector('.chat-messages-container')
+            if (scrollContainer) {
+              const containerRect = scrollContainer.getBoundingClientRect()
+              const messageRect = messageEl.getBoundingClientRect()
+              const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
+              scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
+            } else {
+              messageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            }
           }
         }, 100)
       } else {
@@ -637,7 +670,17 @@ export default function ChatInterface() {
         setCurrentSearchResultIndex(0)
         setTimeout(() => {
           const messageEl = document.getElementById(`message-${results[0]}`)
-          if (messageEl) messageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+          if (messageEl) {
+            const scrollContainer = document.querySelector('.chat-messages-container')
+            if (scrollContainer) {
+              const containerRect = scrollContainer.getBoundingClientRect()
+              const messageRect = messageEl.getBoundingClientRect()
+              const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
+              scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
+            } else {
+              messageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            }
+          }
         }, 100)
       } else {
         setCurrentSearchResultIndex(-1)
@@ -663,7 +706,15 @@ export default function ChatInterface() {
     // Scroll to the message and add highlight animation
     const messageElement = document.getElementById(`message-${searchResults[newIndex]}`)
     if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      const scrollContainer = document.querySelector('.chat-messages-container')
+      if (scrollContainer) {
+        const containerRect = scrollContainer.getBoundingClientRect()
+        const messageRect = messageElement.getBoundingClientRect()
+        const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
+        scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
+      } else {
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
       messageElement.classList.add('search-highlight-container')
       // Remove the highlight after a brief delay
       setTimeout(() => messageElement.classList.remove('search-highlight-container'), 1500)
@@ -982,9 +1033,53 @@ export default function ChatInterface() {
     }
   }, [messages, chatId, user?.id]);
 
+  // Handle scroll position restoration and auto-scroll behavior
+  useEffect(() => {
+    const scrollContainer = document.querySelector('.chat-messages-container')
+    if (!scrollContainer) return
+
+    const handleScroll = () => {
+      const currentPosition = scrollContainer.scrollTop
+      setScrollPosition(currentPosition)
+      
+      // Show scroll-to-bottom button when user scrolls up significantly
+      const isNearBottom = currentPosition >= scrollContainer.scrollHeight - scrollContainer.clientHeight - 150
+      setShowScrollToBottom(!isNearBottom && messages.length > 3)
+    }
+
+    // Add scroll listener to track position
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+
+    // Auto-scroll to bottom when new messages arrive (only if user was near bottom)
+    if (messages.length > 0) {
+      const isNearBottom = scrollPosition >= scrollContainer.scrollHeight - scrollContainer.clientHeight - 100
+      if (isNearBottom || messages[messages.length - 1]?.role === 'user') {
+        // Small delay to ensure DOM is updated
+        setTimeout(() => {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
+        }, 50)
+      }
+    }
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll)
+    }
+  }, [messages, scrollPosition])
+
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    const scrollContainer = document.querySelector('.chat-messages-container')
+    if (scrollContainer) {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth'
+      })
+    }
+  }
+
   return (
     <div 
-      className="relative flex h-[calc(100vh-4rem)] flex-col items-center justify-between"
+      className="relative flex h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] flex-col overflow-hidden"
       tabIndex={0}
       onKeyDown={handleKeyDown}
       aria-live="polite"
@@ -992,10 +1087,10 @@ export default function ChatInterface() {
       aria-label={t("Chat conversation")}
     >
       <TooltipProvider>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
-          {/* Mobile-optimized header with centered tabs */}
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center justify-center px-2 sm:px-4 py-2 border-b">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col overflow-hidden">
+          {/* Fixed header with tabs */}
+          <div className="flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+            <div className="flex items-center justify-center px-2 sm:px-4 py-2">
               <TabsList className="w-full max-w-md mx-auto grid grid-cols-3 h-auto p-1 gap-1">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1039,44 +1134,47 @@ export default function ChatInterface() {
             </div>
           </div>
 
-          {/* Chat content */}
-          <TabsContent value="chat" className="flex-1 flex flex-col px-2 sm:px-4 md:px-0">
+          {/* Chat content with proper scroll containment */}
+          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            {/* Fixed search bar */}
             {showMessageSearch && (
-              <div className="sticky top-[57px] z-10 flex items-center gap-2 p-2 bg-background/95 backdrop-blur border-b">
-                <div className="relative flex-1">
-                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    ref={messageSearchInputRef}
-                    className="pl-8 pr-16"
-                    placeholder={t("Search messages...")}
-                    value={messageSearchQuery}
-                    onChange={(e) => setMessageSearchQuery(e.target.value)}
-                  />
-                  {searchResults.length > 0 && (
-                    <span className="absolute right-16 top-1/2 -translate-y-1/2 text-xs text-muted-foreground bg-background/90 px-2 py-0.5 rounded-md">
-                      {currentSearchResultIndex + 1} / {searchResults.length}
-                    </span>
-                  )}
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={handleMessageSearch}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2"
-                  >
-                    {t("Find")}
-                  </Button>
+              <div className="flex-shrink-0 bg-background/95 backdrop-blur border-b">
+                <div className="flex items-center gap-2 p-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      ref={messageSearchInputRef}
+                      className="pl-8 pr-16"
+                      placeholder={t("Search messages...")}
+                      value={messageSearchQuery}
+                      onChange={(e) => setMessageSearchQuery(e.target.value)}
+                    />
+                    {searchResults.length > 0 && (
+                      <span className="absolute right-16 top-1/2 -translate-y-1/2 text-xs text-muted-foreground bg-background/90 px-2 py-0.5 rounded-md">
+                        {currentSearchResultIndex + 1} / {searchResults.length}
+                      </span>
+                    )}
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={handleMessageSearch}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2"
+                    >
+                      {t("Find")}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Messages container */}
-            <div className="flex-1 overflow-y-auto pb-[120px] sm:pb-[88px]">
+            {/* Scrollable messages container */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 sm:px-4 md:px-6 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent chat-messages-container">
               {messages.length === 0 && !isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4 pt-10">
                   <WelcomeTutorial />
                 </div>
               ) : (
-                <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4 pb-6">
                   {messages.map((message, index) => (
                     <ChatMessage
                       key={message.id}
@@ -1097,44 +1195,69 @@ export default function ChatInterface() {
               )}
             </div>
 
-            {/* Updated input area - positioned at base of page, full width */}
-            <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-3 sm:p-4 w-full">
-              <form onSubmit={handleSubmit} className="flex gap-2 w-full">
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={handleInputChange}
-                  placeholder={t("Type your legal question...")}
-                  className="flex-1 min-h-[44px] sm:min-h-[36px] text-base sm:text-sm"
-                />
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting || !input.trim()} 
-                  className="h-11 w-11 sm:h-9 sm:w-9 p-0 flex-shrink-0"
+            {/* Scroll to bottom button */}
+            {showScrollToBottom && (
+              <div className="absolute bottom-20 right-4 z-10 scroll-to-bottom-button">
+                <Button
+                  onClick={scrollToBottom}
+                  size="sm"
+                  className="rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200 hover:scale-105"
+                  aria-label={t("Scroll to bottom")}
                 >
-                  <Send className="h-5 w-5 sm:h-4 sm:w-4" />
+                  <ArrowDown className="h-4 w-4" />
                 </Button>
-              </form>
+              </div>
+            )}
 
-              {user?.isAnonymous && !isTrialLimitReached() && (
-                <div className="text-xs text-muted-foreground mt-2">
-                  {getTrialConversationsRemaining()} {t("trial conversations remaining")}. 
-                  <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
-                    {t("Sign up for unlimited access")}
+            {/* Fixed input area at bottom */}
+            <div className="flex-shrink-0 bg-background/95 backdrop-blur border-t">
+              <div className="p-3 sm:p-4">
+                <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-4xl mx-auto">
+                  <Input
+                    ref={inputRef}
+                    value={input}
+                    onChange={handleInputChange}
+                    placeholder={t("Type your legal question...")}
+                    className="flex-1 min-h-[44px] sm:min-h-[36px] text-base sm:text-sm"
+                    disabled={isSubmitting}
+                  />
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || !input.trim()} 
+                    className="h-11 w-11 sm:h-9 sm:w-9 p-0 flex-shrink-0"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-5 w-5 sm:h-4 sm:w-4" />
+                    )}
                   </Button>
-                </div>
-              )}
+                </form>
+
+                {user?.isAnonymous && !isTrialLimitReached() && (
+                  <div className="text-xs text-muted-foreground mt-2 text-center">
+                    {getTrialConversationsRemaining()} {t("trial conversations remaining")}. 
+                    <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
+                      {t("Sign up for unlimited access")}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
 
-          {/* Web search tab */}
-          <TabsContent value="web" className="flex-1">
-            <WebBrowser query={searchQuery} />
+          {/* Web search tab with proper scrolling */}
+          <TabsContent value="web" className="flex-1 min-h-0 overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <WebBrowser query={searchQuery} />
+            </div>
           </TabsContent>
 
-          {/* Document analysis tab */}
-          <TabsContent value="document" className="flex-1">
-            <DocumentAnalysis onAnalysisComplete={handleDocumentAnalysis} />
+          {/* Document analysis tab with proper scrolling */}
+          <TabsContent value="document" className="flex-1 min-h-0 overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <DocumentAnalysis onAnalysisComplete={handleDocumentAnalysis} />
+            </div>
           </TabsContent>
         </Tabs>
       </TooltipProvider>

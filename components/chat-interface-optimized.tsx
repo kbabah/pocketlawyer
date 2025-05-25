@@ -329,7 +329,12 @@ export default function ChatInterface() {
       
       // Scroll to bottom after user message is added
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        const scrollContainer = document.querySelector('.chat-messages-container')
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
+        } else {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
       }, 100)
   
       // Chat persistence is handled in effects based on message changes
@@ -358,13 +363,17 @@ export default function ChatInterface() {
           description: "Would you like to retry?",
           action: <button onClick={() => handleSubmit()}>Retry</button>,
         })
+      }      } finally {
+        setIsSubmitting(false)
+        setTimeout(() => {
+          const scrollContainer = document.querySelector('.chat-messages-container')
+          if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight
+          } else {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+          }
+        }, 100)
       }
-    } finally {
-      setIsSubmitting(false)
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 100)
-    }
   }
 
   // Load existing chat if chatId is provided
@@ -411,9 +420,12 @@ export default function ChatInterface() {
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     if (messages.length) {
-      const scrollContainer = document.querySelector('.ScrollAreaViewport')
+      const scrollContainer = document.querySelector('.chat-messages-container')
       if (scrollContainer) {
         scrollContainer.scrollTop = scrollContainer.scrollHeight
+      } else {
+        // Fallback to messagesEndRef
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       }
     }
   }, [messages])
@@ -428,7 +440,7 @@ export default function ChatInterface() {
   // Handle scroll to bottom button visibility
   useEffect(() => {
     const handleScroll = () => {
-      const scrollContainer = document.querySelector('.ScrollAreaViewport')
+      const scrollContainer = document.querySelector('.chat-messages-container')
       if (scrollContainer) {
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
         // Show button when scrolled up more than 200px from bottom
@@ -436,7 +448,7 @@ export default function ChatInterface() {
       }
     }
     
-    const scrollContainer = document.querySelector('.ScrollAreaViewport')
+    const scrollContainer = document.querySelector('.chat-messages-container')
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', handleScroll)
       return () => scrollContainer.removeEventListener('scroll', handleScroll)
@@ -491,7 +503,15 @@ export default function ChatInterface() {
 
   // Scroll to bottom function
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const scrollContainer = document.querySelector('.chat-messages-container')
+    if (scrollContainer) {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: 'smooth'
+      })
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
   }
 
   // Trial limit reached alert component
@@ -824,7 +844,17 @@ export default function ChatInterface() {
     setSearchIsActive(true);
     if (results.length) {
       const elem = document.getElementById(`message-${results[0]}`);
-      elem?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (elem) {
+        const scrollContainer = document.querySelector('.chat-messages-container')
+        if (scrollContainer) {
+          const containerRect = scrollContainer.getBoundingClientRect()
+          const messageRect = elem.getBoundingClientRect()
+          const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
+          scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
+        } else {
+          elem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
+      }
     }
   };
 
@@ -840,15 +870,45 @@ export default function ChatInterface() {
     setCurrentSearchResultIndex(idx);
     const resultIndex = searchResults[idx];
     const elem = document.getElementById(`message-${resultIndex}`);
-    elem?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (elem) {
+      const scrollContainer = document.querySelector('.chat-messages-container')
+      if (scrollContainer) {
+        const containerRect = scrollContainer.getBoundingClientRect()
+        const messageRect = elem.getBoundingClientRect()
+        const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
+        scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
+      } else {
+        elem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }
   };
 
+  // Auto-scroll when typing indicator changes
+  useEffect(() => {
+    if (isTyping) {
+      // Scroll to bottom when typing starts
+      setTimeout(() => {
+        const scrollContainer = document.querySelector('.chat-messages-container')
+        if (scrollContainer) {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: 'smooth'
+          })
+        }
+      }, 100)
+    }
+  }, [isTyping])
+
   return (
-    <div className="flex flex-col h-full">
+    <div 
+      className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden"
+      role="region"
+      aria-label={t("Chat conversation")}
+    >
       <TooltipProvider>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-          {/* Tab navigation */}
-          <div className="border-b sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden">
+          {/* Fixed tab navigation */}
+          <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
             <div className="flex items-center justify-center px-2 sm:px-4 md:px-0 relative">
               <TabsList className="h-12 sm:h-10 p-1">
                 <Tooltip>
@@ -911,121 +971,130 @@ export default function ChatInterface() {
             </div>
           </div>
 
-          {/* Chat content */}
-          <TabsContent value="chat" className="flex-1 p-4">
-            <Card className="h-full">
-              <CardContent className="flex flex-col h-full p-0 overflow-x-hidden">
-                {/* Message search panel */}
+          {/* Chat content with proper scroll containment */}
+          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 overflow-hidden p-4">
+            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <CardContent className="flex flex-col h-full p-0 overflow-hidden">
+                {/* Fixed message search panel */}
                 {showMessageSearch && (
-                  <MessageSearchPanel
-                    messageSearchQuery={messageSearchQuery}
-                    setMessageSearchQuery={setMessageSearchQuery}
-                    handleMessageSearch={handleMessageSearch}
-                    navigateSearchResults={navigateSearchResults}
-                    searchResults={searchResults}
-                    currentSearchResultIndex={currentSearchResultIndex}
-                    messageSearchInputRef={messageSearchInputRef}
-                    t={t}
-                    setShowMessageSearch={setShowMessageSearch}
-                  />
+                  <div className="flex-shrink-0">
+                    <MessageSearchPanel
+                      messageSearchQuery={messageSearchQuery}
+                      setMessageSearchQuery={setMessageSearchQuery}
+                      handleMessageSearch={handleMessageSearch}
+                      navigateSearchResults={navigateSearchResults}
+                      searchResults={searchResults}
+                      currentSearchResultIndex={currentSearchResultIndex}
+                      messageSearchInputRef={messageSearchInputRef}
+                      t={t}
+                      setShowMessageSearch={setShowMessageSearch}
+                    />
+                  </div>
                 )}
 
-                {/* Trial limit alert */}
-                {isTrialLimitReached() && <TrialLimitAlert />}
+                {/* Fixed trial limit alert */}
+                {isTrialLimitReached() && (
+                  <div className="flex-shrink-0 p-4">
+                    <TrialLimitAlert />
+                  </div>
+                )}
 
-                {/* Messages container with hidden horizontal overflow */}
-                <ScrollArea 
-                  ref={scrollAreaRef}
-                  className="flex-1 overflow-y-auto overflow-x-hidden pb-20 sm:pb-16"
-                >
+                {/* Scrollable messages container */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden chat-messages-container px-4">
                   {renderMessages()}
-                </ScrollArea>
+                </div>
 
                 {/* Scroll to bottom button */}
                 {scrollToBottomVisible && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute bottom-24 right-4 rounded-full shadow-md animate-fadeIn transition-all duration-200 z-10"
-                    onClick={scrollToBottom}
-                  >
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
+                  <div className="absolute bottom-20 right-8 z-10">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-full shadow-lg bg-background hover:bg-background/90 transition-all duration-200 hover:scale-105"
+                      onClick={scrollToBottom}
+                      aria-label={t("Scroll to bottom")}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
 
-                {/* Updated input area - positioned at base of page, full width */}
-                <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t p-3 sm:p-4 w-full animate-slideUp">
-                  <form onSubmit={handleSubmit} className="flex gap-2 w-full">
-                    <div className="relative flex-1 flex items-center">
-                      <Textarea
-                        ref={inputRef}
-                        value={input}
-                        onChange={handleInputChange}
-                        placeholder={t("Type your legal question...")}
-                        className="flex-1 min-h-[44px] max-h-[200px] pr-10 resize-none py-3 text-base sm:text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                            e.preventDefault()
-                            handleSubmit()
-                          }
-                        }}
-                      />
+                {/* Fixed input area at bottom */}
+                <div className="flex-shrink-0 bg-background/95 backdrop-blur border-t">
+                  <div className="p-3 sm:p-4">
+                    <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-4xl mx-auto">
+                      <div className="relative flex-1 flex items-center">
+                        <Textarea
+                          ref={inputRef}
+                          value={input}
+                          onChange={handleInputChange}
+                          placeholder={t("Type your legal question...")}
+                          className="flex-1 min-h-[44px] max-h-[200px] pr-10 resize-none py-3 text-base sm:text-sm"
+                          disabled={isSubmitting}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                              e.preventDefault()
+                              handleSubmit()
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            // Document upload functionality would go here
+                            toast.info("Document upload coming soon")
+                          }}
+                        >
+                          <Paperclip className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          // Document upload functionality would go here
-                          toast.info("Document upload coming soon")
-                        }}
+                        type="submit" 
+                        disabled={isSubmitting || !input.trim()} 
+                        className={`h-11 w-11 sm:h-9 sm:w-9 p-0 flex-shrink-0 rounded-full transition-all duration-200 ${
+                          isSubmitting ? 'bg-muted' : ''
+                        }`}
                       >
-                        <Paperclip className="h-4 w-4" />
+                        {isSubmitting ? (
+                          <Loader2 className="h-5 w-5 sm:h-4 sm:w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-5 w-5 sm:h-4 sm:w-4" />
+                        )}
                       </Button>
-                    </div>
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmitting || !input.trim()} 
-                      className={`h-11 w-11 sm:h-9 sm:w-9 p-0 flex-shrink-0 rounded-full transition-all duration-200 ${
-                        isSubmitting ? 'bg-muted' : ''
-                      }`}
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="h-5 w-5 sm:h-4 sm:w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-5 w-5 sm:h-4 sm:w-4" />
-                      )}
-                    </Button>
-                  </form>
+                    </form>
 
-                  {user?.isAnonymous && !isTrialLimitReached() && (
-                    <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
-                      <span>
-                        {getTrialConversationsRemaining()} {t("trial conversations remaining")}
-                      </span>
-                      <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
-                        {t("Sign up for unlimited access")}
-                      </Button>
-                    </div>
-                  )}
+                    {user?.isAnonymous && !isTrialLimitReached() && (
+                      <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
+                        <span>
+                          {getTrialConversationsRemaining()} {t("trial conversations remaining")}
+                        </span>
+                        <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
+                          {t("Sign up for unlimited access")}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Web search tab */}
-          <TabsContent value="web" className="flex-1 p-4">
-            <Card className="h-full">
-              <CardContent className="p-4 h-full overflow-auto">
+          {/* Web search tab with proper scrolling */}
+          <TabsContent value="web" className="flex-1 min-h-0 overflow-hidden p-4">
+            <Card className="h-full flex flex-col min-h-0">
+              <CardContent className="flex-1 overflow-y-auto p-4">
                 <WebBrowser query={searchQuery} />
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Document analysis tab */}
-          <TabsContent value="document" className="flex-1 p-4">
-            <Card className="h-full">
-              <CardContent className="p-4 h-full overflow-auto">
+          {/* Document analysis tab with proper scrolling */}
+          <TabsContent value="document" className="flex-1 min-h-0 overflow-hidden p-4">
+            <Card className="h-full flex flex-col min-h-0">
+              <CardContent className="flex-1 overflow-y-auto p-4">
                 <DocumentAnalysis onAnalysisComplete={handleDocumentAnalysis} />
               </CardContent>
             </Card>
