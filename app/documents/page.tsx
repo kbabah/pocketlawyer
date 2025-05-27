@@ -45,7 +45,7 @@ export default function DocumentsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
 
   // Handle file processing completion
-  const handleFileProcessed = (uploadFile: any) => {
+  const handleFileProcessed = (uploadFile: UploadFile) => {
     const newFile: ProcessedFile = {
       id: uploadFile.id,
       name: uploadFile.file.name,
