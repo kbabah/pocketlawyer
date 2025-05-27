@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useIsMobile } from "@/hooks/use-mobile" // Import mobile hook
+import { useIsMobile } from "@/hooks/use-mobile"
+import { DocumentErrorBoundary } from "@/components/error-boundaries"
 
 interface DocumentAnalysisProps {
   onAnalysisComplete: (question: string, answer: string) => void
@@ -129,8 +130,9 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
   ];
 
   return (
-    <div className="space-y-4 px-2 sm:px-4 pb-16 sm:pb-8">
-      <h3 className="text-xl font-semibold mb-2">{t("document.analyze") || "Document Analysis"}</h3>
+    <DocumentErrorBoundary>
+      <div className="space-y-4 px-2 sm:px-4 pb-16 sm:pb-8">
+        <h3 className="text-xl font-semibold mb-2">{t("document.analyze") || "Document Analysis"}</h3>
       
       <div className="border rounded p-3 sm:p-4">
         <h4 className="text-sm font-medium mb-2">{t("document.select") || "Select Document"}</h4>
@@ -285,5 +287,6 @@ export default function DocumentAnalysis({ onAnalysisComplete }: DocumentAnalysi
         </div>
       )}
     </div>
+    </DocumentErrorBoundary>
   )
 }
