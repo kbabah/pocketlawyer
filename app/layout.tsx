@@ -1,6 +1,7 @@
 import type React from "react"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import "@/styles/chat-interface.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AuthProvider } from "@/contexts/auth-context"

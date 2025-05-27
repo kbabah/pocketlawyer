@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar } from "@/components/ui/avatar"
 import { 
   User, Search, Sparkles, Scale, FileText, Send, Loader2, AlertTriangle, 
-  UserPlus, MessageCircle, ChevronUp, ChevronDown, X, HelpCircle, 
+  MessageCircle, ChevronUp, ChevronDown, X, HelpCircle, 
   BookOpen, Keyboard, Info, ArrowRight, Check, Copy, Share, ThumbsUp,
   ThumbsDown, MoreHorizontal, ArrowDown, Paperclip
 } from "lucide-react"
@@ -560,7 +560,7 @@ export default function ChatInterface() {
     if (!user?.isAnonymous || !isTrialLimitReached()) return null;
     
     return (
-      <div className="mb-4 p-4 border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50 dark:bg-amber-900/30 animate-fadeIn">
+      <div className="mb-4 p-4 border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50 dark:bg-amber-900/30 animate-in fade-in duration-300">
         <div className="flex flex-col gap-3">
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
@@ -602,7 +602,7 @@ export default function ChatInterface() {
     const remaining = getTrialConversationsRemaining();
     
     return (
-      <div className="mt-6 p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-950/30 animate-fadeIn">
+      <div className="mt-6 p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-950/30 animate-in fade-in duration-300">
         <div className="flex flex-col gap-3">
           <div className="flex items-start gap-2">
             <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
@@ -754,7 +754,7 @@ export default function ChatInterface() {
 
     // Welcome section with proper translations
     return (
-      <div className="space-y-6 animate-fadeIn">
+      <div className="space-y-6 animate-in fade-in duration-500">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-primary">{t("Your Legal Assistant")}</h2>
           <p className="text-lg text-muted-foreground">

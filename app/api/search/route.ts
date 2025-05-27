@@ -85,34 +85,14 @@ Important guidelines:
             total: sanitizedResults.length
           });
         } else {
-          // If no proper JSON structure, try to parse as plain text and create mock results
-          const fallbackResults = [{
-            title: "Search Results",
-            link: "#",
-            snippet: message.content.substring(0, 300)
-          }];
-          
-          return NextResponse.json({
-            results: fallbackResults,
-            total: fallbackResults.length,
-            note: "Fallback response - search model may need adjustment"
-          });
+          throw new Error('Invalid response format from search model');
         }
       } catch (parseError) {
         console.error('Failed to parse search response:', parseError);
-        console.log('Raw response:', message.content);
-        
-        // Fallback: return raw content as single result
         return NextResponse.json({
-          results: [{
-            title: "Search Results",
-            link: "#",
-            snippet: message.content?.substring(0, 300) || "No results available"
-          }],
-          total: 1,
-          error: 'Parse error - returned raw response',
+          error: 'Failed to parse search results',
           details: process.env.NODE_ENV === 'development' ? String(parseError) : undefined
-        });
+        }, { status: 500 });
       }
     }
 
