@@ -6,7 +6,6 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 import { AuthProvider } from "@/contexts/auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
 import { Toaster } from "sonner"
-import FloatingChatWidget from "@/components/layout/floating-chat-widget"
 import { Metadata } from "next"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { ErrorFallbackButton } from "@/components/error-fallback-buttons"
@@ -192,16 +191,6 @@ export default function RootLayout({
                         {children}
                       </ErrorBoundary>
                     </main>
-                    
-                    {/* Global floating chat widget */}
-                    <ErrorBoundary
-                      fallback={null}
-                    >
-                      <FloatingChatWidget 
-                        position="bottom-right"
-                        persistState={true}
-                      />
-                    </ErrorBoundary>
                     
                     {/* Global toast notifications */}
                     <Toaster 

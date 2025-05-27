@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { openai, OPENAI_MODELS } from '@/lib/openai';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,116 +11,114 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Initial completion call
+    // Sanitize input to prevent XSS
+    const sanitizedQuery = query.replace(/[<>]/g, '').trim();
+    if (sanitizedQuery.length > 200) {
+      return NextResponse.json({ error: 'Query too long' }, { status: 400 });
+    }
+
+    // Use the search-optimized model directly (gpt-4o-search-preview supports web search natively)
     const completion = await openai.chat.completions.create({
-      model: "gpt-4.1",
+      model: OPENAI_MODELS.GPT4O_SEARCH,
       messages: [
         {
           role: "system",
-          content: `You are a helpful assistant that searches the web to answer user queries. 
-Provide the search results in ${language === 'fr' ? 'French' : 'English'}. 
-Your response must be a valid JSON object with this exact structure:
+          content: `You are a helpful web search assistant with access to real-time web information. 
+Search the web and provide comprehensive results for the user's query.
+
+Provide search results in ${language === 'fr' ? 'French' : 'English'}.
+Return at least 8-10 high-quality, diverse search results when available.
+
+Format your response as a JSON object with this exact structure:
 {
   "results": [
     {
       "title": "Title of the result",
-      "link": "URL of the result",
+      "link": "https://example.com/url",
       "snippet": "Brief description or excerpt"
     }
   ]
-}`
+}
+
+Important guidelines:
+- Include varied, authoritative sources
+- Ensure URLs are complete and valid
+- Keep titles under 200 characters
+- Keep snippets under 300 characters  
+- Prioritize recent and relevant content
+- Include diverse perspectives and sources
+- Focus on factual, reliable information
+- ONLY return the JSON object, no other text`
         },
         {
           role: "user",
-          content: query
+          content: `Please search the web for: "${sanitizedQuery}"`
         }
-      ],
-      tools: [{
-        type: "function",
-        function: {
-          name: "web_search",
-          description: "Search the web for the most relevant results",
-          parameters: {
-            type: "object",
-            properties: {
-              query: {
-                type: "string",
-                description: "The search query"
-              }
-            },
-            required: ["query"]
-          }
-        }
-      }],
-      tool_choice: {
-        type: "function",
-        function: { name: "web_search" }
-      }
+      ]
     });
 
     const message = completion.choices[0]?.message;
-    const toolCalls = message?.tool_calls;
-
-    // Handle tool calls
-    if (toolCalls && toolCalls.length > 0) {
-      const toolCall = toolCalls[0];
-      if (toolCall.function.name === "web_search") {
-        // Get the search arguments
-        const searchArgs = JSON.parse(toolCall.function.arguments);
+    
+    if (message?.content) {
+      try {
+        // Try to extract JSON from the response
+        let jsonContent = message.content.trim();
         
-        // Make a second completion call with the tool call results
-        const secondCompletion = await openai.chat.completions.create({
-          model: "gpt-4.1",
-          messages: [
-            {
-              role: "system",
-              content: `You are a helpful assistant that formats web search results. 
-Format your response as a JSON object with this structure:
-{
-  "results": [
-    {
-      "title": "Title of the result",
-      "link": "URL of the result",
-      "snippet": "Brief description or excerpt"
-    }
-  ]
-}`
-            },
-            {
-              role: "user",
-              content: query
-            },
-            message,
-            {
-              role: "tool",
-              tool_call_id: toolCall.id,
-              content: JSON.stringify({ query: searchArgs.query })
-            }
-          ],
-          response_format: { type: "json_object" }
-        });
-
-        const finalMessage = secondCompletion.choices[0]?.message;
-        
-        if (finalMessage?.content) {
-          try {
-            const results = JSON.parse(finalMessage.content);
-            return NextResponse.json(results);
-          } catch (parseError) {
-            console.error('Failed to parse final response:', parseError);
-            return NextResponse.json({
-              error: 'Failed to parse search results.',
-              raw_content: finalMessage.content
-            }, { status: 500 });
-          }
+        // If the response contains JSON wrapped in markdown or other text, extract it
+        const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonContent = jsonMatch[0];
         }
+        
+        const results = JSON.parse(jsonContent);
+        
+        // Validate and sanitize results
+        if (results && results.results && Array.isArray(results.results)) {
+          const sanitizedResults = results.results.map((result: any) => ({
+            title: String(result.title || '').substring(0, 200),
+            link: String(result.link || '').substring(0, 500),
+            snippet: String(result.snippet || '').substring(0, 300)
+          })).filter((result: any) => result.title && result.link);
+
+          return NextResponse.json({
+            results: sanitizedResults,
+            total: sanitizedResults.length
+          });
+        } else {
+          // If no proper JSON structure, try to parse as plain text and create mock results
+          const fallbackResults = [{
+            title: "Search Results",
+            link: "#",
+            snippet: message.content.substring(0, 300)
+          }];
+          
+          return NextResponse.json({
+            results: fallbackResults,
+            total: fallbackResults.length,
+            note: "Fallback response - search model may need adjustment"
+          });
+        }
+      } catch (parseError) {
+        console.error('Failed to parse search response:', parseError);
+        console.log('Raw response:', message.content);
+        
+        // Fallback: return raw content as single result
+        return NextResponse.json({
+          results: [{
+            title: "Search Results",
+            link: "#",
+            snippet: message.content?.substring(0, 300) || "No results available"
+          }],
+          total: 1,
+          error: 'Parse error - returned raw response',
+          details: process.env.NODE_ENV === 'development' ? String(parseError) : undefined
+        });
       }
     }
 
-    // If we get here, something went wrong
     return NextResponse.json({
-      error: 'Failed to get search results',
-      details: 'No valid response from the AI assistant'
+      error: 'No response received from search service',
+      details: 'Empty response from AI assistant'
     }, { status: 500 });
 
   } catch (error: any) {
