@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import WebBrowser from "@/components/web-browser"
 import DocumentAnalysis from "@/components/document-analysis"
+import EnhancedDocumentIntegration from "@/components/enhanced-document-integration"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { 
@@ -38,6 +39,7 @@ import {
 // Import the fuzzy search library
 import Fuse from 'fuse.js'
 import { HighlightMatches } from '@/components/ui/highlight-matches'
+import { useChatFeedback } from '@/hooks/use-chat-feedback'
 
 // Define interface for ChatMessage props
 interface ChatMessageProps {
@@ -49,6 +51,7 @@ interface ChatMessageProps {
   isLastInGroup?: boolean;
   isFirstInGroup?: boolean;
   onReaction?: (messageId: string, reaction: 'like' | 'dislike') => void;
+  chatId?: string;
 }
 
 // Enhanced memoized chat message component with better styling and grouping
@@ -60,7 +63,8 @@ const ChatMessage = memo(({
   searchTerms = [],
   isFirstInGroup = true,
   isLastInGroup = true,
-  onReaction
+  onReaction,
+  chatId
 }: ChatMessageProps) => {
   // Improved content rendering with better highlighting
   const content = searchTerms.length > 0 ? 
@@ -68,11 +72,32 @@ const ChatMessage = memo(({
     message.content;
   
   const [showActions, setShowActions] = useState(false);
+  const { submitFeedback, getFeedbackState } = useChatFeedback();
+  
+  // Get current feedback state for this message
+  const feedbackState = getFeedbackState(message.id);
   
   // Handle copy message content
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
     toast.success(t("Message copied to clipboard"));
+  };
+
+  // Handle feedback submission
+  const handleFeedback = async (feedbackType: 'like' | 'dislike') => {
+    try {
+      await submitFeedback({
+        messageId: message.id,
+        chatId: chatId,
+        feedbackType,
+      });
+      
+      // Also call the original onReaction callback if provided
+      onReaction?.(message.id, feedbackType);
+    } catch (error) {
+      // Error is already handled in the hook
+      console.error('Failed to submit feedback:', error);
+    }
   };
   
   return (
@@ -129,11 +154,31 @@ const ChatMessage = memo(({
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
                   <Copy className="h-3 w-3" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onReaction?.(message.id, 'like')}>
-                  <ThumbsUp className="h-3 w-3" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`h-6 w-6 ${feedbackState.feedbackType === 'like' ? 'text-green-600 bg-green-100 dark:bg-green-900/30' : ''}`}
+                  onClick={() => handleFeedback('like')}
+                  disabled={feedbackState.isSubmitting}
+                >
+                  {feedbackState.isSubmitting && feedbackState.feedbackType === 'like' ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <ThumbsUp className="h-3 w-3" />
+                  )}
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onReaction?.(message.id, 'dislike')}>
-                  <ThumbsDown className="h-3 w-3" />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`h-6 w-6 ${feedbackState.feedbackType === 'dislike' ? 'text-red-600 bg-red-100 dark:bg-red-900/30' : ''}`}
+                  onClick={() => handleFeedback('dislike')}
+                  disabled={feedbackState.isSubmitting}
+                >
+                  {feedbackState.isSubmitting && feedbackState.feedbackType === 'dislike' ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <ThumbsDown className="h-3 w-3" />
+                  )}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -254,6 +299,9 @@ export default function ChatInterface() {
   const [isTyping, setIsTyping] = useState(false)
   const [scrollToBottomVisible, setScrollToBottomVisible] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  // Initialize chat feedback hook
+  const { loadExistingFeedback } = useChatFeedback()
 
   const { messages, input, handleInputChange, handleSubmit: originalHandleSubmit, isLoading, setMessages } = useChat({
     api: "/api/chat",
@@ -393,6 +441,8 @@ export default function ChatInterface() {
         const chat = await response.json()
         if (chat.userId === user.id) {
           setMessages(chat.messages)
+          // Load existing feedback for this chat
+          loadExistingFeedback(chatId)
         } else {
           toast.error("Unauthorized access")
           router.push("/")
@@ -647,8 +697,11 @@ export default function ChatInterface() {
                   searchTerms={highlightTerms}
                   isFirstInGroup={messageIndex === 0}
                   isLastInGroup={messageIndex === group.length - 1}
+                  chatId={chatId}
                   onReaction={(messageId, reaction) => {
-                    toast.success(reaction === 'like' ? t("Thanks for your feedback!") : t("We'll improve based on your feedback"))
+                    // This callback is now mainly for backwards compatibility
+                    // The actual database storage is handled within ChatMessage component
+                    console.log(`Feedback ${reaction} for message ${messageId} stored in database`)
                   }}
                 />
               )
@@ -1091,11 +1144,11 @@ export default function ChatInterface() {
             </Card>
           </TabsContent>
 
-          {/* Document analysis tab with proper scrolling */}
+          {/* Document analysis tab with enhanced integration */}
           <TabsContent value="document" className="flex-1 min-h-0 overflow-hidden p-4">
             <Card className="h-full flex flex-col min-h-0">
               <CardContent className="flex-1 overflow-y-auto p-4">
-                <DocumentAnalysis onAnalysisComplete={handleDocumentAnalysis} />
+                <EnhancedDocumentIntegration onAnalysisComplete={handleDocumentAnalysis} />
               </CardContent>
             </Card>
           </TabsContent>

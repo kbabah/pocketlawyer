@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User } from "lucide-react" 
+import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User, FileText, Home } from "lucide-react" 
 import { format } from "date-fns"
 import {
   AlertDialog,
@@ -259,6 +259,36 @@ export function AppSidebar() {
         </SidebarHeader>
         
         <SidebarContent className="px-2 py-2.5">
+          {/* Navigation Section */}
+          <div className="mb-4 space-y-1">
+            <div className="px-2 py-1">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {t("Navigation")}
+              </h4>
+            </div>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]"
+              onClick={() => router.push("/")}
+            >
+              <Home className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <span className="font-medium truncate">{t("Home")}</span>
+            </Button>
+            
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-2 py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]"
+              onClick={() => router.push("/documents")}
+            >
+              <FileText className="h-5 w-5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+              <span className="font-medium truncate">{t("Documents")}</span>
+            </Button>
+          </div>          <div className="mb-4">
+            <div className="px-2 py-1">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                {t("Chat")}
+              </h4>
+            </div>
           <Button
             variant="outline"
             className="w-full justify-start gap-2 mb-3 py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]"
@@ -267,6 +297,7 @@ export function AppSidebar() {
             <MessageSquare className="h-5 w-5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
             <span className="font-medium truncate">{t("Start New Conversation")}</span>
           </Button>
+          </div>
 
           {user?.isAnonymous && (
             <div className="mb-4 p-3 border border-amber-200 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-900/20 rounded-md shadow-sm">
