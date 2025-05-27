@@ -692,7 +692,7 @@ export default function ChatInterface() {
                   onReaction={(messageId, reaction) => {
                     // This callback is now mainly for backwards compatibility
                     // The actual database storage is handled within ChatMessage component
-                    console.log(`Feedback ${reaction} for message ${messageId} stored in database`)
+                    toast.success(`Feedback "${reaction}" for message "${messageId}" has been recorded.`)
                   }}
                 />
               )
