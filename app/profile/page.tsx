@@ -13,6 +13,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { AuthErrorBoundary } from "@/components/error-boundaries"
 
 export default function Profile() {
   const { user, updateProfile, updatePassword } = useAuth()
@@ -99,9 +100,10 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-pattern-light dark:bg-pattern-dark p-4">
-      <div className="w-full max-w-md mx-auto">
-        <Card>
+    <AuthErrorBoundary>
+      <div className="min-h-screen w-full flex items-center justify-center bg-pattern-light dark:bg-pattern-dark p-4">
+        <div className="w-full max-w-md mx-auto">
+          <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl flex items-center gap-2">
               <Scale className="h-6 w-6" />
@@ -246,5 +248,6 @@ export default function Profile() {
         </Card>
       </div>
     </div>
+    </AuthErrorBoundary>
   )
 }

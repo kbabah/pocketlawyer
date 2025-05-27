@@ -7,6 +7,7 @@ import { AuthForm } from "@/components/auth/auth-form"
 import { useLanguage } from "@/contexts/language-context"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UserPlus } from "lucide-react"
+import { AuthErrorBoundary } from "@/components/error-boundaries"
 
 // Loading skeleton for auth form
 const AuthFormSkeleton = () => (
@@ -54,11 +55,13 @@ function SignUpContent() {
           
           {/* Auth Form */}
           <Suspense fallback={<AuthFormSkeleton />}>
-            <AuthForm 
-              mode={authMode}
-              onModeChange={setAuthMode}
-              redirectUrl={callbackUrl}
-            />
+            <AuthErrorBoundary>
+              <AuthForm 
+                mode={authMode}
+                onModeChange={setAuthMode}
+                redirectUrl={callbackUrl}
+              />
+            </AuthErrorBoundary>
           </Suspense>
           
           {/* Benefits */}

@@ -12,6 +12,7 @@ import { MessageSquare, FileText, Search, User, ChevronRight, Check, X } from "l
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { sendEmail } from "@/lib/email-service-client"
+import { AuthErrorBoundary } from "@/components/error-boundaries"
 
 // Define the onboarding step type
 interface OnboardingStep {
@@ -349,8 +350,9 @@ export function PostRegistrationOnboarding() {
   const step = onboardingSteps[currentStep]
   
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-      <Card className="w-full max-w-md">
+    <AuthErrorBoundary>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <Card className="w-full max-w-md">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">{step.title}</CardTitle>
@@ -403,6 +405,7 @@ export function PostRegistrationOnboarding() {
         </CardFooter>
       </Card>
     </div>
+    </AuthErrorBoundary>
   )
 }
 

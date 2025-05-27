@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Scale } from "lucide-react"
+import { AuthErrorBoundary } from "@/components/error-boundaries"
 
 // Loading skeleton for auth form
 const AuthFormSkeleton = () => (
@@ -65,11 +66,13 @@ function SignInContent() {
           
           {/* Auth Form */}
           <Suspense fallback={<AuthFormSkeleton />}>
-            <AuthForm 
-              mode={authMode}
-              onModeChange={setAuthMode}
-              redirectUrl={callbackUrl}
-            />
+            <AuthErrorBoundary>
+              <AuthForm 
+                mode={authMode}
+                onModeChange={setAuthMode}
+                redirectUrl={callbackUrl}
+              />
+            </AuthErrorBoundary>
           </Suspense>
           
           {/* Additional info */}

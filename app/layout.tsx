@@ -8,6 +8,8 @@ import { LanguageProvider } from "@/contexts/language-context"
 import { Toaster } from "sonner"
 import FloatingChatWidget from "@/components/layout/floating-chat-widget"
 import { Metadata } from "next"
+import { ErrorBoundary } from "@/components/error-boundary"
+import { ErrorFallbackButton } from "@/components/error-fallback-buttons"
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -30,14 +32,6 @@ export const metadata: Metadata = {
   generator: 'Next.js',
   applicationName: 'PocketLawyer',
   referrer: 'origin-when-cross-origin',
-  colorScheme: 'light dark',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: 'cover',
-  },
   icons: {
     icon: [
       {
@@ -106,6 +100,15 @@ export const metadata: Metadata = {
   },
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
+  colorScheme: 'light dark',
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -126,38 +129,93 @@ export default function RootLayout({
         className={`${inter.className} flex min-h-screen flex-col antialiased`}
         suppressHydrationWarning
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange={false}
-          storageKey="pocket-lawyer-theme"
+        <ErrorBoundary
+          fallback={
+            <div className="min-h-screen flex items-center justify-center bg-background">
+              <div className="text-center space-y-4 p-8 max-w-md">
+                <div className="text-2xl font-bold text-destructive">Application Error</div>
+                <p className="text-muted-foreground">
+                  Something went wrong. Please refresh the page or contact support if the problem persists.
+                </p>
+                <ErrorFallbackButton 
+                  variant="reload"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                >
+                  Reload Page
+                </ErrorFallbackButton>
+              </div>
+            </div>
+          }
         >
-          <LanguageProvider>
-            <AuthProvider>
-              <SidebarProvider>
-                {/* Main application content */}
-                <main className="flex-1 relative min-h-screen">
-                  {children}
-                </main>
-                
-                {/* Global floating chat widget */}
-                <FloatingChatWidget 
-                  position="bottom-right"
-                  persistState={true}
-                />
-                
-                {/* Global toast notifications */}
-                <Toaster 
-                  position="top-right"
-                  expand={true}
-                  richColors={true}
-                  closeButton={true}
-                />
-              </SidebarProvider>
-            </AuthProvider>
-          </LanguageProvider>
-        </ThemeProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange={false}
+            storageKey="pocket-lawyer-theme"
+          >
+            <LanguageProvider>
+              <ErrorBoundary
+                fallback={
+                  <div className="min-h-screen flex items-center justify-center bg-background">
+                    <div className="text-center space-y-4 p-8 max-w-md">
+                      <div className="text-xl font-bold text-destructive">Authentication Error</div>
+                      <p className="text-muted-foreground">
+                        There was an issue with authentication. Please try refreshing the page.
+                      </p>
+                    </div>
+                  </div>
+                }
+              >
+                <AuthProvider>
+                  <SidebarProvider>
+                    {/* Main application content */}
+                    <main className="flex-1 relative min-h-screen">
+                      <ErrorBoundary
+                        fallback={
+                          <div className="min-h-screen flex items-center justify-center bg-background p-4">
+                            <div className="text-center space-y-4 max-w-md">
+                              <div className="text-lg font-bold text-destructive">Page Error</div>
+                              <p className="text-muted-foreground">
+                                There was an error loading this page. Please try again.
+                              </p>
+                              <ErrorFallbackButton 
+                                variant="home"
+                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                              >
+                                Go to Home
+                              </ErrorFallbackButton>
+                            </div>
+                          </div>
+                        }
+                      >
+                        {children}
+                      </ErrorBoundary>
+                    </main>
+                    
+                    {/* Global floating chat widget */}
+                    <ErrorBoundary
+                      fallback={null}
+                    >
+                      <FloatingChatWidget 
+                        position="bottom-right"
+                        persistState={true}
+                      />
+                    </ErrorBoundary>
+                    
+                    {/* Global toast notifications */}
+                    <Toaster 
+                      position="top-right"
+                      expand={true}
+                      richColors={true}
+                      closeButton={true}
+                    />
+                  </SidebarProvider>
+                </AuthProvider>
+              </ErrorBoundary>
+            </LanguageProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

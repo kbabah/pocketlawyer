@@ -5,7 +5,6 @@ import { useChat } from "@ai-sdk/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar } from "@/components/ui/avatar"
 import { 
@@ -14,9 +13,6 @@ import {
   BookOpen, Keyboard, Info, ArrowRight, Check, Copy, Share, ThumbsUp,
   ThumbsDown, MoreHorizontal, ArrowDown, Paperclip
 } from "lucide-react"
-import WebBrowser from "@/components/web-browser"
-import DocumentAnalysis from "@/components/document-analysis"
-import EnhancedDocumentIntegration from "@/components/enhanced-document-integration"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { 
@@ -33,6 +29,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu"
+import { ChatErrorBoundary } from "@/components/error-boundaries"
 
 // ...react-window import removed (unused)
 
@@ -269,7 +266,6 @@ const MessageSearchPanel = ({
 );
 
 export default function ChatInterface() {
-  const [activeTab, setActiveTab] = useState<string>("chat")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [messageSearchQuery, setMessageSearchQuery] = useState<string>("")
   const [searchResults, setSearchResults] = useState<number[]>([])
@@ -504,11 +500,6 @@ export default function ChatInterface() {
       return () => scrollContainer.removeEventListener('scroll', handleScroll)
     }
   }, [])
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setActiveTab("web")
-  }
 
   const handleDocumentAnalysis = async (question: string, answer: string) => {
     // Check for trial limit for anonymous users for document analysis too
@@ -953,59 +944,20 @@ export default function ChatInterface() {
   }, [isTyping])
 
   return (
-    <div 
-      className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden"
-      role="region"
-      aria-label={t("Chat conversation")}
-    >
+    <ChatErrorBoundary>
+      <div 
+        className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden"
+        role="region"
+        aria-label={t("Chat conversation")}
+      >
       <TooltipProvider>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden">
-          {/* Fixed tab navigation */}
-          <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-            <div className="flex items-center justify-center px-2 sm:px-4 md:px-0 relative">
-              <TabsList className="h-12 sm:h-10 p-1">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger 
-                      value="chat" 
-                      className="py-2.5 px-3 min-h-[44px] sm:min-h-0 data-[state=active]:border-b-2 data-[state=active]:border-[#ec6307] data-[state=active]:text-[#ec6307] transition-all duration-200"
-                    >
-                      <MessageCircle className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{t("Legal Chat")}</span>
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("Chat with our AI legal assistant")}</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger 
-                      value="web" 
-                      className="py-2.5 px-3 min-h-[44px] sm:min-h-0 data-[state=active]:border-b-2 data-[state=active]:border-[#ec6307] data-[state=active]:text-[#ec6307] transition-all duration-200"
-                    >
-                      <Search className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{t("Web Search")}</span>
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("Search legal resources online")}</TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger 
-                      value="document" 
-                      className="py-2.5 px-3 min-h-[44px] sm:min-h-0 data-[state=active]:border-b-2 data-[state=active]:border-[#ec6307] data-[state=active]:text-[#ec6307] transition-all duration-200"
-                    >
-                      <FileText className="h-5 w-5 sm:h-4 sm:w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{t("Documents")}</span>
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("Analyze legal documents")}</TooltipContent>
-                </Tooltip>
-              </TabsList>
-              
-              {/* Search toggle button */}
-              {activeTab === "chat" && messages.length > 0 && (
+        {/* Chat Interface - No Tabs */}
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Search toggle button - only show when messages exist */}
+          {messages.length > 0 && (
+            <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+              <div className="flex items-center justify-between px-4 py-2">
+                <h2 className="text-lg font-medium">{t("Legal Chat")}</h2>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -1015,17 +967,16 @@ export default function ChatInterface() {
                       setTimeout(() => messageSearchInputRef.current?.focus(), 100)
                     }
                   }}
-                  className="mr-2"
                 >
                   <Search className="h-4 w-4 mr-2" />
                   <span className="hidden sm:inline">{t("Search")}</span>
                 </Button>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Chat content with proper scroll containment */}
-          <TabsContent value="chat" className="flex-1 flex flex-col min-h-0 overflow-hidden p-4">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-4">
             <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <CardContent className="flex flex-col h-full p-0 overflow-hidden">
                 {/* Fixed message search panel */}
@@ -1133,27 +1084,10 @@ export default function ChatInterface() {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Web search tab with proper scrolling */}
-          <TabsContent value="web" className="flex-1 min-h-0 overflow-hidden p-4">
-            <Card className="h-full flex flex-col min-h-0">
-              <CardContent className="flex-1 overflow-y-auto p-4">
-                <WebBrowser query={searchQuery} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Document analysis tab with enhanced integration */}
-          <TabsContent value="document" className="flex-1 min-h-0 overflow-hidden p-4">
-            <Card className="h-full flex flex-col min-h-0">
-              <CardContent className="flex-1 overflow-y-auto p-4">
-                <EnhancedDocumentIntegration onAnalysisComplete={handleDocumentAnalysis} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </TooltipProvider>
     </div>
+    </ChatErrorBoundary>
   );
 }

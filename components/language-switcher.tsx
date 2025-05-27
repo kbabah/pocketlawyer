@@ -3,8 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/contexts/language-context"
-import { Globe, Check, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { Globe, Check, Loader2, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 const languages = [
 	{ code: "en", name: "English", nativeName: "English", flag: "🇺🇸" },
@@ -12,19 +12,15 @@ const languages = [
 ] as const
 
 export function LanguageSwitcher() {
-	const { language, setLanguage, t } = useLanguage()
-	const [isChanging, setIsChanging] = useState(false)
+	const { language, setLanguage, t, isChanging, error } = useLanguage()
 
 	const handleLanguageChange = async (newLanguage: "en" | "fr") => {
-		if (newLanguage === language) return
-
-		setIsChanging(true)
-
-		// Add a small delay to show loading state for better UX
-		await new Promise((resolve) => setTimeout(resolve, 300))
-
-		setLanguage(newLanguage)
-		setIsChanging(false)
+		try {
+			await setLanguage(newLanguage)
+		} catch (err) {
+			// Error is already handled in the context
+			console.error("Failed to change language:", err)
+		}
 	}
 
 	const currentLanguage = languages.find((lang) => lang.code === language)
@@ -54,9 +50,18 @@ export function LanguageSwitcher() {
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				align="end"
-				className="min-w-[160px] p-1"
+				className="min-w-[180px] p-2"
 				sideOffset={5}
 			>
+				{error && (
+					<Alert className="mb-2 p-2">
+						<AlertCircle className="h-3 w-3" />
+						<AlertDescription className="text-xs">
+							{error}
+						</AlertDescription>
+					</Alert>
+				)}
+				
 				{languages.map((lang) => (
 					<DropdownMenuItem
 						key={lang.code}
@@ -65,12 +70,14 @@ export function LanguageSwitcher() {
 							language === lang.code
 								? "bg-primary/10 font-medium text-primary"
 								: "hover:bg-accent/50"
-						} py-2.5 px-3 cursor-pointer transition-colors rounded-sm flex items-center justify-between group`}
+						} py-3 px-3 cursor-pointer transition-all duration-200 rounded-md flex items-center justify-between group ${
+							isChanging ? "opacity-50 pointer-events-none" : ""
+						}`}
 						disabled={isChanging}
 					>
 						<div className="flex items-center gap-3">
 							<span
-								className="text-lg"
+								className="text-lg transition-transform group-hover:scale-110"
 								role="img"
 								aria-label={`${lang.name} flag`}
 							>
@@ -83,14 +90,19 @@ export function LanguageSwitcher() {
 								</span>
 							</div>
 						</div>
-						{language === lang.code && (
-							<Check className="h-4 w-4 text-primary" />
-						)}
+						<div className="flex items-center gap-1">
+							{isChanging && language === lang.code && (
+								<Loader2 className="h-3 w-3 animate-spin" />
+							)}
+							{language === lang.code && !isChanging && (
+								<Check className="h-4 w-4 text-primary" />
+							)}
+						</div>
 					</DropdownMenuItem>
 				))}
 
-				<div className="border-t border-border mt-1 pt-1">
-					<div className="px-3 py-2 text-xs text-muted-foreground">
+				<div className="border-t border-border mt-2 pt-2">
+					<div className="px-3 py-1 text-xs text-muted-foreground">
 						{t("language.switch").replace("{language}", "")}
 					</div>
 				</div>
