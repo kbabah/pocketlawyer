@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { sendEmail } from "@/lib/email-service";
-import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {

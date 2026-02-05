@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { logger } from "@/lib/logger";
 import { sendEmail, testEmailService } from '@/lib/email-service';
-import { logger } from "@/lib/logger";
 import { adminAuth } from '@/lib/firebase-admin';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';

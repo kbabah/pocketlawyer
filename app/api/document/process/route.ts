@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from "@/lib/logger";
 import { createWorker } from 'tesseract.js';
-import { logger } from "@/lib/logger";
 
 // Define types for Tesseract logger messages
 interface TesseractLoggerMessage {

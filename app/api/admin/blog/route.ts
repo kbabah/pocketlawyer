@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { adminDb } from "@/lib/firebase-admin";
-import { logger } from "@/lib/logger";
 import { adminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
 
