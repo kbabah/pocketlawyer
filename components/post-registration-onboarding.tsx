@@ -153,13 +153,13 @@ export function PostRegistrationOnboarding() {
       skipable: true
     },
     {
-      id: "search",
-      title: t("Search for Legal Information"),
-      description: t("Use the search feature to find specific legal information or browse through categories of legal topics."),
-      icon: <Search className="h-8 w-8 text-primary" />,
+      id: "documents",
+      title: t("Analyze Legal Documents"),
+      description: t("Upload and analyze your legal documents with AI assistance."),
+      icon: <FileText className="h-8 w-8 text-primary" />,
       action: () => {
-        router.push("/search")
-        handleComplete("search")
+        router.push("/documents")
+        handleComplete("documents")
       },
       skipable: true
     },
