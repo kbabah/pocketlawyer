@@ -22,6 +22,17 @@ import {
   Share
 } from "lucide-react"
 
+interface UploadFile {
+  id: string
+  file: File
+  status: 'pending' | 'uploading' | 'processing' | 'completed' | 'error'
+  progress: number
+  extractedText?: string
+  error?: string
+  uploadedAt?: Date
+  language?: string
+}
+
 interface ProcessedFile {
   id: string
   name: string

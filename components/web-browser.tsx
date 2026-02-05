@@ -30,14 +30,8 @@ export default function WebBrowser({ query: initialQuery }: WebBrowserProps) {
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
     e.preventDefault()
-    if (currentUrl) {
-      setHistory(prev => [...prev.slice(0, historyIndex + 1), currentUrl])
-      setHistoryIndex(prev => prev + 1)
-    } else {
-      setHistory([])
-      setHistoryIndex(0)
-    }
-    setCurrentUrl(url)
+    // Open in new tab instead of iframe (many sites block iframe embedding)
+    window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   const handleBack = () => {
