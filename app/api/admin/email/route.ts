@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { sendEmail, testEmailService } from '@/lib/email-service';
 import { adminAuth } from '@/lib/firebase-admin';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { cookies } from 'next/headers';
 
 // Function to verify if a user is an admin
 async function isAdmin(userId: string): Promise<boolean> {
@@ -17,11 +17,29 @@ async function isAdmin(userId: string): Promise<boolean> {
   }
 }
 
+// Get user ID from Firebase session cookie
+async function getUserIdFromSession(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('firebase-session');
+    
+    if (!sessionCookie?.value) {
+      return null;
+    }
+    
+    // Verify the session cookie
+    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie.value, true);
+    return decodedClaims.uid;
+  } catch (error) {
+    console.error('Error verifying session:', error);
+    return null;
+  }
+}
+
 // Test the email configuration
 export async function GET(req: Request) {
   try {
-    const session = await auth();
-    const userId = session.userId;
+    const userId = await getUserIdFromSession();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -48,8 +66,7 @@ export async function GET(req: Request) {
 // Send bulk emails (admin only)
 export async function POST(req: Request) {
   try {
-    const session = await auth();
-    const userId = session.userId;
+    const userId = await getUserIdFromSession();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
