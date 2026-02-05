@@ -253,10 +253,10 @@ export function AuthForm({
   const handleSignUp = async (data: SignUpForm) => {
     setIsSubmitting(true)
     try {
-      await signUp(data.email, data.password, {
-        firstName: data.firstName,
-        lastName: data.lastName,
-      })
+      // Combine first and last name
+      const fullName = `${data.firstName} ${data.lastName}`.trim()
+      
+      await signUp(data.email, data.password, fullName)
       toast.success(t('Account created successfully!'))
     } catch (error: any) {
       toast.error(error.message || t('Failed to create account'))
