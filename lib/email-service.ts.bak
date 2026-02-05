@@ -4,7 +4,6 @@ if (typeof window !== 'undefined') {
 }
 
 import { ServerClient, Message, Attachment } from 'postmark';
-import { logger } from "@/lib/logger";
 import crypto from 'crypto';
 import { adminDb } from './firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -136,7 +135,7 @@ async function storeInitialTrackingData(
       links: []
     });
   } catch (error) {
-    logger.error('Failed to store email tracking data:', error);
+    console.error('Failed to store email tracking data:', error);
   }
 }
 
@@ -227,7 +226,7 @@ export async function sendEmail({
     };
 
     // Send email via Postmark
-    logger.info(`Sending email via Postmark to ${Array.isArray(to) ? to.join(', ') : to}`);
+    console.log(`Sending email via Postmark to ${Array.isArray(to) ? to.join(', ') : to}`);
     const response = await client.sendEmail(messageData);
 
     return { 
@@ -236,7 +235,7 @@ export async function sendEmail({
       emailId
     };
   } catch (error) {
-    logger.error('Email sending failed:', error);
+    console.error('Email sending failed:', error);
     return { success: false, error };
   }
 }
@@ -697,7 +696,7 @@ export async function sendBulkEmails({
       failed
     };
   } catch (error) {
-    logger.error('Bulk email sending failed:', error);
+    console.error('Bulk email sending failed:', error);
     return {
       success: false,
       sent: 0,
@@ -765,7 +764,7 @@ export async function processScheduledEmails(): Promise<{ processed: number; suc
           failed++;
         }
       } catch (error) {
-        logger.error(`Failed to process scheduled email ${doc.id}:`, error);
+        console.error(`Failed to process scheduled email ${doc.id}:`, error);
         
         // Update status to failed
         await doc.ref.update({
@@ -783,7 +782,7 @@ export async function processScheduledEmails(): Promise<{ processed: number; suc
       failed
     };
   } catch (error) {
-    logger.error('Failed to process scheduled emails:', error);
+    console.error('Failed to process scheduled emails:', error);
     return { processed: 0, succeeded: 0, failed: 0 };
   }
 }
@@ -850,7 +849,7 @@ export async function processScheduledCampaigns(): Promise<{ processed: number; 
         
         succeeded++;
       } catch (error) {
-        logger.error(`Failed to process campaign ${doc.id}:`, error);
+        console.error(`Failed to process campaign ${doc.id}:`, error);
         
         // Update status to failed
         await doc.ref.update({
@@ -865,7 +864,7 @@ export async function processScheduledCampaigns(): Promise<{ processed: number; 
     
     return { processed, succeeded, failed };
   } catch (error) {
-    logger.error('Failed to process scheduled campaigns:', error);
+    console.error('Failed to process scheduled campaigns:', error);
     return { processed: 0, succeeded: 0, failed: 0 };
   }
 }

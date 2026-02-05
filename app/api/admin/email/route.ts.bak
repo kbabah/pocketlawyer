@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/logger";
 import { sendEmail, testEmailService } from '@/lib/email-service';
-import { logger } from "@/lib/logger";
 import { adminAuth } from '@/lib/firebase-admin';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -14,7 +12,7 @@ async function isAdmin(userId: string): Promise<boolean> {
     const user = await adminAuth.getUser(userId);
     return user.customClaims?.admin === true;
   } catch (error) {
-    logger.error('Error checking admin status:', error);
+    console.error('Error checking admin status:', error);
     return false;
   }
 }
@@ -33,7 +31,7 @@ async function getUserIdFromSession(): Promise<string | null> {
     const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie.value, true);
     return decodedClaims.uid;
   } catch (error) {
-    logger.error('Error verifying session:', error);
+    console.error('Error verifying session:', error);
     return null;
   }
 }
@@ -60,7 +58,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json(result);
   } catch (error) {
-    logger.error('Email test failed:', error);
+    console.error('Email test failed:', error);
     return NextResponse.json({ error: 'Failed to test email service' }, { status: 500 });
   }
 }
@@ -168,7 +166,7 @@ export async function POST(req: Request) {
       results: testMode ? results : undefined // Only return detailed results in test mode
     });
   } catch (error) {
-    logger.error('Bulk email send failed:', error);
+    console.error('Bulk email send failed:', error);
     return NextResponse.json({ error: 'Failed to send emails' }, { status: 500 });
   }
 }

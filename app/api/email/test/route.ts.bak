@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { logger } from "@/lib/logger";
 import { sendEmail } from "@/lib/email-service";
-import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
@@ -15,9 +13,9 @@ export async function POST(req: Request) {
     }
     
     // Debug environment variables
-    logger.info("Email Service Environment Check:");
-    logger.info(`POSTMARK_SERVER_TOKEN exists: ${!!process.env.POSTMARK_SERVER_TOKEN}`);
-    logger.info(`EMAIL_FROM: ${process.env.EMAIL_FROM}`);
+    console.log("Email Service Environment Check:");
+    console.log(`POSTMARK_SERVER_TOKEN exists: ${!!process.env.POSTMARK_SERVER_TOKEN}`);
+    console.log(`EMAIL_FROM: ${process.env.EMAIL_FROM}`);
     
     // Try to send a test email
     const result = await sendEmail({
@@ -40,7 +38,7 @@ export async function POST(req: Request) {
     });
     
     if (!result.success) {
-      logger.error("Test email failed:", result.error);
+      console.error("Test email failed:", result.error);
       return NextResponse.json(
         { 
           success: false, 
@@ -57,7 +55,7 @@ export async function POST(req: Request) {
       messageId: result.messageId
     });
   } catch (error) {
-    logger.error("Error in email test route:", error);
+    console.error("Error in email test route:", error);
     return NextResponse.json(
       { success: false, message: "Server error", error },
       { status: 500 }

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/logger";
 import { adminDb } from '@/lib/firebase-admin';
 import { sendEmail } from '@/lib/email-service';
 import * as z from 'zod';
@@ -60,7 +59,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-    logger.error('Newsletter subscription error:', error);
+    console.error('Newsletter subscription error:', error);
     return NextResponse.json(
       { error: "Failed to process subscription" },
       { status: 500 }

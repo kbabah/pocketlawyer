@@ -1,5 +1,4 @@
 import { openai } from "@ai-sdk/openai"
-import { logger } from "@/lib/logger";
 import { streamText } from "ai"
 import { OPENAI_MODELS } from '@/lib/openai'
 import { rateLimit, getIdentifier } from '@/lib/rate-limit'
@@ -19,7 +18,7 @@ function validateModel(requestedModel: string): string {
   }
   
   // Otherwise fallback to default model
-  logger.warn(`Unsupported model requested: ${requestedModel}. Using default: ${OPENAI_MODELS.GPT41}`);
+  console.warn(`Unsupported model requested: ${requestedModel}. Using default: ${OPENAI_MODELS.GPT41}`);
   return OPENAI_MODELS.GPT41;
 }
 
@@ -114,7 +113,7 @@ ${language === "fr" ?
     return result.toDataStreamResponse()
   } catch (e: unknown) {
     const error = e as Error;
-    logger.error('Chat API Error:', error);
+    console.error('Chat API Error:', error);
     return new Response(
       JSON.stringify({ 
         error: 'An error occurred while processing your request',

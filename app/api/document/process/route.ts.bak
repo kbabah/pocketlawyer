@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { logger } from "@/lib/logger";
 import { createWorker } from 'tesseract.js';
-import { logger } from "@/lib/logger";
 
 // Define types for Tesseract logger messages
 interface TesseractLoggerMessage {
@@ -69,7 +67,7 @@ async function extractTextFromPDF(buffer: Buffer, options?: { language?: string 
     
     // Last resort: Try OCR directly on the PDF buffer
     try {
-      logger.info('Starting direct OCR processing...');
+      console.log('Starting direct OCR processing...');
       
       // Get language from options or use default
       const requestLanguage = options?.language || '';
@@ -78,11 +76,11 @@ async function extractTextFromPDF(buffer: Buffer, options?: { language?: string 
         [requestLanguage, ...DEFAULT_LANGUAGES] : 
         DEFAULT_LANGUAGES;
       
-      logger.info(`Using language(s): ${languagesToTry.join(', ')}`);
+      console.log(`Using language(s): ${languagesToTry.join(', ')}`);
       
       // Simple Tesseract processing without the PDF.js complexity
       const worker = await createWorker({ 
-        logger: (m: TesseractLoggerMessage) => logger.info(`OCR: ${m.status}`)
+        logger: (m: TesseractLoggerMessage) => console.log(`OCR: ${m.status}`)
       });
       
       await worker.loadLanguage(languagesToTry);
@@ -97,12 +95,12 @@ async function extractTextFromPDF(buffer: Buffer, options?: { language?: string 
         return data.text.trim();
       }
     } catch (error: any) {
-      logger.error('OCR process failed:', error.message);
+      console.error('OCR process failed:', error.message);
     }
     
     return "Could not extract readable text. The document may be image-based, encrypted, or use non-standard encoding.";
   } catch (error: any) {
-    logger.error('Text extraction error:', error.message);
+    console.error('Text extraction error:', error.message);
     return "An error occurred while processing the document.";
   }
 }
@@ -147,7 +145,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ text, success: true });
     } catch (innerError: any) {
       // Always return JSON even if processing fails
-      logger.error('Document processing error:', innerError);
+      console.error('Document processing error:', innerError);
       return NextResponse.json({ 
         error: 'Failed to process document. Please try again later.',
         success: false
@@ -155,7 +153,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (outerError: any) {
     // Final fallback - guarantee JSON response
-    logger.error('Critical API error:', outerError);
+    console.error('Critical API error:', outerError);
     return NextResponse.json({ 
       error: 'Server error occurred. Please try again.',
       success: false

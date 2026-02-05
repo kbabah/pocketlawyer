@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/logger";
 import { openai, OPENAI_MODELS } from '@/lib/openai';
 
 export async function GET(request: Request) {
@@ -89,7 +88,7 @@ Important guidelines:
           throw new Error('Invalid response format from search model');
         }
       } catch (parseError) {
-        logger.error('Failed to parse search response:', parseError);
+        console.error('Failed to parse search response:', parseError);
         return NextResponse.json({
           error: 'Failed to parse search results',
           details: process.env.NODE_ENV === 'development' ? String(parseError) : undefined
@@ -103,7 +102,7 @@ Important guidelines:
     }, { status: 500 });
 
   } catch (error: any) {
-    logger.error('Search API Error:', error);
+    console.error('Search API Error:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json({
       error: 'An error occurred while processing your request',

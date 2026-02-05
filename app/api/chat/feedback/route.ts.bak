@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { logger } from "@/lib/logger";
 import { getServerSession } from 'next-auth'
-import { logger } from "@/lib/logger";
 import { authOptions } from '@/lib/auth'
 import { adminDb } from '@/lib/firebase-admin'
 
@@ -88,7 +86,7 @@ export async function POST(request: NextRequest) {
         })
       }
     } catch (statsError) {
-      logger.warn('Failed to update message stats:', statsError)
+      console.warn('Failed to update message stats:', statsError)
       // Don't fail the main operation if stats update fails
     }
 
@@ -99,7 +97,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    logger.error('Chat feedback API error:', error)
+    console.error('Chat feedback API error:', error)
     return NextResponse.json(
       { 
         error: 'Failed to submit feedback',
@@ -151,7 +149,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ feedback })
 
   } catch (error: any) {
-    logger.error('Get feedback API error:', error)
+    console.error('Get feedback API error:', error)
     return NextResponse.json(
       { 
         error: 'Failed to retrieve feedback',

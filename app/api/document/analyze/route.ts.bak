@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { logger } from "@/lib/logger";
 import { openai, OPENAI_MODELS } from '@/lib/openai'
 
 export const maxDuration = 30
@@ -41,7 +40,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ answer })
     } catch (error: any) {
-      logger.error("OpenAI API error:", error);
+      console.error("OpenAI API error:", error);
       // More user-friendly error for AI failures
       let errorMessage = 'Failed to analyze the document due to an issue with the AI service.';
       if (error.code === 'context_length_exceeded') {
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: errorMessage + " Please try again later or contact support if the issue persists." }, { status: 500 })
     }
   } catch (outerError: any) {
-    logger.error("Request parsing error:", outerError);
+    console.error("Request parsing error:", outerError);
     // General server error for request issues
     return NextResponse.json({ error: 'There was a problem processing your request. Please ensure the data is correctly formatted.' }, { status: 400 })
   }
