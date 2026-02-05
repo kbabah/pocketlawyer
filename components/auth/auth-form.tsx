@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/contexts/auth-context'
@@ -335,11 +335,18 @@ export function AuthForm({
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="rememberMe"
-                      {...signInForm.register('rememberMe')}
+                    <Controller
+                      name="rememberMe"
+                      control={signInForm.control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="rememberMe"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
                     />
-                    <Label htmlFor="rememberMe" className="text-sm">
+                    <Label htmlFor="rememberMe" className="text-sm cursor-pointer">
                       {t('Remember me')}
                     </Label>
                   </div>
@@ -457,28 +464,38 @@ export function AuthForm({
                   placeholder={t('Confirm your password')}
                 />
                 
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="acceptTerms"
-                    {...signUpForm.register('acceptTerms')}
-                  />
-                  <Label htmlFor="acceptTerms" className="text-sm">
-                    {t('I agree to the')}{' '}
-                    <Link href="/terms" className="text-primary hover:underline">
-                      {t('Terms of Service')}
-                    </Link>{' '}
-                    {t('and')}{' '}
-                    <Link href="/privacy" className="text-primary hover:underline">
-                      {t('Privacy Policy')}
-                    </Link>
-                  </Label>
-                </div>
-                {signUpForm.formState.errors.acceptTerms && (
-                  <div className="flex items-center gap-2 text-sm text-red-600">
-                    <AlertTriangle className="h-3 w-3" />
-                    {signUpForm.formState.errors.acceptTerms.message}
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <Controller
+                      name="acceptTerms"
+                      control={signUpForm.control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="acceptTerms"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="mt-1"
+                        />
+                      )}
+                    />
+                    <Label htmlFor="acceptTerms" className="text-sm font-normal cursor-pointer">
+                      {t('I agree to the')}{' '}
+                      <Link href="/terms" target="_blank" className="text-primary hover:underline font-medium">
+                        {t('Terms of Service')}
+                      </Link>{' '}
+                      {t('and')}{' '}
+                      <Link href="/privacy" target="_blank" className="text-primary hover:underline font-medium">
+                        {t('Privacy Policy')}
+                      </Link>
+                    </Label>
                   </div>
-                )}
+                  {signUpForm.formState.errors.acceptTerms && (
+                    <div className="flex items-center gap-2 text-sm text-red-600">
+                      <AlertTriangle className="h-3 w-3" />
+                      {signUpForm.formState.errors.acceptTerms.message}
+                    </div>
+                  )}
+                </div>
                 
                 <Button 
                   type="submit" 
