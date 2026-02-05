@@ -45,6 +45,41 @@
     --sidebar-ring: 217 91.2% 59.8%;
   }
 
+  /* Typography Scale */
+  h1 {
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight;
+    @apply leading-tight;
+  }
+
+  h2 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-semibold tracking-tight;
+    @apply leading-tight;
+  }
+
+  h3 {
+    @apply text-xl md:text-2xl lg:text-3xl font-semibold;
+    @apply leading-snug;
+  }
+
+  h4 {
+    @apply text-lg md:text-xl lg:text-2xl font-semibold;
+    @apply leading-snug;
+  }
+
+  h5 {
+    @apply text-base md:text-lg lg:text-xl font-medium;
+    @apply leading-normal;
+  }
+
+  h6 {
+    @apply text-sm md:text-base lg:text-lg font-medium;
+    @apply leading-normal;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+
   /* Optimize for mobile */
   html {
     -webkit-tap-highlight-color: transparent;
@@ -298,6 +333,50 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-orange-600;
   }
+
+  /* Form Styles */
+  .form-input {
+    @apply transition-all duration-200;
+    @apply focus-visible:ring-2 focus-visible:ring-primary/20;
+    @apply focus-visible:border-primary;
+  }
+
+  .form-error {
+    @apply text-sm text-destructive font-medium;
+    @apply flex items-center gap-1.5 mt-1.5;
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-foreground;
+    @apply mb-1.5 block;
+  }
+
+  .form-helper {
+    @apply text-xs text-muted-foreground mt-1;
+  }
+
+  /* Button Enhancements */
+  .btn-loading {
+    @apply opacity-70 cursor-not-allowed;
+  }
+
+  /* Card Hover Effects */
+  .card-hover {
+    @apply transition-all duration-300;
+    @apply hover:shadow-lg hover:-translate-y-0.5;
+    @apply active:translate-y-0;
+  }
+
+  /* Focus Visible */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2;
+    @apply focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  /* Smooth Transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
 }
 
 /* Animation delay utilities */
@@ -307,6 +386,54 @@
 
 .animation-delay-400 {
   animation-delay: 400ms;
+}
+
+/* Fade in up animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+/* Scale in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
 }
 
 /* Search result highlighting */
