@@ -311,21 +311,43 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loading && user && !initialAuthChecked) {
       const currentPath = window.location.pathname;
-      const publicPaths = ["/welcome", "/sign-in", "/sign-up", "/terms", "/privacy", "/blog"];
-      const isPublicPage = publicPaths.includes(currentPath);
+      const authPages = ["/sign-in", "/sign-up", "/sign-in-new", "/sign-up-new"];
+      const publicPages = ["/welcome", "/terms", "/privacy", "/blog", "/contact"];
+      const isAuthPage = authPages.includes(currentPath);
+      const isPublicPage = publicPages.includes(currentPath);
       
-      // Don't redirect if on a public page
+      // If user just signed in/up, redirect to dashboard or onboarding
+      if (isAuthPage && !user.isAnonymous) {
+        // Check onboarding status
+        getDoc(doc(db, "users", user.id, "onboarding", "progress"))
+          .then((progressDoc) => {
+            const shouldShowOnboarding = !progressDoc.exists() || !progressDoc.data()?.finishedAt;
+            if (shouldShowOnboarding) {
+              router.push("/onboarding");
+            } else {
+              router.push("/");
+            }
+          })
+          .catch(() => {
+            // If error checking onboarding, just go to home
+            router.push("/");
+          })
+          .finally(() => setInitialAuthChecked(true));
+        return;
+      }
+      
+      // Don't redirect if on other public pages
       if (isPublicPage) {
         setInitialAuthChecked(true);
         return;
       }
 
-      // Check onboarding status asynchronously without blocking redirect
-      if (!user.isAnonymous) {
+      // Check onboarding status for non-auth pages
+      if (!user.isAnonymous && currentPath !== "/onboarding") {
         getDoc(doc(db, "users", user.id, "onboarding", "progress"))
           .then((progressDoc) => {
             const shouldShowOnboarding = !progressDoc.exists() || !progressDoc.data()?.finishedAt;
-            if (shouldShowOnboarding && currentPath !== "/onboarding") {
+            if (shouldShowOnboarding) {
               router.push("/onboarding");
             }
           })
@@ -335,7 +357,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         setInitialAuthChecked(true);
       }
     }
-  }, [user, loading, router, searchParams, initialAuthChecked]);
+  }, [user, loading, router, initialAuthChecked]);
 
   useEffect(() => {
     // Set session persistence
@@ -394,8 +416,13 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Router push will happen in useEffect after auth state changes
+      // Reset initialAuthChecked to allow redirect logic to run
+      setInitialAuthChecked(false);
+      // Auth state change will trigger in onAuthStateChanged
+      // which will then trigger the redirect in useEffect
+      logger.info('Sign in successful, waiting for auth state change');
     } catch (error: any) {
+      logger.error('Sign in failed', error);
       throw new Error(error.message);
     }
   };
@@ -450,9 +477,13 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         console.error("Error sending welcome email:", error);
       });
 
+      // Reset initialAuthChecked to allow redirect logic to run
+      setInitialAuthChecked(false);
+      logger.info('Sign up successful, waiting for auth state change');
+      
       // Router push will happen in useEffect after auth state changes
     } catch (error: any) {
-      console.error('Sign-up error:', error);
+      logger.error('Sign-up error', error);
       
       // Provide more specific error messages
       let errorMessage = error.message;
@@ -509,9 +540,14 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
           template: "welcome",
           data: { name: result.user.displayName || 'there' }
         }).catch(error => {
-          console.error("Error sending welcome email:", error);
+          logger.error("Error sending welcome email", error);
         });
       }
+      
+      // Reset initialAuthChecked to allow redirect logic to run
+      setInitialAuthChecked(false);
+      logger.info('Google sign in successful, waiting for auth state change');
+      
       // Router push will happen in useEffect after auth state changes
     } catch (error: any) {
       throw new Error(error.message);
