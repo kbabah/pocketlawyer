@@ -404,6 +404,24 @@ export function AppSidebar() {
               <Scale className={`text-muted-foreground flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-5 w-5 sm:h-4 sm:w-4'}`} />
               <span className="truncate">{t("Find a Lawyer")}</span>
             </Button>
+
+            {user && (
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 touch-manipulation font-medium ${
+                  isMobile 
+                    ? 'py-4 text-base min-h-[52px] px-3' 
+                    : 'py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]'
+                }`}
+                onClick={() => {
+                  router.push("/bookings")
+                  if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                }}
+              >
+                <Calendar className={`text-muted-foreground flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-5 w-5 sm:h-4 sm:w-4'}`} />
+                <span className="truncate">{t("My Bookings")}</span>
+              </Button>
+            )}
           </div>
 
           {/* Chat Section */}
