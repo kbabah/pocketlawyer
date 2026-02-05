@@ -453,7 +453,34 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       // Router push will happen in useEffect after auth state changes
     } catch (error: any) {
       console.error('Sign-up error:', error);
-      throw new Error(error.message);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message;
+      
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'This email is already registered. Please sign in instead.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password sign-up is not enabled. Please contact support.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please use at least 6 characters.';
+          break;
+        case 'auth/internal-error':
+          errorMessage = 'Authentication service error. Please check:\n1. Email/Password auth is enabled in Firebase Console\n2. API key restrictions allow authentication\n3. Your internet connection\n\nIf the problem persists, contact support.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        default:
+          errorMessage = `Sign-up failed: ${error.message}`;
+      }
+      
+      throw new Error(errorMessage);
     }
   };
 
