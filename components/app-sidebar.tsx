@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User, FileText, Home, Scale } from "lucide-react" 
+import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User, FileText, Home, Scale, Briefcase, Settings } from "lucide-react" 
 import { format } from "date-fns"
 import {
   AlertDialog,
@@ -553,6 +553,36 @@ export function AppSidebar() {
                     >
                       <User className="h-4 w-4" />
                       {t("Profile Settings")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onSelect={() => {
+                        router.push("/lawyers/register")
+                        if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                      }} 
+                      className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
+                    >
+                      <Scale className="h-4 w-4" />
+                      {t("Register as Lawyer")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onSelect={() => {
+                        router.push("/lawyer/dashboard")
+                        if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                      }} 
+                      className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
+                    >
+                      <Briefcase className="h-4 w-4" />
+                      {t("Lawyer Dashboard")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onSelect={() => {
+                        router.push("/admin/lawyers")
+                        if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                      }} 
+                      className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
+                    >
+                      <Settings className="h-4 w-4" />
+                      {t("Admin Dashboard")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 

@@ -93,17 +93,37 @@ export default function LawyersPage() {
       <div className="container max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Scale className="h-6 w-6 text-primary" />
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Scale className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">{t("Find a Lawyer")}</h1>
+                <p className="text-muted-foreground">
+                  {t("Browse verified legal professionals in Cameroon")}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">{t("Find a Lawyer")}</h1>
-              <p className="text-muted-foreground">
-                {t("Browse verified legal professionals in Cameroon")}
-              </p>
-            </div>
+            <Button
+              variant="default"
+              onClick={() => router.push("/lawyers/register")}
+              className="hidden md:flex"
+            >
+              <Scale className="h-4 w-4 mr-2" />
+              {t("Become a Lawyer")}
+            </Button>
           </div>
+          
+          {/* Mobile CTA */}
+          <Button
+            variant="default"
+            onClick={() => router.push("/lawyers/register")}
+            className="w-full md:hidden mb-4"
+          >
+            <Scale className="h-4 w-4 mr-2" />
+            {t("Become a Lawyer")}
+          </Button>
         </div>
 
         {/* Search & Filters */}
