@@ -62,10 +62,32 @@ class Logger {
 
     console.error(this.formatMessage('error', message, errorMeta));
     
-    // In production, send to error tracking service
-    if (!this.isDevelopment && typeof window === 'undefined') {
-      // Server-side: Could integrate with Sentry here
-      // Example: Sentry.captureException(error);
+    // Send to Sentry in production
+    if (!this.isDevelopment) {
+      try {
+        // Dynamic import to avoid bundling Sentry in dev
+        if (typeof window === 'undefined') {
+          // Server-side
+          import('@sentry/nextjs').then(Sentry => {
+            if (error instanceof Error) {
+              Sentry.captureException(error, {
+                tags: { source: 'logger' },
+                extra: meta
+              });
+            } else {
+              Sentry.captureMessage(message, {
+                level: 'error',
+                tags: { source: 'logger' },
+                extra: { error, ...meta }
+              });
+            }
+          }).catch(() => {
+            // Sentry not available, ignore
+          });
+        }
+      } catch (err) {
+        // Fail silently if Sentry is not configured
+      }
     }
   }
 
