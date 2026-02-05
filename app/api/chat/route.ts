@@ -1,6 +1,8 @@
 import { openai } from "@ai-sdk/openai"
 import { streamText } from "ai"
 import { OPENAI_MODELS } from '@/lib/openai'
+import { rateLimit, getIdentifier } from '@/lib/rate-limit'
+import { NextResponse } from 'next/server'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
@@ -22,9 +24,37 @@ function validateModel(requestedModel: string): string {
 
 export async function POST(req: Request) {
   try {
-    // Use DEFAULT_MODEL constant for better clarity and consistency
-    const DEFAULT_MODEL = OPENAI_MODELS.GPT41;
-    const { messages, userId, documentContent, language = "en", model = DEFAULT_MODEL } = await req.json()
+    const { userId } = await req.json().then(body => ({ ...body, userId: body.userId }));
+    
+    // Rate limiting: 30 requests per minute for authenticated users, 10 for anonymous
+    const identifier = getIdentifier(req, userId);
+    const rateLimitConfig = userId 
+      ? { maxRequests: 30, windowMs: 60000 }  // Authenticated: 30/min
+      : { maxRequests: 10, windowMs: 60000 };  // Anonymous: 10/min
+    
+    const rateLimitResult = rateLimit(identifier, rateLimitConfig);
+    
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: 'Too many requests. Please try again later.',
+          retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimitConfig.maxRequests.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimitResult.reset).toISOString(),
+            'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString()
+          }
+        }
+      );
+    }
+
+    // Re-parse the full body now that we've passed rate limiting
+    const { messages, documentContent, language = "en", model = OPENAI_MODELS.GPT41 } = await req.json();
 
     // Validate the model parameter
     const validatedModel = validateModel(model);
