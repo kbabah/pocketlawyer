@@ -2,7 +2,6 @@ import { NextAuthOptions } from "next-auth";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { NextRequest } from "next/server";
 import { cookies } from "next/headers";
-import { logger } from "@/lib/logger";
 
 // Extend the built-in session types
 declare module "next-auth" {
@@ -38,7 +37,7 @@ export const authOptions: NextAuthOptions = {
             session.user.role = userDoc.data()?.role || 'user';
           }
         } catch (error) {
-          logger.error("Error checking admin role:", error);
+          console.error("Error checking admin role:", error);
           session.user.role = 'user';
         }
       }
@@ -66,7 +65,7 @@ export async function checkAdminPermission(
       const sessionCookie = cookies().get("firebase-session")?.value;
       
       if (!sessionCookie) {
-        verbose && logger.info("No session cookie found");
+        verbose && console.log("No session cookie found");
         return false;
       }
       
@@ -86,7 +85,7 @@ export async function checkAdminPermission(
       return await checkUserAdminStatus(input, verbose);
     }
   } catch (error) {
-    logger.error("Error checking admin permission:", error);
+    console.error("Error checking admin permission:", error);
     return false;
   }
 }
@@ -104,7 +103,7 @@ async function checkUserAdminStatus(uid: string, verbose: boolean): Promise<bool
     const customClaims = userRecord.customClaims || {};
     
     if (customClaims.admin === true) {
-      verbose && logger.info("Admin verified via custom claims");
+      verbose && console.log("Admin verified via custom claims");
       return true;
     }
     
@@ -113,15 +112,15 @@ async function checkUserAdminStatus(uid: string, verbose: boolean): Promise<bool
     if (userDoc.exists) {
       const userData = userDoc.data();
       if (userData?.role === "admin" || userData?.isAdmin === true) {
-        verbose && logger.info("Admin verified via Firestore role");
+        verbose && console.log("Admin verified via Firestore role");
         return true;
       }
     }
     
-    verbose && logger.info("User is not an admin");
+    verbose && console.log("User is not an admin");
     return false;
   } catch (error) {
-    logger.error("Error in checkUserAdminStatus:", error);
+    console.error("Error in checkUserAdminStatus:", error);
     return false;
   }
 }
