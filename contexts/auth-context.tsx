@@ -22,6 +22,7 @@ import { v4 as uuidv4 } from "uuid";
 import { sendEmail, EmailTemplate } from "@/lib/email-service-client"; // Updated import
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase"; // Assuming you have a Firestore db export
+import { logger } from "@/lib/logger";
 
 // Define anonymous trial settings
 const MAX_TRIAL_CONVERSATIONS = 10;
