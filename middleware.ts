@@ -66,17 +66,16 @@ export function middleware(request: NextRequest) {
   // Add security headers to all responses
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.gstatic.com https://www.google.com;
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.gstatic.com https://www.google.com https://apis.google.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https:;
     font-src 'self' https://fonts.gstatic.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    frame-src 'self' https://www.google.com;
+    frame-src 'self' https://www.google.com https://*.firebaseapp.com https://accounts.google.com;
     frame-ancestors 'none';
-    upgrade-insecure-requests;
-    connect-src 'self' https://api.openai.com https://*.firebaseapp.com https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com;
+    connect-src 'self' https://api.openai.com https://*.firebaseapp.com https://*.firebaseio.com https://*.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://accounts.google.com;
   `.replace(/\s{2,}/g, ' ').trim()
 
   response.headers.set('Content-Security-Policy', cspHeader)
