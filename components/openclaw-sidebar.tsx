@@ -16,7 +16,9 @@ import {
   ChevronRight,
   Activity,
   MessageSquare,
-  Plus
+  Plus,
+  Shield,
+  Users
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -24,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
+import { useRoleCheck } from "@/hooks/use-role-check"
 import { useSidebar } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
@@ -34,6 +37,7 @@ interface NavItem {
   badge?: string
   requiresAuth?: boolean
   adminOnly?: boolean
+  lawyerOnly?: boolean
 }
 
 const navigation: NavItem[] = [
@@ -41,7 +45,7 @@ const navigation: NavItem[] = [
   { title: "Documents", href: "/documents", icon: FileText },
   { title: "Find Lawyer", href: "/lawyers", icon: Scale },
   { title: "My Bookings", href: "/bookings", icon: Calendar, requiresAuth: true },
-  { title: "Lawyer Dashboard", href: "/lawyer/dashboard", icon: Briefcase, requiresAuth: true },
+  { title: "Lawyer Dashboard", href: "/lawyer/dashboard", icon: Briefcase, requiresAuth: true, lawyerOnly: true },
   { title: "Admin Panel", href: "/admin", icon: Settings, adminOnly: true },
 ]
 
@@ -51,14 +55,7 @@ export function AppSidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const { state } = useSidebar()
-  const [isAdmin, setIsAdmin] = useState(false)
-
-  useEffect(() => {
-    // Check if user is admin (you'll need to implement this check)
-    if (user) {
-      // setIsAdmin(user.role === 'admin' || user.isAdmin)
-    }
-  }, [user])
+  const { isAdmin, isApprovedLawyer, loading: roleLoading } = useRoleCheck()
 
   const handleSignOut = async () => {
     try {
@@ -86,6 +83,7 @@ export function AppSidebar() {
   const filteredNavigation = navigation.filter(item => {
     if (item.requiresAuth && !user) return false
     if (item.adminOnly && !isAdmin) return false
+    if (item.lawyerOnly && !isApprovedLawyer) return false
     return true
   })
 
@@ -183,6 +181,60 @@ export function AppSidebar() {
               </button>
             )
           })}
+          
+          {/* Admin Submenu */}
+          {isAdmin && pathname.startsWith('/admin') && (
+            <div className="ml-4 mt-2 space-y-1 border-l-2 border-slate-700 pl-2">
+              <button
+                onClick={() => router.push("/admin")}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
+                  pathname === "/admin"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
+                )}
+              >
+                <Activity className="h-3 w-3" />
+                <span>Overview</span>
+              </button>
+              <button
+                onClick={() => router.push("/admin/users")}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
+                  pathname === "/admin/users"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
+                )}
+              >
+                <Users className="h-3 w-3" />
+                <span>Users</span>
+              </button>
+              <button
+                onClick={() => router.push("/admin/lawyers")}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
+                  pathname === "/admin/lawyers"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
+                )}
+              >
+                <Scale className="h-3 w-3" />
+                <span>Lawyers</span>
+              </button>
+              <button
+                onClick={() => router.push("/admin/setup")}
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
+                  pathname === "/admin/setup"
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
+                )}
+              >
+                <Settings className="h-3 w-3" />
+                <span>Settings</span>
+              </button>
+            </div>
+          )}
         </div>
 
         <Separator className="my-4 bg-slate-800" />

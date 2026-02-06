@@ -131,6 +131,18 @@ const translations: Translations = {
     "document.analyze": "Analyze Document",
     "document.analyzing": "Analyzing...",
 
+    // Quick Actions
+    "Quick Actions": "Quick Actions",
+    "Analyze Document": "Analyze Document",
+    "Draft Contract": "Draft Contract",
+    "Legal Research": "Legal Research",
+    "Case Review": "Case Review",
+    "Find a Lawyer": "Find a Lawyer",
+    "Book Consultation": "Book Consultation",
+    "Contract drafting feature coming soon": "Contract drafting feature coming soon",
+    "Legal research feature coming soon": "Legal research feature coming soon",
+    "Case review feature coming soon": "Case review feature coming soon",
+
     // Sidebar
     "sidebar.new.chat": "New Chat",
     "sidebar.no.history": "No chat history yet",
@@ -293,6 +305,18 @@ const translations: Translations = {
     "sidebar.delete": "Supprimer",
     "sidebar.signed.with.google": "Connecté avec Google",
     "sidebar.signout": "Se déconnecter",
+
+    // Quick Actions
+    "Quick Actions": "Actions Rapides",
+    "Analyze Document": "Analyser un Document",
+    "Draft Contract": "Rédiger un Contrat",
+    "Legal Research": "Recherche Juridique",
+    "Case Review": "Examen de Cas",
+    "Find a Lawyer": "Trouver un Avocat",
+    "Book Consultation": "Réserver une Consultation",
+    "Contract drafting feature coming soon": "Fonctionnalité de rédaction de contrat bientôt disponible",
+    "Legal research feature coming soon": "Fonctionnalité de recherche juridique bientôt disponible",
+    "Case review feature coming soon": "Fonctionnalité d'examen de cas bientôt disponible",
 
     // Language
     "language.en": "Anglais",

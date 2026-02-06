@@ -4,10 +4,11 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { OpenClawLayout } from "@/components/layout/openclaw-layout"
+import { useRoleCheck } from "@/hooks/use-role-check"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -40,10 +41,14 @@ import {
   UserX,
   UserCheck,
   Loader2,
-  ChevronRight,
+  ChevronLeft,
   Edit,
   Trash2,
-  MoreVertical
+  MoreVertical,
+  Filter,
+  Download,
+  UserPlus,
+  Activity
 } from "lucide-react"
 import {
   collection,
@@ -63,8 +68,16 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
 
 interface User {
   id: string
@@ -78,18 +91,20 @@ interface User {
   isAnonymous?: boolean
   trialConversationsUsed?: number
   trialConversationsLimit?: number
+  profileImage?: string
 }
 
 export default function UserManagementPage() {
   const { user: currentUser } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
+  const { isAdmin, loading: roleLoading } = useRoleCheck()
   
   const [loading, setLoading] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [filterRole, setFilterRole] = useState<string>("all")
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -105,59 +120,46 @@ export default function UserManagementPage() {
       router.push("/sign-in")
       return
     }
-    checkAdminAndLoadUsers()
-  }, [currentUser])
+    
+    if (!roleLoading && !isAdmin) {
+      toast.error("Admin access required")
+      router.push("/")
+      return
+    }
+    
+    if (!roleLoading && isAdmin) {
+      loadUsers()
+    }
+  }, [currentUser, isAdmin, roleLoading, router])
 
   useEffect(() => {
-    // Filter users based on search query
-    if (searchQuery.trim() === "") {
-      setFilteredUsers(users)
-    } else {
+    // Filter users based on search query and role filter
+    let filtered = users
+    
+    // Apply search filter
+    if (searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase()
-      setFilteredUsers(
-        users.filter(
-          (user) =>
-            user.name?.toLowerCase().includes(query) ||
-            user.email.toLowerCase().includes(query) ||
-            user.id.toLowerCase().includes(query)
-        )
+      filtered = filtered.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(query) ||
+          user.email.toLowerCase().includes(query) ||
+          user.id.toLowerCase().includes(query)
       )
     }
-  }, [searchQuery, users])
-
-  const checkAdminAndLoadUsers = async () => {
-    if (!currentUser) return
-
-    try {
-      setLoading(true)
-      
-      // Check admin status
-      const userDoc = await getDoc(doc(db, "users", currentUser.id))
-      if (userDoc.exists()) {
-        const userData = userDoc.data()
-        const hasAdminAccess = userData?.role === "admin" || userData?.isAdmin === true
-        
-        setIsAdmin(hasAdminAccess)
-        
-        if (!hasAdminAccess) {
-          toast.error("You don't have admin access")
-          router.push("/")
-          return
-        }
-
-        // Load users
-        await loadUsers()
-      } else {
-        toast.error("User not found")
-        router.push("/")
+    
+    // Apply role filter
+    if (filterRole !== "all") {
+      if (filterRole === "admin") {
+        filtered = filtered.filter(u => u.isAdmin || u.role === "admin")
+      } else if (filterRole === "guest") {
+        filtered = filtered.filter(u => u.isAnonymous)
+      } else if (filterRole === "user") {
+        filtered = filtered.filter(u => !u.isAnonymous && !u.isAdmin && u.role !== "admin")
       }
-    } catch (error) {
-      console.error("Error checking admin status:", error)
-      toast.error("Failed to verify admin access")
-    } finally {
-      setLoading(false)
     }
-  }
+    
+    setFilteredUsers(filtered)
+  }, [searchQuery, filterRole, users])
 
   const loadUsers = async () => {
     try {

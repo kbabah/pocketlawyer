@@ -30,6 +30,8 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { ThemeLogo } from "@/components/theme-logo"
 import { useChatHistory } from "@/hooks/use-chat-history"
 import { FeedbackDialog } from "@/components/feedback-dialog"
+import { QuickActions } from "@/components/quick-actions"
+import { useRoleCheck } from "@/hooks/use-role-check"
 import { 
   Sidebar,
   SidebarHeader,
@@ -48,6 +50,7 @@ export function AppSidebar() {
   const { t } = useLanguage()
   const router = useRouter()
   const { chatHistory, loading, deleteChat, renameChat } = useChatHistory(user?.id)
+  const { isAdmin, isApprovedLawyer } = useRoleCheck()
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const isMobile = useIsMobile()
   const { toggleSidebar } = useSidebar()
@@ -424,6 +427,11 @@ export function AppSidebar() {
             )}
           </div>
 
+          {/* Quick Actions Section */}
+          <div className={isMobile ? "mb-5" : "mb-4"}>
+            <QuickActions />
+          </div>
+
           {/* Chat Section */}
           <div className={isMobile ? "mb-5" : "mb-4"}>
             <div className={`px-2 ${isMobile ? 'py-2' : 'py-1'}`}>
@@ -554,36 +562,48 @@ export function AppSidebar() {
                       <User className="h-4 w-4" />
                       {t("Profile Settings")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onSelect={() => {
-                        router.push("/lawyers/register")
-                        if (isMobile) setTimeout(() => toggleSidebar(), 150)
-                      }} 
-                      className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
-                    >
-                      <Scale className="h-4 w-4" />
-                      {t("Register as Lawyer")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onSelect={() => {
-                        router.push("/lawyer/dashboard")
-                        if (isMobile) setTimeout(() => toggleSidebar(), 150)
-                      }} 
-                      className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
-                    >
-                      <Briefcase className="h-4 w-4" />
-                      {t("Lawyer Dashboard")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onSelect={() => {
-                        router.push("/admin/lawyers")
-                        if (isMobile) setTimeout(() => toggleSidebar(), 150)
-                      }} 
-                      className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
-                    >
-                      <Settings className="h-4 w-4" />
-                      {t("Admin Dashboard")}
-                    </DropdownMenuItem>
+                    
+                    {/* Show "Register as Lawyer" only to non-lawyers */}
+                    {!isApprovedLawyer && (
+                      <DropdownMenuItem 
+                        onSelect={() => {
+                          router.push("/lawyers/register")
+                          if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                        }} 
+                        className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
+                      >
+                        <Scale className="h-4 w-4" />
+                        {t("Register as Lawyer")}
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {/* Show "Lawyer Dashboard" only to approved lawyers */}
+                    {isApprovedLawyer && (
+                      <DropdownMenuItem 
+                        onSelect={() => {
+                          router.push("/lawyer/dashboard")
+                          if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                        }} 
+                        className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
+                      >
+                        <Briefcase className="h-4 w-4" />
+                        {t("Lawyer Dashboard")}
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {/* Show "Admin Dashboard" only to admin users */}
+                    {isAdmin && (
+                      <DropdownMenuItem 
+                        onSelect={() => {
+                          router.push("/admin")
+                          if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                        }} 
+                        className={`gap-2 touch-manipulation ${isMobile ? 'py-3' : 'py-2.5'}`}
+                      >
+                        <Settings className="h-4 w-4" />
+                        {t("Admin Dashboard")}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       onSelect={handleSignOut} 

@@ -7,10 +7,17 @@ export function middleware(request: NextRequest) {
   
   const { pathname } = request.nextUrl
   
-  // Protect admin routes
+  // Protect admin routes - only accessible to admin users
   if (pathname.startsWith('/admin')) {
-    // You can add cookie/token checks here
-    // For now, we rely on client-side checks in the admin pages
+    // Note: Full protection happens in the page component
+    // which checks user role from Firebase
+    return NextResponse.next()
+  }
+  
+  // Protect lawyer dashboard routes - only accessible to approved lawyers
+  if (pathname.startsWith('/lawyer/dashboard')) {
+    // Note: Full protection happens in the page component
+    // which checks lawyer status from Firebase
     return NextResponse.next()
   }
   
@@ -18,5 +25,8 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: [
+    '/admin/:path*',
+    '/lawyer/dashboard/:path*'
+  ]
 }

@@ -460,10 +460,10 @@ export default function LawyerDashboardPage() {
               
               <div className="grid grid-cols-2 gap-4">
                 <MetricItem label="RATING" value={`${lawyer.rating.toFixed(1)} ⭐`} />
-                <MetricItem label="REVIEWS" value={lawyer.reviewCount} />
+                <MetricItem label="REVIEWS" value={lawyer.totalReviews} />
                 <MetricItem label="HOURLY RATE" value={`${lawyer.hourlyRate} XAF`} />
                 <MetricItem label="STATUS" value={lawyer.status.toUpperCase()} />
-                <MetricItem label="SPECIALTIES" value={lawyer.specialties.length} />
+                <MetricItem label="SPECIALTIES" value={lawyer.specializations?.length || 0} />
                 <MetricItem label="EXPERIENCE" value={`${lawyer.experience} years`} />
               </div>
             </div>

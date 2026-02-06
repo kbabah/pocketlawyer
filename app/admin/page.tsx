@@ -148,6 +148,14 @@ export default function AdminDashboard() {
 
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              <span className="hidden sm:inline">Overview</span>
+            </TabsTrigger>
+            <TabsTrigger value="lawyers" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              <span className="hidden sm:inline">Lawyers</span>
+            </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
@@ -169,6 +177,66 @@ export default function AdminDashboard() {
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Stats</CardTitle>
+                  <CardDescription>
+                    Overview of key system metrics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Total Users</span>
+                    <span className="font-bold">--</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Active Lawyers</span>
+                    <span className="font-bold">--</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Pending Approvals</span>
+                    <span className="font-bold">--</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                  <CardDescription>
+                    Latest system activities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">Activity log coming soon...</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="lawyers" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Lawyer Management</CardTitle>
+                <CardDescription>
+                  Approve, manage, and monitor lawyer registrations.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="rounded-md bg-muted p-4">
+                  <p className="text-sm">Review pending lawyer registrations, approve or reject applications, and manage active lawyers.</p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button onClick={() => router.push("/admin/lawyers")}>
+                  Manage Lawyers
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
             <Card>
