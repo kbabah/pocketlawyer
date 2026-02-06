@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Calendar } from "@/components/ui/calendar"
+import { PaymentDialog } from "@/components/payment-dialog"
 import { toast } from "sonner"
 import { 
   Calendar as CalendarIcon, 
@@ -25,6 +26,7 @@ import {
 } from "lucide-react"
 import { getLawyer } from "@/lib/services/lawyer-service"
 import { createBooking, isTimeSlotAvailable } from "@/lib/services/booking-service"
+import { sendBookingConfirmation, sendLawyerBookingNotification } from "@/lib/services/email-service"
 import type { Lawyer } from "@/types/lawyer"
 import { DURATION_OPTIONS, CONSULTATION_TYPES } from "@/types/lawyer"
 
@@ -39,6 +41,8 @@ export default function BookLawyerPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [lawyer, setLawyer] = useState<Lawyer | null>(null)
+  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState("")
@@ -169,16 +173,64 @@ export default function BookLawyerPage() {
         bookingData.notes = notes
       }
 
-      await createBooking(bookingData)
+      const bookingId = await createBooking(bookingData)
+      setCreatedBookingId(bookingId)
 
-      setSubmitted(true)
-      toast.success(t("Booking request submitted successfully!"))
+      // Show payment dialog
+      setShowPaymentDialog(true)
+      toast.success(t("Booking created! Please complete payment."))
     } catch (error: any) {
       console.error("Error creating booking:", error)
       toast.error(t("Failed to create booking"))
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handlePaymentSuccess = async () => {
+    // Payment completed, send emails
+    if (user && lawyer && selectedDate && createdBookingId) {
+      try {
+        const [hours, minutes] = selectedTime.split(':').map(Number)
+        const consultationDate = new Date(selectedDate)
+        consultationDate.setHours(hours, minutes, 0, 0)
+
+        // Send confirmation email to user
+        await sendBookingConfirmation({
+          userEmail: user.email,
+          userName: user.name || user.email,
+          lawyerName: lawyer.name,
+          bookingDate: consultationDate,
+          bookingTime: selectedTime,
+          duration,
+          type: consultationType,
+          amount: calculateTotal(),
+          bookingId: createdBookingId,
+          meetingLink: consultationType === 'video' ? undefined : undefined, // TODO: Generate meeting link
+        })
+
+        // Send notification email to lawyer
+        await sendLawyerBookingNotification({
+          lawyerEmail: lawyer.email,
+          lawyerName: lawyer.name,
+          userName: user.name || user.email,
+          userPhone: userPhone || user.email,
+          bookingDate: consultationDate,
+          bookingTime: selectedTime,
+          duration,
+          type: consultationType,
+          amount: calculateTotal(),
+          notes,
+          bookingId: createdBookingId,
+        })
+      } catch (error) {
+        console.error("Error sending emails:", error)
+        // Don't fail the booking if email fails
+      }
+    }
+
+    setSubmitted(true)
+    setShowPaymentDialog(false)
   }
 
   if (loading) {
@@ -443,21 +495,36 @@ export default function BookLawyerPage() {
                     {submitting ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        {t("Submitting...")}
+                        {t("Creating Booking...")}
                       </>
                     ) : (
-                      t("Submit Booking Request")
+                      t("Proceed to Payment")
                     )}
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    {t("You'll be charged after the lawyer confirms")}
+                    {t("Secure payment via Mobile Money")}
                   </p>
                 </CardContent>
               </Card>
             </div>
           </div>
         </form>
+
+        {/* Payment Dialog */}
+        {createdBookingId && lawyer && user && (
+          <PaymentDialog
+            open={showPaymentDialog}
+            onOpenChange={setShowPaymentDialog}
+            bookingId={createdBookingId}
+            amount={calculateTotal()}
+            currency="XAF"
+            userId={user.id}
+            userEmail={user.email}
+            description={`Consultation with ${lawyer.name}`}
+            onSuccess={handlePaymentSuccess}
+          />
+        )}
       </div>
     </MainLayout>
   )

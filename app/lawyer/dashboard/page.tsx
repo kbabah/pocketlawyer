@@ -442,13 +442,42 @@ export default function LawyerDashboardPage() {
             </div>
 
             <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-white font-mono mb-4">PROFILE METRICS</h3>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-bold text-white font-mono">PROFILE SETTINGS</h3>
+                  <p className="text-sm text-slate-400 font-mono mt-1">
+                    Manage your professional profile
+                  </p>
+                </div>
+                <Button
+                  onClick={() => router.push("/lawyer/profile/edit")}
+                  className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 font-mono"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  EDIT PROFILE
+                </Button>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <MetricItem label="RATING" value={`${lawyer.rating.toFixed(1)} ⭐`} />
                 <MetricItem label="REVIEWS" value={lawyer.reviewCount} />
                 <MetricItem label="HOURLY RATE" value={`${lawyer.hourlyRate} XAF`} />
                 <MetricItem label="STATUS" value={lawyer.status.toUpperCase()} />
+                <MetricItem label="SPECIALTIES" value={lawyer.specialties.length} />
+                <MetricItem label="EXPERIENCE" value={`${lawyer.experience} years`} />
               </div>
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-white font-mono mb-4">ACCOUNT</h3>
+              <Button
+                onClick={() => signOut()}
+                variant="outline"
+                className="w-full border-red-500/30 text-red-400 hover:bg-red-500/20 font-mono"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                SIGN OUT
+              </Button>
             </div>
           </TabsContent>
         </Tabs>
