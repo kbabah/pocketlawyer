@@ -180,11 +180,11 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="rounded-md bg-muted p-4">
-                  <p className="text-sm">User management functionality coming soon.</p>
+                  <p className="text-sm">View and manage all registered users, assign roles, and control access permissions.</p>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => router.push("/admin/users")} disabled>
+                <Button onClick={() => router.push("/admin/users")}>
                   Manage Users
                 </Button>
               </CardFooter>

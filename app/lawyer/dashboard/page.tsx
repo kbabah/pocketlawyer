@@ -4,10 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
-import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
@@ -34,7 +32,13 @@ import {
   DollarSign,
   TrendingUp,
   Star,
-  Settings
+  Settings,
+  Terminal,
+  Activity,
+  Zap,
+  BarChart3,
+  ChevronRight,
+  LogOut
 } from "lucide-react"
 import { getLawyerByUserId, updateLawyerAvailability } from "@/lib/services/lawyer-service"
 import { getLawyerBookings, confirmBooking, cancelBooking, completeBooking } from "@/lib/services/booking-service"
@@ -45,7 +49,7 @@ const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
 const TIME_SLOTS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
 
 export default function LawyerDashboardPage() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
   
@@ -113,7 +117,6 @@ export default function LawyerDashboardPage() {
       toast.success(t("Booking confirmed!"))
       setShowConfirmDialog(false)
       setMeetingLink("")
-      setSelectedBooking(null)
       loadDashboard()
     } catch (error: any) {
       console.error("Error confirming booking:", error)
@@ -128,10 +131,9 @@ export default function LawyerDashboardPage() {
 
     setActionLoading(true)
     try {
-      await cancelBooking(selectedBooking.id, 'lawyer', 'Lawyer cancelled the booking')
+      await cancelBooking(selectedBooking.id, 'lawyer', 'Cancelled by lawyer')
       toast.success(t("Booking cancelled"))
       setShowCancelDialog(false)
-      setSelectedBooking(null)
       loadDashboard()
     } catch (error: any) {
       console.error("Error cancelling booking:", error)
@@ -141,11 +143,9 @@ export default function LawyerDashboardPage() {
     }
   }
 
-  const handleCompleteBooking = async (booking: Booking) => {
-    if (!confirm(t("Mark this consultation as completed?"))) return
-
+  const handleCompleteBooking = async (bookingId: string) => {
     try {
-      await completeBooking(booking.id)
+      await completeBooking(bookingId)
       toast.success(t("Booking marked as completed"))
       loadDashboard()
     } catch (error: any) {
@@ -160,7 +160,7 @@ export default function LawyerDashboardPage() {
     setSavingAvailability(true)
     try {
       await updateLawyerAvailability(lawyer.id, availability)
-      toast.success(t("Availability updated successfully!"))
+      toast.success(t("Availability updated successfully"))
       setShowAvailabilityDialog(false)
       loadDashboard()
     } catch (error: any) {
@@ -171,7 +171,7 @@ export default function LawyerDashboardPage() {
     }
   }
 
-  const toggleDayAvailability = (day: keyof LawyerAvailability) => {
+  const toggleDayAvailability = (day: typeof DAYS[number]) => {
     if (!availability) return
     
     setAvailability({
@@ -183,51 +183,31 @@ export default function LawyerDashboardPage() {
     })
   }
 
-  const toggleTimeSlot = (day: keyof LawyerAvailability, time: string) => {
+  const updateDayHours = (day: typeof DAYS[number], hours: string[]) => {
     if (!availability) return
-    
-    const dayData = availability[day]
-    const hours = dayData.hours.includes(time)
-      ? dayData.hours.filter(h => h !== time)
-      : [...dayData.hours, time].sort()
     
     setAvailability({
       ...availability,
       [day]: {
-        ...dayData,
+        ...availability[day],
         hours
       }
     })
   }
 
-  const getBookingIcon = (type: Booking['type']) => {
-    switch (type) {
-      case 'video': return <Video className="h-4 w-4" />
-      case 'phone': return <Phone className="h-4 w-4" />
-      case 'in-person': return <Users className="h-4 w-4" />
-    }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Terminal className="h-12 w-12 text-emerald-400 animate-pulse" />
+          <p className="text-slate-400 font-mono">Initializing dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
-  const getStatusBadge = (status: Booking['status']) => {
-    const variants = {
-      pending: 'default' as const,
-      confirmed: 'default' as const,
-      completed: 'secondary' as const,
-      cancelled: 'destructive' as const,
-    }
-    
-    const colors = {
-      pending: 'text-yellow-600 dark:text-yellow-400',
-      confirmed: 'text-green-600 dark:text-green-400',
-      completed: 'text-blue-600 dark:text-blue-400',
-      cancelled: 'text-red-600 dark:text-red-400',
-    }
-
-    return (
-      <Badge variant={variants[status]} className={colors[status]}>
-        {t(status.charAt(0).toUpperCase() + status.slice(1))}
-      </Badge>
-    )
+  if (!lawyer || !user) {
+    return null
   }
 
   const pendingBookings = bookings.filter(b => b.status === 'pending')
@@ -237,412 +217,356 @@ export default function LawyerDashboardPage() {
   const completedBookings = bookings.filter(b => b.status === 'completed')
   const totalEarnings = completedBookings.reduce((sum, b) => sum + b.totalAmount, 0)
 
-  const BookingCard = ({ booking }: { booking: Booking }) => {
-    const bookingDate = booking.date instanceof Date ? booking.date : new Date(booking.date)
-    const isPending = booking.status === 'pending'
-    const isConfirmed = booking.status === 'confirmed'
-    const isPast = bookingDate < new Date() && isConfirmed
-
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Info */}
-            <div className="flex-1 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-bold mb-1">{booking.userName}</h3>
-                  <p className="text-sm text-muted-foreground">{booking.userEmail}</p>
-                  {booking.userPhone && (
-                    <p className="text-sm text-muted-foreground">{booking.userPhone}</p>
-                  )}
-                </div>
-                {getStatusBadge(booking.status)}
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(bookingDate, 'EEEE, MMMM d, yyyy')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(bookingDate, 'h:mm a')} ({booking.duration} {t("minutes")})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {getBookingIcon(booking.type)}
-                  <span className="capitalize">{booking.type.replace('-', ' ')}</span>
-                </div>
-              </div>
-
-              {booking.notes && (
-                <div className="text-sm">
-                  <p className="text-muted-foreground font-medium mb-1">{t("Client Notes")}:</p>
-                  <p className="text-muted-foreground italic">{booking.notes}</p>
-                </div>
-              )}
-
-              {booking.meetingLink && (
-                <div className="text-sm">
-                  <p className="text-muted-foreground font-medium mb-1">{t("Meeting Link")}:</p>
-                  <a 
-                    href={booking.meetingLink} 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    {booking.meetingLink}
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col gap-2 md:w-48">
-              <div className="text-sm mb-2">
-                <p className="text-muted-foreground">{t("Fee")}</p>
-                <p className="text-xl font-bold">{booking.totalAmount.toLocaleString()} XAF</p>
-              </div>
-
-              {isPending && (
-                <>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedBooking(booking)
-                      setShowConfirmDialog(true)
-                    }}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    {t("Confirm")}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedBooking(booking)
-                      setShowCancelDialog(true)
-                    }}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    {t("Decline")}
-                  </Button>
-                </>
-              )}
-
-              {isPast && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => handleCompleteBooking(booking)}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  {t("Mark Complete")}
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
+      case 'confirmed': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+      case 'completed': return 'bg-blue-500/10 text-blue-400 border-blue-500/30'
+      case 'cancelled': return 'bg-red-500/10 text-red-400 border-red-500/30'
+      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/30'
+    }
   }
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="container max-w-6xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </MainLayout>
-    )
-  }
-
-  if (!lawyer) {
-    return null
+  const getBookingIcon = (type: string) => {
+    switch (type) {
+      case 'video': return <Video className="h-4 w-4" />
+      case 'phone': return <Phone className="h-4 w-4" />
+      case 'in-person': return <Users className="h-4 w-4" />
+      default: return null
+    }
   }
 
   return (
-    <MainLayout>
-      <div className="container max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Scale className="h-6 w-6 text-primary" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+      {/* Header */}
+      <div className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Scale className="h-8 w-8 text-emerald-400" />
+              <div>
+                <h1 className="text-xl font-bold text-white font-mono">LAWYER.CONTROL</h1>
+                <p className="text-sm text-slate-400 font-mono">{lawyer.name}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">{t("Lawyer Dashboard")}</h1>
-              <p className="text-muted-foreground">
-                {t("Welcome back")}, {lawyer.name}
-              </p>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/")}
+                className="text-slate-400 hover:text-white font-mono"
+              >
+                <ChevronRight className="h-4 w-4 mr-1" />
+                CLIENT VIEW
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut()}
+                className="text-red-400 hover:text-red-300 font-mono"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                EXIT
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{pendingBookings.length}</div>
-                  <p className="text-xs text-muted-foreground">{t("Pending")}</p>
-                </div>
-                <Clock className="h-8 w-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{upcomingBookings.length}</div>
-                  <p className="text-xs text-muted-foreground">{t("Upcoming")}</p>
-                </div>
-                <Calendar className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{completedBookings.length}</div>
-                  <p className="text-xs text-muted-foreground">{t("Completed")}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{totalEarnings.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">{t("Total Earnings (XAF)")}</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
+      <div className="container mx-auto px-6 py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard
+            icon={<Activity className="h-5 w-5" />}
+            label="PENDING"
+            value={pendingBookings.length}
+            color="text-yellow-400"
+            bgColor="bg-yellow-500/10"
+            borderColor="border-yellow-500/30"
+          />
+          <StatCard
+            icon={<Zap className="h-5 w-5" />}
+            label="UPCOMING"
+            value={upcomingBookings.length}
+            color="text-emerald-400"
+            bgColor="bg-emerald-500/10"
+            borderColor="border-emerald-500/30"
+          />
+          <StatCard
+            icon={<CheckCircle className="h-5 w-5" />}
+            label="COMPLETED"
+            value={completedBookings.length}
+            color="text-blue-400"
+            bgColor="bg-blue-500/10"
+            borderColor="border-blue-500/30"
+          />
+          <StatCard
+            icon={<DollarSign className="h-5 w-5" />}
+            label="EARNINGS"
+            value={`${totalEarnings.toLocaleString()} XAF`}
+            color="text-purple-400"
+            bgColor="bg-purple-500/10"
+            borderColor="border-purple-500/30"
+          />
         </div>
 
-        {/* Quick Actions */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-4">
-              <Button onClick={() => setShowAvailabilityDialog(true)}>
-                <Settings className="h-4 w-4 mr-2" />
-                {t("Manage Availability")}
-              </Button>
-              <Button variant="outline" onClick={() => router.push(`/lawyers/${lawyer.id}`)}>
-                {t("View My Profile")}
-              </Button>
-              <Button variant="outline" onClick={() => router.push("/lawyer/profile")}>
-                {t("Edit Profile")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bookings Tabs */}
+        {/* Main Content */}
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="pending">
-              {t("Pending")} ({pendingBookings.length})
+          <TabsList className="bg-slate-900/50 border border-slate-800 p-1">
+            <TabsTrigger 
+              value="pending" 
+              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+            >
+              <Terminal className="h-4 w-4 mr-2" />
+              PENDING ({pendingBookings.length})
             </TabsTrigger>
-            <TabsTrigger value="upcoming">
-              {t("Upcoming")} ({upcomingBookings.length})
+            <TabsTrigger 
+              value="upcoming"
+              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              UPCOMING ({upcomingBookings.length})
             </TabsTrigger>
-            <TabsTrigger value="completed">
-              {t("Completed")} ({completedBookings.length})
+            <TabsTrigger 
+              value="completed"
+              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              HISTORY ({completedBookings.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="settings"
+              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              CONFIG
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
             {pendingBookings.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Clock className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">{t("No pending bookings")}</p>
-                </CardContent>
-              </Card>
+              <EmptyState message="No pending bookings" />
             ) : (
               pendingBookings.map(booking => (
-                <BookingCard key={booking.id} booking={booking} />
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onConfirm={() => {
+                    setSelectedBooking(booking)
+                    setShowConfirmDialog(true)
+                  }}
+                  onCancel={() => {
+                    setSelectedBooking(booking)
+                    setShowCancelDialog(true)
+                  }}
+                  getStatusColor={getStatusColor}
+                  getBookingIcon={getBookingIcon}
+                  t={t}
+                />
               ))
             )}
           </TabsContent>
 
           <TabsContent value="upcoming" className="space-y-4">
             {upcomingBookings.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">{t("No upcoming consultations")}</p>
-                </CardContent>
-              </Card>
+              <EmptyState message="No upcoming bookings" />
             ) : (
               upcomingBookings.map(booking => (
-                <BookingCard key={booking.id} booking={booking} />
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  onComplete={() => handleCompleteBooking(booking.id)}
+                  onCancel={() => {
+                    setSelectedBooking(booking)
+                    setShowCancelDialog(true)
+                  }}
+                  getStatusColor={getStatusColor}
+                  getBookingIcon={getBookingIcon}
+                  t={t}
+                />
               ))
             )}
           </TabsContent>
 
           <TabsContent value="completed" className="space-y-4">
             {completedBookings.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <p className="text-muted-foreground">{t("No completed consultations yet")}</p>
-                </CardContent>
-              </Card>
+              <EmptyState message="No completed bookings yet" />
             ) : (
               completedBookings.map(booking => (
-                <BookingCard key={booking.id} booking={booking} />
+                <BookingCard
+                  key={booking.id}
+                  booking={booking}
+                  getStatusColor={getStatusColor}
+                  getBookingIcon={getBookingIcon}
+                  t={t}
+                  readonly
+                />
               ))
             )}
           </TabsContent>
-        </Tabs>
 
-        {/* Confirm Dialog */}
-        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("Confirm Booking")}</DialogTitle>
-              <DialogDescription>
-                {t("Confirm this consultation with")} {selectedBooking?.userName}
-              </DialogDescription>
-            </DialogHeader>
-
-            {selectedBooking?.type === 'video' && (
-              <div className="space-y-4">
+          <TabsContent value="settings" className="space-y-4">
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <Label htmlFor="meetingLink">{t("Video Meeting Link")} (optional)</Label>
-                  <Input
-                    id="meetingLink"
-                    placeholder="https://meet.google.com/xxx-xxxx-xxx"
-                    value={meetingLink}
-                    onChange={(e) => setMeetingLink(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("Provide a Google Meet, Zoom, or other video call link")}
+                  <h3 className="text-lg font-bold text-white font-mono">AVAILABILITY CONFIG</h3>
+                  <p className="text-sm text-slate-400 font-mono mt-1">
+                    Configure your weekly schedule
                   </p>
                 </div>
+                <Button
+                  onClick={() => setShowAvailabilityDialog(true)}
+                  className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  EDIT
+                </Button>
               </div>
-            )}
+              
+              <div className="space-y-3">
+                {DAYS.map(day => (
+                  <div key={day} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <div className="flex items-center gap-3">
+                      <div className={`h-2 w-2 rounded-full ${lawyer.availability[day].available ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                      <span className="font-mono text-sm text-white uppercase">{day}</span>
+                    </div>
+                    <span className="text-sm font-mono text-slate-400">
+                      {lawyer.availability[day].available 
+                        ? `${lawyer.availability[day].hours.length} slots` 
+                        : 'OFFLINE'
+                      }
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowConfirmDialog(false)
-                  setMeetingLink("")
-                }}
-                disabled={actionLoading}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirmBooking}
-                disabled={actionLoading}
-              >
-                {actionLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t("Confirming...")}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    {t("Confirm Booking")}
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
+              <h3 className="text-lg font-bold text-white font-mono mb-4">PROFILE METRICS</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <MetricItem label="RATING" value={`${lawyer.rating.toFixed(1)} ⭐`} />
+                <MetricItem label="REVIEWS" value={lawyer.reviewCount} />
+                <MetricItem label="HOURLY RATE" value={`${lawyer.hourlyRate} XAF`} />
+                <MetricItem label="STATUS" value={lawyer.status.toUpperCase()} />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
-        {/* Cancel Dialog */}
-        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("Decline Booking")}</DialogTitle>
-              <DialogDescription>
-                {t("Are you sure you want to decline this booking?")}
-              </DialogDescription>
-            </DialogHeader>
+      {/* Confirm Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="bg-slate-900 border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-emerald-400">CONFIRM BOOKING</DialogTitle>
+            <DialogDescription className="font-mono text-slate-400">
+              Approve this consultation request
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBooking?.type === 'video' && (
+            <div className="space-y-2">
+              <Label className="font-mono text-slate-300">Meeting Link</Label>
+              <Input
+                placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                value={meetingLink}
+                onChange={(e) => setMeetingLink(e.target.value)}
+                className="bg-slate-800 border-slate-700 text-white font-mono"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowConfirmDialog(false)}
+              className="font-mono"
+            >
+              CANCEL
+            </Button>
+            <Button
+              onClick={handleConfirmBooking}
+              disabled={actionLoading || (selectedBooking?.type === 'video' && !meetingLink)}
+              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+            >
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CONFIRM'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowCancelDialog(false)}
-                disabled={actionLoading}
-              >
-                {t("Keep Booking")}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleCancelBooking}
-                disabled={actionLoading}
-              >
-                {actionLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t("Declining...")}
-                  </>
-                ) : (
-                  <>
-                    <X className="h-4 w-4 mr-2" />
-                    {t("Decline Booking")}
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      {/* Cancel Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="bg-slate-900 border-slate-800">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-red-400">CANCEL BOOKING</DialogTitle>
+            <DialogDescription className="font-mono text-slate-400">
+              This action cannot be undone
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCancelDialog(false)}
+              className="font-mono"
+            >
+              ABORT
+            </Button>
+            <Button
+              onClick={handleCancelBooking}
+              disabled={actionLoading}
+              className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-mono"
+            >
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CANCEL BOOKING'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Availability Dialog */}
-        <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{t("Manage Availability")}</DialogTitle>
-              <DialogDescription>
-                {t("Set your working hours for each day of the week")}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-6">
-              {availability && DAYS.map((day) => (
-                <div key={day} className="space-y-3">
-                  <div className="flex items-center gap-2">
+      {/* Availability Dialog */}
+      <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
+        <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-emerald-400">EDIT AVAILABILITY</DialogTitle>
+            <DialogDescription className="font-mono text-slate-400">
+              Configure your weekly schedule
+            </DialogDescription>
+          </DialogHeader>
+          
+          {availability && (
+            <div className="space-y-4">
+              {DAYS.map(day => (
+                <div key={day} className="border border-slate-800 rounded-lg p-4 bg-slate-800/50">
+                  <div className="flex items-center gap-3 mb-3">
                     <Checkbox
                       checked={availability[day].available}
                       onCheckedChange={() => toggleDayAvailability(day)}
+                      className="border-slate-600"
                     />
-                    <Label className="text-base font-medium capitalize cursor-pointer">
-                      {t(day)}
+                    <Label className="font-mono text-white uppercase cursor-pointer">
+                      {day}
                     </Label>
                   </div>
-
+                  
                   {availability[day].available && (
-                    <div className="ml-6 grid grid-cols-3 md:grid-cols-5 gap-2">
-                      {TIME_SLOTS.map((time) => (
+                    <div className="grid grid-cols-3 gap-2 ml-7">
+                      {TIME_SLOTS.map(slot => (
                         <Button
-                          key={time}
-                          type="button"
-                          variant={availability[day].hours.includes(time) ? "default" : "outline"}
+                          key={slot}
                           size="sm"
-                          onClick={() => toggleTimeSlot(day, time)}
-                          className="text-xs"
+                          variant={availability[day].hours.includes(slot) ? "default" : "outline"}
+                          onClick={() => {
+                            const currentHours = availability[day].hours
+                            const newHours = currentHours.includes(slot)
+                              ? currentHours.filter(h => h !== slot)
+                              : [...currentHours, slot].sort()
+                            updateDayHours(day, newHours)
+                          }}
+                          className={`font-mono text-xs ${
+                            availability[day].hours.includes(slot)
+                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                              : 'bg-slate-700/50 text-slate-400 border-slate-600'
+                          }`}
                         >
-                          {time}
+                          {slot}
                         </Button>
                       ))}
                     </div>
@@ -650,35 +574,178 @@ export default function LawyerDashboardPage() {
                 </div>
               ))}
             </div>
+          )}
+          
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowAvailabilityDialog(false)}
+              className="font-mono"
+            >
+              CANCEL
+            </Button>
+            <Button
+              onClick={handleSaveAvailability}
+              disabled={savingAvailability}
+              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+            >
+              {savingAvailability ? <Loader2 className="h-4 w-4 animate-spin" /> : 'SAVE'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowAvailabilityDialog(false)}
-                disabled={savingAvailability}
-              >
-                {t("Cancel")}
-              </Button>
-              <Button
-                onClick={handleSaveAvailability}
-                disabled={savingAvailability}
-              >
-                {savingAvailability ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t("Saving...")}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    {t("Save Availability")}
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+// Stat Card Component
+function StatCard({ icon, label, value, color, bgColor, borderColor }: any) {
+  return (
+    <div className={`${bgColor} border ${borderColor} rounded-lg p-4`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className={`${color} font-mono text-xs font-bold`}>{label}</span>
+        <div className={color}>{icon}</div>
       </div>
-    </MainLayout>
+      <div className={`${color} text-2xl font-bold font-mono`}>
+        {typeof value === 'number' ? value : value}
+      </div>
+    </div>
+  )
+}
+
+// Booking Card Component
+function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor, getBookingIcon, t, readonly }: any) {
+  const bookingDate = booking.date instanceof Date ? booking.date : new Date(booking.date)
+  const isPending = booking.status === 'pending'
+  const isConfirmed = booking.status === 'confirmed'
+  const isPast = bookingDate < new Date() && isConfirmed
+
+  return (
+    <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 hover:border-slate-700 transition-colors">
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Info */}
+        <div className="flex-1 space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-white font-mono">{booking.userName}</h3>
+              <p className="text-sm text-slate-400 font-mono">{booking.userEmail}</p>
+              {booking.userPhone && (
+                <p className="text-sm text-slate-400 font-mono">{booking.userPhone}</p>
+              )}
+            </div>
+            <Badge className={`${getStatusColor(booking.status)} font-mono border`}>
+              {booking.status.toUpperCase()}
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-2 text-slate-300 font-mono">
+              <Calendar className="h-4 w-4 text-emerald-400" />
+              <span>{format(bookingDate, 'MMM d, yyyy')}</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-300 font-mono">
+              <Clock className="h-4 w-4 text-emerald-400" />
+              <span>{format(bookingDate, 'HH:mm')} · {booking.duration}m</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-300 font-mono">
+              {getBookingIcon(booking.type)}
+              <span className="capitalize">{booking.type.replace('-', ' ')}</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-300 font-mono">
+              <DollarSign className="h-4 w-4 text-purple-400" />
+              <span>{booking.totalAmount.toLocaleString()} XAF</span>
+            </div>
+          </div>
+
+          {booking.notes && (
+            <div className="text-sm bg-slate-800/50 rounded p-3 border border-slate-700">
+              <p className="text-slate-400 font-mono italic">"{booking.notes}"</p>
+            </div>
+          )}
+
+          {booking.meetingLink && (
+            <div className="text-sm">
+              <a 
+                href={booking.meetingLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-emerald-400 hover:text-emerald-300 font-mono flex items-center gap-2"
+              >
+                <Video className="h-4 w-4" />
+                {booking.meetingLink}
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        {!readonly && (
+          <div className="flex flex-col gap-2 min-w-[120px]">
+            {isPending && (
+              <>
+                <Button
+                  onClick={onConfirm}
+                  size="sm"
+                  className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  CONFIRM
+                </Button>
+                <Button
+                  onClick={onCancel}
+                  size="sm"
+                  variant="ghost"
+                  className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-mono"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  DECLINE
+                </Button>
+              </>
+            )}
+            {isConfirmed && !isPast && (
+              <Button
+                onClick={onCancel}
+                size="sm"
+                variant="ghost"
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-mono"
+              >
+                <X className="h-4 w-4 mr-1" />
+                CANCEL
+              </Button>
+            )}
+            {isPast && onComplete && (
+              <Button
+                onClick={onComplete}
+                size="sm"
+                className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 font-mono"
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                COMPLETE
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Empty State Component
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-12 text-center">
+      <Terminal className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+      <p className="text-slate-500 font-mono">{message}</p>
+    </div>
+  )
+}
+
+// Metric Item Component
+function MetricItem({ label, value }: { label: string; value: any }) {
+  return (
+    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
+      <p className="text-xs text-slate-500 font-mono mb-1">{label}</p>
+      <p className="text-lg font-bold text-white font-mono">{value}</p>
+    </div>
   )
 }

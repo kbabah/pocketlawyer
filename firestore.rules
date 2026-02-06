@@ -132,5 +132,41 @@ service cloud.firestore {
       allow read: if isAdmin();
       // Write access only through server API
     }
+
+    // Lawyers collection
+    match /lawyers/{lawyerId} {
+      allow read: if true;  // Public read access for lawyer profiles
+      allow create: if isAuthenticated();  // Any authenticated user can add a lawyer
+      allow update, delete: if isAdmin() || isOwner(resource.data.userId);  // Only admin or creator can edit/delete
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      allow create: if isAuthenticated();  // Simplified - any authenticated user can create
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||  // User who made the booking
+        resource.data.lawyerId == request.auth.uid ||  // Lawyer who received the booking
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||  // User can update their booking
+        resource.data.lawyerId == request.auth.uid ||  // Lawyer can update booking status
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||  // User can cancel
+        isAdmin()
+      );
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      allow create: if isAuthenticated();
+      allow read: if true;  // Public read for reviews
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+    }
   }
 }

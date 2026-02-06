@@ -15,13 +15,46 @@ import { db } from '@/lib/firebase'
 import type { Booking, Review } from '@/types/lawyer'
 
 /**
+ * Convert Firestore Timestamp to Date
+ */
+function convertTimestampToDate(value: any): Date {
+  if (value instanceof Date) {
+    return value
+  }
+  if (value?.toDate && typeof value.toDate === 'function') {
+    return value.toDate()
+  }
+  if (value?.seconds) {
+    return new Date(value.seconds * 1000)
+  }
+  return new Date(value)
+}
+
+/**
+ * Convert booking data from Firestore
+ */
+function convertBookingData(data: any): any {
+  return {
+    ...data,
+    date: convertTimestampToDate(data.date),
+    createdAt: data.createdAt ? convertTimestampToDate(data.createdAt) : new Date(),
+    updatedAt: data.updatedAt ? convertTimestampToDate(data.updatedAt) : new Date(),
+  }
+}
+
+/**
  * Create a new booking
  */
 export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const bookingRef = doc(collection(db, 'bookings'))
   
-  const booking: Omit<Booking, 'id'> = {
-    ...bookingData,
+  // Remove undefined fields to avoid Firestore error
+  const cleanedData = Object.fromEntries(
+    Object.entries(bookingData).filter(([_, value]) => value !== undefined)
+  )
+  
+  const booking: any = {
+    ...cleanedData,
     createdAt: new Date(),
     updatedAt: new Date(),
   }
@@ -43,7 +76,7 @@ export async function getBooking(bookingId: string): Promise<Booking | null> {
 
   return {
     id: bookingSnap.id,
-    ...bookingSnap.data(),
+    ...convertBookingData(bookingSnap.data()),
   } as Booking
 }
 
@@ -61,7 +94,7 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
   
   return snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data(),
+    ...convertBookingData(doc.data()),
   } as Booking))
 }
 
@@ -79,7 +112,7 @@ export async function getLawyerBookings(lawyerId: string): Promise<Booking[]> {
   
   return snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data(),
+    ...convertBookingData(doc.data()),
   } as Booking))
 }
 
@@ -101,7 +134,7 @@ export async function getLawyerUpcomingBookings(lawyerId: string): Promise<Booki
   
   return snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data(),
+    ...convertBookingData(doc.data()),
   } as Booking))
 }
 

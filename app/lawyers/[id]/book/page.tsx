@@ -146,11 +146,10 @@ export default function BookLawyerPage() {
       }
 
       // Create booking
-      await createBooking({
+      const bookingData: any = {
         userId: user.id,
         userName: user.name || user.email,
         userEmail: user.email,
-        userPhone: consultationType === 'phone' ? userPhone : undefined,
         lawyerId: lawyer.id,
         lawyerName: lawyer.name,
         lawyerEmail: lawyer.email,
@@ -160,8 +159,17 @@ export default function BookLawyerPage() {
         status: 'pending',
         totalAmount: calculateTotal(),
         paymentStatus: 'pending',
-        notes: notes || undefined,
-      })
+      }
+
+      // Only add optional fields if they have values
+      if (consultationType === 'phone' && userPhone) {
+        bookingData.userPhone = userPhone
+      }
+      if (notes) {
+        bookingData.notes = notes
+      }
+
+      await createBooking(bookingData)
 
       setSubmitted(true)
       toast.success(t("Booking request submitted successfully!"))
