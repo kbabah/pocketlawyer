@@ -48,15 +48,33 @@ function convertBookingData(data: any): any {
 export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   const bookingRef = doc(collection(db, 'bookings'))
   
-  // Remove undefined fields to avoid Firestore error
-  const cleanedData = Object.fromEntries(
-    Object.entries(bookingData).filter(([_, value]) => value !== undefined)
-  )
-  
+  // Convert Date to Timestamp for Firestore
   const booking: any = {
-    ...cleanedData,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    userId: bookingData.userId,
+    userName: bookingData.userName,
+    userEmail: bookingData.userEmail,
+    lawyerId: bookingData.lawyerId,
+    lawyerName: bookingData.lawyerName,
+    lawyerEmail: bookingData.lawyerEmail,
+    date: Timestamp.fromDate(bookingData.date),
+    duration: bookingData.duration,
+    type: bookingData.type,
+    status: bookingData.status || 'pending',
+    totalAmount: bookingData.totalAmount,
+    paymentStatus: bookingData.paymentStatus || 'pending',
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  }
+
+  // Add optional fields
+  if (bookingData.userPhone) {
+    booking.userPhone = bookingData.userPhone
+  }
+  if (bookingData.notes) {
+    booking.notes = bookingData.notes
+  }
+  if (bookingData.meetingLink) {
+    booking.meetingLink = bookingData.meetingLink
   }
 
   await setDoc(bookingRef, booking)
