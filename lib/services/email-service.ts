@@ -77,7 +77,7 @@ export async function sendBookingConfirmation(data: {
   userEmail: string
   userName: string
   lawyerName: string
-  bookingDate: Date
+  bookingDate: Date | string
   bookingTime: string
   duration: number
   type: string
@@ -85,6 +85,10 @@ export async function sendBookingConfirmation(data: {
   bookingId: string
   meetingLink?: string
 }) {
+  // Convert bookingDate to Date if it's a string
+  const bookingDate = typeof data.bookingDate === 'string' 
+    ? new Date(data.bookingDate) 
+    : data.bookingDate
   const html = `
     <!DOCTYPE html>
     <html>
@@ -117,7 +121,7 @@ export async function sendBookingConfirmation(data: {
             <h2 style="margin-top: 0;">Booking Details</h2>
             <div class="detail-row">
               <span class="detail-label">Date</span>
-              <span class="detail-value">${data.bookingDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span class="detail-value">${bookingDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
             <div class="detail-row">
               <span class="detail-label">Time</span>
@@ -184,7 +188,7 @@ export async function sendLawyerBookingNotification(data: {
   lawyerName: string
   userName: string
   userPhone: string
-  bookingDate: Date
+  bookingDate: Date | string
   bookingTime: string
   duration: number
   type: string
@@ -192,6 +196,10 @@ export async function sendLawyerBookingNotification(data: {
   notes?: string
   bookingId: string
 }) {
+  // Convert bookingDate to Date if it's a string
+  const bookingDate = typeof data.bookingDate === 'string' 
+    ? new Date(data.bookingDate) 
+    : data.bookingDate
   const html = `
     <!DOCTYPE html>
     <html>
@@ -236,7 +244,7 @@ export async function sendLawyerBookingNotification(data: {
             <h2 style="margin-top: 0;">Consultation Details</h2>
             <div class="detail-row">
               <span class="detail-label">Date</span>
-              <span class="detail-value">${data.bookingDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span class="detail-value">${bookingDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
             <div class="detail-row">
               <span class="detail-label">Time</span>

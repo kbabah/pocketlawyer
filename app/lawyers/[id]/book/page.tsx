@@ -26,7 +26,6 @@ import {
 } from "lucide-react"
 import { getLawyer } from "@/lib/services/lawyer-service"
 import { createBooking, isTimeSlotAvailable } from "@/lib/services/booking-service"
-import { sendBookingConfirmation, sendLawyerBookingNotification } from "@/lib/services/email-service"
 import type { Lawyer } from "@/types/lawyer"
 import { DURATION_OPTIONS, CONSULTATION_TYPES } from "@/types/lawyer"
 
@@ -188,7 +187,7 @@ export default function BookLawyerPage() {
   }
 
   const handlePaymentSuccess = async () => {
-    // Payment completed, send emails
+    // Payment completed, send emails via API
     if (user && lawyer && selectedDate && createdBookingId) {
       try {
         const [hours, minutes] = selectedTime.split(':').map(Number)
@@ -196,32 +195,42 @@ export default function BookLawyerPage() {
         consultationDate.setHours(hours, minutes, 0, 0)
 
         // Send confirmation email to user
-        await sendBookingConfirmation({
-          userEmail: user.email,
-          userName: user.name || user.email,
-          lawyerName: lawyer.name,
-          bookingDate: consultationDate,
-          bookingTime: selectedTime,
-          duration,
-          type: consultationType,
-          amount: calculateTotal(),
-          bookingId: createdBookingId,
-          meetingLink: consultationType === 'video' ? undefined : undefined, // TODO: Generate meeting link
+        await fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'booking-confirmation',
+            userEmail: user.email,
+            userName: user.name || user.email,
+            lawyerName: lawyer.name,
+            bookingDate: consultationDate.toISOString(),
+            bookingTime: selectedTime,
+            duration,
+            type: consultationType,
+            amount: calculateTotal(),
+            bookingId: createdBookingId,
+            meetingLink: consultationType === 'video' ? undefined : undefined, // TODO: Generate meeting link
+          })
         })
 
         // Send notification email to lawyer
-        await sendLawyerBookingNotification({
-          lawyerEmail: lawyer.email,
-          lawyerName: lawyer.name,
-          userName: user.name || user.email,
-          userPhone: userPhone || user.email,
-          bookingDate: consultationDate,
-          bookingTime: selectedTime,
-          duration,
-          type: consultationType,
-          amount: calculateTotal(),
-          notes,
-          bookingId: createdBookingId,
+        await fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'lawyer-notification',
+            lawyerEmail: lawyer.email,
+            lawyerName: lawyer.name,
+            userName: user.name || user.email,
+            userPhone: userPhone || user.email,
+            bookingDate: consultationDate.toISOString(),
+            bookingTime: selectedTime,
+            duration,
+            type: consultationType,
+            amount: calculateTotal(),
+            notes,
+            bookingId: createdBookingId,
+          })
         })
       } catch (error) {
         console.error("Error sending emails:", error)
