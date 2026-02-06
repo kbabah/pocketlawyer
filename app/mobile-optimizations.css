@@ -1,0 +1,245 @@
+/* Mobile Optimization Utilities */
+
+/* Ensure all buttons are touch-friendly (44px minimum) */
+.btn-touch {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Better spacing on mobile */
+@media (max-width: 640px) {
+  .mobile-padding {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .mobile-spacing {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Sticky headers on mobile */
+@media (max-width: 768px) {
+  .mobile-sticky {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: inherit;
+  }
+}
+
+/* Better touch targets for cards */
+.card-touch {
+  min-height: 48px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent text selection on buttons */
+button, .btn {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Better input sizing on mobile */
+@media (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+/* Scrollable tables on mobile */
+.table-mobile-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Stack columns on mobile */
+@media (max-width: 640px) {
+  .mobile-stack {
+    flex-direction: column;
+  }
+  
+  .mobile-full-width {
+    width: 100%;
+  }
+}
+
+/* Hide desktop-only elements on mobile */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+}
+
+/* Show mobile-only elements */
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+}
+
+/* Better modal sizing on mobile */
+@media (max-width: 640px) {
+  [role="dialog"] {
+    max-width: calc(100vw - 2rem);
+    margin: 1rem;
+  }
+}
+
+/* Improve sidebar on mobile */
+@media (max-width: 768px) {
+  .sidebar-mobile {
+    width: 280px;
+    max-width: 85vw;
+  }
+}
+
+/* Better spacing for mobile grids */
+@media (max-width: 640px) {
+  .grid-mobile-gap {
+    gap: 0.75rem;
+  }
+}
+
+/* Prevent horizontal scroll */
+body {
+  overflow-x: hidden;
+}
+
+/* Better image handling on mobile */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Touch-friendly navigation */
+nav a, nav button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Better form spacing on mobile */
+@media (max-width: 640px) {
+  form > * + * {
+    margin-top: 1rem;
+  }
+}
+
+/* Improve calendar on mobile */
+@media (max-width: 640px) {
+  .calendar-mobile {
+    width: 100%;
+  }
+  
+  .calendar-mobile button {
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
+
+/* Better tab sizing on mobile */
+@media (max-width: 640px) {
+  [role="tablist"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  [role="tablist"]::-webkit-scrollbar {
+    display: none;
+  }
+  
+  [role="tab"] {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* Improve badge sizing */
+.badge {
+  min-height: 24px;
+  padding: 0.25rem 0.75rem;
+}
+
+/* Better avatar sizing on mobile */
+@media (max-width: 640px) {
+  .avatar-large {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* Sticky action buttons on mobile */
+@media (max-width: 640px) {
+  .mobile-sticky-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 1rem;
+    background: inherit;
+    border-top: 1px solid hsl(var(--border));
+    z-index: 10;
+  }
+}
+
+/* Better card stacking on mobile */
+@media (max-width: 640px) {
+  .card-stack > * {
+    margin-bottom: 1rem;
+  }
+  
+  .card-stack > *:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Improve dropdown sizing */
+@media (max-width: 640px) {
+  [role="menu"], [role="listbox"] {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+}
+
+/* Better toast positioning on mobile */
+@media (max-width: 640px) {
+  [data-sonner-toaster] {
+    bottom: env(safe-area-inset-bottom, 1rem) !important;
+  }
+}
+
+/* Safe area padding for iOS */
+@supports (padding: max(0px)) {
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+}
+
+/* Improve loading states on mobile */
+@media (max-width: 640px) {
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Better dialog sizing */
+@media (max-width: 640px) {
+  .dialog-mobile {
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
