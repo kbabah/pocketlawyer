@@ -173,9 +173,10 @@ export function AppSidebar() {
     const fetchUserMetrics = async () => {
       setLoadingMetrics(true)
       try {
-        // Fetch user's chat count
-        const chatsRef = collection(db, "users", user.id, "chats")
-        const chatsSnapshot = await getDocs(chatsRef)
+        // Fetch user's chat count from root chats collection
+        const chatsRef = collection(db, "chats")
+        const chatsQuery = query(chatsRef, where("userId", "==", user.id))
+        const chatsSnapshot = await getDocs(chatsQuery)
         setUserChatsCount(chatsSnapshot.size)
 
         // Fetch user's booking count
