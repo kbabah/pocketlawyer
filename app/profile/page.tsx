@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { AuthErrorBoundary } from "@/components/error-boundaries"
+import { AvatarUpload } from "@/components/avatar-upload"
 
 export default function Profile() {
   const { user, updateProfile, updatePassword } = useAuth()
@@ -134,6 +135,24 @@ export default function Profile() {
               
               <TabsContent value="profile">
                 <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  {/* Profile Picture Upload */}
+                  <div className="space-y-2">
+                    <Label>{t("Profile Picture")}</Label>
+                    <div className="flex justify-center">
+                      <AvatarUpload
+                        currentUrl={user.profileImage || undefined}
+                        userId={user.id}
+                        userType="user"
+                        userName={user.name || undefined}
+                        onUploadComplete={(url) => {
+                          setSuccess(t("Profile picture updated!"))
+                        }}
+                        size="lg"
+                        editable={true}
+                      />
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
                     <Input

@@ -3,17 +3,16 @@ import React, { Suspense } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { MainLayout } from "@/components/layout/main-layout"
-import ChatInterface from "@/components/chat-interface-optimized"
 import { ExampleAIInteractions } from "@/components/example-ai-interactions"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Scale, BookOpen, MessageCircle, Users, Shield, Zap, FileText } from "lucide-react"
+import { Scale, BookOpen, MessageCircle, Users, Shield, Zap, FileText, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// Loading component for chat interface
-const ChatInterfaceSkeleton = () => (
+// Loading component
+const ContentSkeleton = () => (
   <div className="space-y-4">
     <Skeleton className="h-8 w-3/4" />
     <Skeleton className="h-32 w-full" />
@@ -102,12 +101,85 @@ const HeroSection = React.memo(() => {
 
 HeroSection.displayName = "HeroSection"
 
+// Quick actions for authenticated users
+const AuthenticatedDashboard = React.memo(() => {
+  const { t } = useLanguage()
+  
+  const quickActions = [
+    {
+      icon: MessageCircle,
+      title: t('Start Chat'),
+      description: t('Get instant AI legal assistance'),
+      href: '/chat',
+      color: 'text-emerald-500 bg-emerald-500/10',
+    },
+    {
+      icon: FileText,
+      title: t('Analyze Document'),
+      description: t('Upload and review legal documents'),
+      href: '/documents',
+      color: 'text-blue-500 bg-blue-500/10',
+    },
+    {
+      icon: Scale,
+      title: t('Find a Lawyer'),
+      description: t('Connect with verified legal professionals'),
+      href: '/lawyers',
+      color: 'text-purple-500 bg-purple-500/10',
+    },
+    {
+      icon: BookOpen,
+      title: t('My Bookings'),
+      description: t('View and manage your consultations'),
+      href: '/bookings',
+      color: 'text-orange-500 bg-orange-500/10',
+    },
+  ]
+  
+  return (
+    <div className="space-y-8">
+      {/* Welcome banner */}
+      <Card className="bg-gradient-to-br from-primary/5 to-emerald-500/5 border-primary/20">
+        <CardContent className="pt-6">
+          <h2 className="text-2xl font-bold mb-2">{t('Welcome back!')}</h2>
+          <p className="text-muted-foreground mb-4">
+            {t('What would you like to do today?')}
+          </p>
+        </CardContent>
+      </Card>
+      
+      {/* Quick Actions Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {quickActions.map((action, index) => (
+          <Link key={index} href={action.href}>
+            <Card className="hover:shadow-lg transition-all hover:border-primary/50 cursor-pointer h-full">
+              <CardHeader>
+                <div className={cn("mb-3 flex h-12 w-12 items-center justify-center rounded-lg", action.color)}>
+                  <action.icon className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-lg">{action.title}</CardTitle>
+                <CardDescription className="flex items-center gap-1">
+                  {action.description}
+                  <ArrowRight className="h-3 w-3" />
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+})
+
+AuthenticatedDashboard.displayName = "AuthenticatedDashboard"
+
 export default function HomePage() {
   const { user, loading } = useAuth()
   const { t } = useLanguage()
   
   // Check if user is not logged in to show hero section
   const showHero = !user || user.isAnonymous
+  const showAuthDashboard = user && !user.isAnonymous
   const showExamples = showHero
   
   // Page breadcrumbs
@@ -118,96 +190,34 @@ export default function HomePage() {
   return (
     <MainLayout
       breadcrumbs={breadcrumbs}
-      title={user ? t('Legal Assistant') : undefined}
-      subtitle={user ? t('Ask any legal question and get instant AI-powered assistance') : undefined}
+      title={user && !user.isAnonymous ? t('Dashboard') : undefined}
+      subtitle={user && !user.isAnonymous ? t('Your legal AI assistant hub') : undefined}
       className="min-h-screen"
     >
-      <div className="grid gap-6 lg:gap-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Hero section for non-authenticated users */}
         {showHero && (
-          <div className="lg:col-span-2">
+          <Suspense fallback={<ContentSkeleton />}>
             <HeroSection />
-          </div>
+          </Suspense>
         )}
         
-        {/* Main chat interface */}
-        <div className={cn(
-          "space-y-6",
-          showHero ? "lg:col-span-2" : "lg:col-span-3"
-        )}>
-          {user && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold">{t('Chat with Legal Assistant')}</h2>
-              </div>
-              
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-0">
-                  <Suspense fallback={<ChatInterfaceSkeleton />}>
-                    <div className="min-h-[600px]">
-                      <ChatInterface />
-                    </div>
-                  </Suspense>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-          
-          {/* Example interactions for non-authenticated users */}
-          {showExamples && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold">{t('Example Legal Questions')}</h2>
-              </div>
-              
-              <ExampleAIInteractions />
-            </div>
-          )}
-        </div>
+        {/* Dashboard for authenticated users */}
+        {showAuthDashboard && (
+          <Suspense fallback={<ContentSkeleton />}>
+            <AuthenticatedDashboard />
+          </Suspense>
+        )}
         
-        {/* Sidebar content for authenticated users */}
-        {user && !user.isAnonymous && (
-          <div className="space-y-6 lg:col-span-1">
-            {/* Quick actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t('Quick Actions')}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link href="/document">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    {t('Document Analysis')}
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link href="/examples">
-                    <MessageCircle className="mr-2 h-4 w-4" />
-                    {t('View Examples')}
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link href="/profile">
-                    <Users className="mr-2 h-4 w-4" />
-                    {t('Profile Settings')}
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+        {/* Example interactions for non-authenticated users */}
+        {showExamples && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">{t('Example Legal Questions')}</h2>
+            </div>
             
-            {/* Recent activity placeholder */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t('Recent Activity')}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {t('Your recent legal consultations will appear here')}
-                </p>
-              </CardContent>
-            </Card>
+            <ExampleAIInteractions />
           </div>
         )}
       </div>

@@ -14,7 +14,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Eye, EyeOff, Mail, Lock, User, AlertTriangle, Check, Chrome } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Eye, EyeOff, Mail, Lock, User, AlertTriangle, Check, Chrome, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -203,6 +204,8 @@ export function AuthForm({
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [resetEmailSent, setResetEmailSent] = useState(false)
+  const [profileImageUrl, setProfileImageUrl] = useState<string>('')
+  const [uploadingImage, setUploadingImage] = useState(false)
   
   // Form instances
   const signInForm = useForm<SignInForm>({
@@ -257,11 +260,44 @@ export function AuthForm({
       const fullName = `${data.firstName} ${data.lastName}`.trim()
       
       await signUp(data.email, data.password, fullName)
+      // TODO: Upload profile image after account creation if profileImageUrl is set
       toast.success(t('Account created successfully!'))
     } catch (error: any) {
       toast.error(error.message || t('Failed to create account'))
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Handle profile image upload
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('Please select an image file'))
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error(t('Image must be less than 2MB'))
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      // Convert to base64 for preview (will be uploaded after account creation)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setProfileImageUrl(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+      toast.success(t('Profile picture selected!'))
+    } catch (error: any) {
+      toast.error(t('Failed to process image'))
+    } finally {
+      setUploadingImage(false)
     }
   }
   
@@ -424,6 +460,44 @@ export function AuthForm({
                     autoComplete="family-name"
                     placeholder={t('Last name')}
                   />
+                </div>
+
+                {/* Profile Picture Upload (Optional) */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    {t('Profile Picture')} <span className="text-muted-foreground">({t('Optional')})</span>
+                  </Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={profileImageUrl} />
+                      <AvatarFallback className="bg-primary/10">
+                        <User className="h-8 w-8 text-primary" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage || isSubmitting}
+                        className="hidden"
+                        id="profile-picture-upload"
+                      />
+                      <Label
+                        htmlFor="profile-picture-upload"
+                        className={cn(
+                          "flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors",
+                          (uploadingImage || isSubmitting) && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <Upload className="h-4 w-4" />
+                        {uploadingImage ? t('Uploading...') : t('Choose Picture')}
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t('JPG, PNG or GIF. Max 2MB')}
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 
                 <FormInput

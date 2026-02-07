@@ -42,6 +42,7 @@ export default function BookLawyerPage() {
   const [lawyer, setLawyer] = useState<Lawyer | null>(null)
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+  const [showSignUpPrompt, setShowSignUpPrompt] = useState(false)
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState("")
@@ -51,14 +52,14 @@ export default function BookLawyerPage() {
   const [userPhone, setUserPhone] = useState("")
 
   useEffect(() => {
-    if (!user) {
-      toast.error(t("Please sign in to book a consultation"))
-      router.push("/sign-in")
-      return
-    }
-    
+    // Load lawyer data regardless of auth status
     if (lawyerId) {
       loadLawyer()
+    }
+    
+    // Show sign-up prompt if user is not authenticated
+    if (!user) {
+      setShowSignUpPrompt(true)
     }
   }, [lawyerId, user])
 
@@ -175,9 +176,61 @@ export default function BookLawyerPage() {
       const bookingId = await createBooking(bookingData)
       setCreatedBookingId(bookingId)
 
-      // Show payment dialog
-      setShowPaymentDialog(true)
-      toast.success(t("Booking created! Please complete payment."))
+      // PAYMENT DISABLED: Skip payment dialog and send emails directly
+      // setShowPaymentDialog(true)
+      // toast.success(t("Booking created! Please complete payment."))
+      
+      // Send confirmation emails immediately (payment disabled for now)
+      try {
+        const [hours, minutes] = selectedTime.split(':').map(Number)
+        const emailConsultationDate = new Date(selectedDate)
+        emailConsultationDate.setHours(hours, minutes, 0, 0)
+
+        // Send confirmation email to user
+        await fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'booking-confirmation',
+            userEmail: user.email,
+            userName: user.name || user.email,
+            lawyerName: lawyer.name,
+            bookingDate: emailConsultationDate.toISOString(),
+            bookingTime: selectedTime,
+            duration,
+            type: consultationType,
+            amount: calculateTotal(),
+            bookingId: bookingId,
+            meetingLink: consultationType === 'video' ? undefined : undefined,
+          })
+        })
+
+        // Send notification email to lawyer
+        await fetch('/api/emails/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'lawyer-notification',
+            lawyerEmail: lawyer.email,
+            lawyerName: lawyer.name,
+            userName: user.name || user.email,
+            userPhone: userPhone || user.email,
+            bookingDate: emailConsultationDate.toISOString(),
+            bookingTime: selectedTime,
+            duration,
+            type: consultationType,
+            amount: calculateTotal(),
+            notes,
+            bookingId: bookingId,
+          })
+        })
+      } catch (error) {
+        console.error("Error sending emails:", error)
+        // Don't fail the booking if email fails
+      }
+
+      setSubmitted(true)
+      toast.success(t("Booking confirmed! Check your email for details."))
     } catch (error: any) {
       console.error("Error creating booking:", error)
       toast.error(t("Failed to create booking"))
@@ -199,14 +252,14 @@ export default function BookLawyerPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: 'booking-confirmation',
+            template: 'booking-confirmation',
             userEmail: user.email,
             userName: user.name || user.email,
             lawyerName: lawyer.name,
             bookingDate: consultationDate.toISOString(),
             bookingTime: selectedTime,
             duration,
-            type: consultationType,
+            consultationType: consultationType,
             amount: calculateTotal(),
             bookingId: createdBookingId,
             meetingLink: consultationType === 'video' ? undefined : undefined, // TODO: Generate meeting link
@@ -218,7 +271,7 @@ export default function BookLawyerPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            type: 'lawyer-notification',
+            template: 'lawyer-notification',
             lawyerEmail: lawyer.email,
             lawyerName: lawyer.name,
             userName: user.name || user.email,
@@ -226,7 +279,7 @@ export default function BookLawyerPage() {
             bookingDate: consultationDate.toISOString(),
             bookingTime: selectedTime,
             duration,
-            type: consultationType,
+            consultationType: consultationType,
             amount: calculateTotal(),
             notes,
             bookingId: createdBookingId,
@@ -507,12 +560,12 @@ export default function BookLawyerPage() {
                         {t("Creating Booking...")}
                       </>
                     ) : (
-                      t("Proceed to Payment")
+                      t("Confirm Booking")
                     )}
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    {t("Secure payment via Mobile Money")}
+                    {t("Your booking will be confirmed immediately")}
                   </p>
                 </CardContent>
               </Card>
@@ -529,10 +582,102 @@ export default function BookLawyerPage() {
             amount={calculateTotal()}
             currency="XAF"
             userId={user.id}
-            userEmail={user.email}
+            userEmail={user.email || ""}
             description={`Consultation with ${lawyer.name}`}
             onSuccess={handlePaymentSuccess}
           />
+        )}
+
+        {/* Sign-Up Prompt for Guest Users */}
+        {showSignUpPrompt && !user && lawyer && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  {t("Sign Up Required")}
+                </CardTitle>
+                <CardDescription>
+                  {t("Create a free account to book consultations with verified lawyers")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Lawyer Preview */}
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground mb-2">{t("You're booking with")}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="font-bold text-primary">
+                        {lawyer.name.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold">{lawyer.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {lawyer.specializations?.[0] || t("Lawyer")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Benefits */}
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">{t("With a free account you can:")}</p>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      {t("Book consultations with lawyers")}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      {t("Get AI legal assistance 24/7")}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      {t("Upload and analyze documents")}
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      {t("Track your consultation history")}
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-2">
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => {
+                      const returnUrl = `/lawyers/${lawyerId}/book`
+                      router.push(`/sign-up?callbackUrl=${encodeURIComponent(returnUrl)}`)
+                    }}
+                  >
+                    {t("Create Free Account")}
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => {
+                      const returnUrl = `/lawyers/${lawyerId}/book`
+                      router.push(`/sign-in?callbackUrl=${encodeURIComponent(returnUrl)}`)
+                    }}
+                  >
+                    {t("Already have an account? Sign In")}
+                  </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    className="w-full"
+                    onClick={() => router.push(`/lawyers/${lawyerId}`)}
+                  >
+                    {t("Back to Profile")}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </MainLayout>

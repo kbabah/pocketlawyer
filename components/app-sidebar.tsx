@@ -157,7 +157,7 @@ export function AppSidebar() {
   }, [typeof window !== 'undefined' && window.location.search])
 
   const handleNewChat = () => {
-    router.push("/")
+    router.push("/chat")
   }
 
   const handleDeleteChat = (date: string, id: string) => {
@@ -172,9 +172,9 @@ export function AppSidebar() {
       setDeleteDialogOpen(false)
       setItemToDelete(null)
       
-      // If current chat was deleted, navigate back to home
+      // If current chat was deleted, navigate back to chat page
       if (typeof window !== 'undefined' && window.location.search.includes(`chatId=${itemToDelete.id}`)) {
-        router.push("/")
+        router.push("/chat")
       }
       toast.success(t("Chat deleted successfully"))
     } catch (error) {
@@ -259,7 +259,7 @@ export function AppSidebar() {
                     <div 
                       className="flex-1 flex items-center gap-2 cursor-pointer overflow-hidden"
                       onClick={() => {
-                        router.push(`/?chatId=${chat.id}`)
+                        router.push(`/chat?chatId=${chat.id}`)
                         if (isMobile) {
                           // Auto-close sidebar on mobile after selection
                           setTimeout(() => toggleSidebar(), 150)
