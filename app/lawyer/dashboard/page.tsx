@@ -626,7 +626,6 @@ export default function LawyerDashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
     </MainLayout>
   )
 }
