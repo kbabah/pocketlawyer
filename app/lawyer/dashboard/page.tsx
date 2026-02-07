@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
+import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -197,12 +198,14 @@ export default function LawyerDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Terminal className="h-12 w-12 text-emerald-400 animate-pulse" />
-          <p className="text-slate-400 font-mono">Initializing dashboard...</p>
+      <MainLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Terminal className="h-12 w-12 text-emerald-400 animate-pulse" />
+            <p className="text-slate-400 font-mono">Initializing dashboard...</p>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
@@ -237,9 +240,9 @@ export default function LawyerDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <MainLayout>
       {/* Header */}
-      <div className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl">
+      <div className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl mb-6">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -623,7 +626,8 @@ export default function LawyerDashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </MainLayout>
   )
 }
 

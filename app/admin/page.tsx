@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { MainLayout } from "@/components/layout/main-layout"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -58,38 +59,41 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-pattern-light dark:bg-pattern-dark">
-        <div className="text-center">
-          <Shield className="h-10 w-10 text-primary mx-auto animate-pulse" />
-          <h1 className="text-2xl font-bold mt-4">Verifying admin access...</h1>
+      <MainLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-center">
+            <Shield className="h-10 w-10 text-primary mx-auto animate-pulse" />
+            <h1 className="text-2xl font-bold mt-4">Verifying admin access...</h1>
+          </div>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-pattern-light dark:bg-pattern-dark">
-        <div className="w-full max-w-md">
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>
-              You don't have permission to access this area. Redirecting...
-            </AlertDescription>
-          </Alert>
-          <Button 
-            onClick={() => router.push("/")}
-            variant="outline"
-            className="w-full"
-          >
-            Return to Home
+      <MainLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="w-full max-w-md">
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                You don't have permission to access this area. Redirecting...
+              </AlertDescription>
+            </Alert>
+            <Button 
+              onClick={() => router.push("/")}
+              variant="outline"
+              className="w-full"
+            >
+              Return to Home
           </Button>
         </div>
-      </div>
+      </MainLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-pattern-light dark:bg-pattern-dark">
+    <MainLayout>
       <div className="container mx-auto py-8 px-4">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -363,6 +367,6 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </MainLayout>
   )
 }
