@@ -86,7 +86,8 @@ export default function AdminDashboard() {
               className="w-full"
             >
               Return to Home
-          </Button>
+            </Button>
+          </div>
         </div>
       </MainLayout>
     )
