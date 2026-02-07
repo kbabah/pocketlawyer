@@ -256,6 +256,15 @@ export default function LawyerDashboardPage() {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => router.push("/lawyer/profile/edit")}
+                className="text-emerald-400 hover:text-emerald-300 font-mono"
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                EDIT PROFILE
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => router.push("/")}
                 className="text-slate-400 hover:text-white font-mono"
               >

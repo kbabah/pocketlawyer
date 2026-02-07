@@ -99,53 +99,63 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <Shield className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <div>
+              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+              <p className="text-sm text-muted-foreground">System management and overview</p>
+            </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="flex items-center gap-2"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/users")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">User Management</CardTitle>
+              <Users className="h-5 w-5 text-blue-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">--</div>
               <p className="text-xs text-muted-foreground">
-                +-- from last month
+                Manage all users
               </p>
             </CardContent>
           </Card>
-          <Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/lawyers")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Conversations</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Lawyers</CardTitle>
+              <Shield className="h-5 w-5 text-emerald-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">--</div>
               <p className="text-xs text-muted-foreground">
-                +-- from last month
+                Approve & manage lawyers
               </p>
             </CardContent>
           </Card>
-          <Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/blog")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Blog Posts</CardTitle>
+              <FileText className="h-5 w-5 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">--</div>
+              <p className="text-xs text-muted-foreground">
+                Manage blog content
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/email")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Email Campaigns</CardTitle>
-              <Mail className="h-4 w-4 text-muted-foreground" />
+              <Mail className="h-5 w-5 text-orange-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">--</div>
               <p className="text-xs text-muted-foreground">
-                +-- from last month
+                Manage email templates
               </p>
             </CardContent>
           </Card>
