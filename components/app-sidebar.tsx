@@ -408,7 +408,7 @@ export function AppSidebar() {
               <span className="truncate">{t("Find a Lawyer")}</span>
             </Button>
 
-            {user && (
+            {user && !user.isAnonymous && (
               <Button
                 variant="ghost"
                 className={`w-full justify-start gap-2 touch-manipulation font-medium ${
@@ -488,15 +488,17 @@ export function AppSidebar() {
             </div>
           )}
 
-          {/* Chat History with enhanced mobile scrolling */}
-          <div className="relative">
-            <ScrollArea 
-              className={`overflow-auto mobile-scroll ${isMobile ? 'pr-2' : 'pr-1'}`}
-              style={{ height: `${sidebarHeight}px` }}
-            >
-              {renderChatHistory()}
-            </ScrollArea>
-          </div>
+          {/* Chat History - Only for authenticated users */}
+          {user && !user.isAnonymous && (
+            <div className="relative">
+              <ScrollArea 
+                className={`overflow-auto mobile-scroll ${isMobile ? 'pr-2' : 'pr-1'}`}
+                style={{ height: `${sidebarHeight}px` }}
+              >
+                {renderChatHistory()}
+              </ScrollArea>
+            </div>
+          )}
         </SidebarContent>
 
         <SidebarFooter data-sidebar-footer className={`border-t border-border/60 mt-auto ${isMobile ? 'p-3' : 'p-2.5'}`}>
