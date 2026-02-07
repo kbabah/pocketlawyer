@@ -42,7 +42,6 @@ export default function BookLawyerPage() {
   const [lawyer, setLawyer] = useState<Lawyer | null>(null)
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
-  const [showSignUpPrompt, setShowSignUpPrompt] = useState(false)
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState("")
@@ -56,12 +55,7 @@ export default function BookLawyerPage() {
     if (lawyerId) {
       loadLawyer()
     }
-    
-    // Show sign-up prompt if user is not authenticated
-    if (!user) {
-      setShowSignUpPrompt(true)
-    }
-  }, [lawyerId, user])
+  }, [lawyerId])
 
   const loadLawyer = async () => {
     try {
@@ -307,8 +301,73 @@ export default function BookLawyerPage() {
     )
   }
 
-  if (!lawyer || !user) {
+  if (!lawyer) {
     return null
+  }
+
+  // Show authentication prompt if user is not logged in
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="container max-w-2xl mx-auto px-4 py-12">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl">{t("Sign In Required")}</CardTitle>
+              <CardDescription>
+                {t("You need to be signed in to book a consultation")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-muted p-4 rounded-lg">
+                <h3 className="font-medium mb-2">{t("Booking with")}:</h3>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Users className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{lawyer.name}</p>
+                    <p className="text-sm text-muted-foreground">{lawyer.location}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {t("Please sign in or create an account to continue with your booking.")}
+                </p>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    className="flex-1" 
+                    size="lg"
+                    onClick={() => router.push(`/sign-in?redirect=/lawyers/${lawyerId}/book`)}
+                  >
+                    {t("Sign In")}
+                  </Button>
+                  <Button 
+                    className="flex-1" 
+                    size="lg"
+                    variant="outline"
+                    onClick={() => router.push(`/sign-up?redirect=/lawyers/${lawyerId}/book`)}
+                  >
+                    {t("Create Account")}
+                  </Button>
+                </div>
+
+                <Button 
+                  variant="ghost" 
+                  className="w-full"
+                  onClick={() => router.push(`/lawyers/${lawyerId}`)}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t("Back to Lawyer Profile")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    )
   }
 
   if (submitted) {
