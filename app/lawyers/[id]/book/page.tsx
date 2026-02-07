@@ -103,7 +103,12 @@ export default function BookLawyerPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!user || !lawyer) return
+    // Prevent anonymous users from submitting
+    if (!user || user.isAnonymous || !lawyer) {
+      toast.error(t("Please sign in to book a consultation"))
+      router.push(`/sign-in?redirect=/lawyers/${lawyerId}/book`)
+      return
+    }
 
     // Validation
     if (!selectedDate) {
@@ -305,8 +310,8 @@ export default function BookLawyerPage() {
     return null
   }
 
-  // Show authentication prompt if user is not logged in
-  if (!user) {
+  // Show authentication prompt if user is not logged in or is anonymous
+  if (!user || user.isAnonymous) {
     return (
       <MainLayout>
         <div className="container max-w-2xl mx-auto px-4 py-12">

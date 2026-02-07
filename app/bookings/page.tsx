@@ -56,15 +56,15 @@ export default function UserBookingsPage() {
   const [existingReviews, setExistingReviews] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (!user) {
-      router.push("/sign-in")
+    if (!user || user.isAnonymous) {
+      router.push("/sign-in?redirect=/bookings")
       return
     }
     loadBookings()
   }, [user])
 
   const loadBookings = async () => {
-    if (!user) return
+    if (!user || user.isAnonymous) return
     
     try {
       setLoading(true)
@@ -91,6 +91,11 @@ export default function UserBookingsPage() {
   }
 
   const handleCancelBooking = async () => {
+    if (!user || user.isAnonymous) {
+      toast.error(t("Please sign in to cancel bookings"))
+      return
+    }
+
     if (!selectedBooking || !cancelReason.trim()) {
       toast.error(t("Please provide a cancellation reason"))
       return
@@ -113,7 +118,10 @@ export default function UserBookingsPage() {
   }
 
   const handleSubmitReview = async () => {
-    if (!selectedBooking || !user) return
+    if (!selectedBooking || !user || user.isAnonymous) {
+      toast.error(t("Please sign in to submit reviews"))
+      return
+    }
 
     if (!reviewComment.trim()) {
       toast.error(t("Please write a review comment"))
