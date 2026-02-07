@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { useRoleCheck } from "@/hooks/use-role-check"
+import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -301,14 +302,14 @@ export default function UserManagementPage() {
 
   if (loading) {
     return (
-      <OpenClawLayout>
+      <MainLayout>
         <div className="flex items-center justify-center py-12">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-12 w-12 text-emerald-400 animate-spin" />
             <p className="text-slate-400 font-mono">LOADING USERS...</p>
           </div>
         </div>
-      </OpenClawLayout>
+      </MainLayout>
     )
   }
 
@@ -317,7 +318,7 @@ export default function UserManagementPage() {
   }
 
   return (
-    <OpenClawLayout>
+    <MainLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -585,6 +586,6 @@ export default function UserManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </OpenClawLayout>
+    </MainLayout>
   )
 }
