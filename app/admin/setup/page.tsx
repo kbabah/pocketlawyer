@@ -66,7 +66,7 @@ export default function AdminSetupPage() {
     <MainLayout>
       <div className="container flex items-center justify-center min-h-[60vh] py-10">
         <div className="w-full max-w-md">
-        <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
+          <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
           <ShieldAlert className="h-4 w-4" />
           <AlertTitle>Admin Setup Tool</AlertTitle>
           <AlertDescription>
