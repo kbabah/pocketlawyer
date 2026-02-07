@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +63,8 @@ export default function AdminSetupPage() {
   };
   
   return (
-    <div className="container flex items-center justify-center min-h-screen py-10">
+    <MainLayout>
+      <div className="container flex items-center justify-center min-h-[60vh] py-10">
       <div className="w-full max-w-md">
         <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
           <ShieldAlert className="h-4 w-4" />
@@ -122,6 +124,6 @@ export default function AdminSetupPage() {
           </form>
         </Card>
       </div>
-    </div>
+    </MainLayout>
   );
 }

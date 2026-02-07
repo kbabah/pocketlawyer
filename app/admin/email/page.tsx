@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -95,7 +96,8 @@ export default function EmailDashboard() {
   };
 
   return (
-    <div className="container py-8">
+    <MainLayout>
+      <div className="container py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Email Management</h1>
@@ -293,7 +295,7 @@ export default function EmailDashboard() {
           <SubscribersList />
         </TabsContent>
       </Tabs>
-    </div>
+    </MainLayout>
   );
 }
 

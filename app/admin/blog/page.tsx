@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
+import { MainLayout } from "@/components/layout/main-layout";
 import {
   Card,
   CardContent,
@@ -159,7 +160,8 @@ export default function BlogManagementPage() {
   );
 
   return (
-    <div className="container py-8">
+    <MainLayout>
+      <div className="container py-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button
@@ -378,6 +380,6 @@ export default function BlogManagementPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </MainLayout>
   );
 }
