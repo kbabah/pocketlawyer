@@ -164,25 +164,25 @@ export default function BlogManagementPage() {
       <div className="container py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.push("/admin")}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Blog Management</h1>
-            <p className="text-muted-foreground">
-              Create and manage blog posts for your website
-            </p>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => router.push("/admin")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Blog Management</h1>
+              <p className="text-muted-foreground">
+                Create and manage blog posts for your website
+              </p>
+            </div>
           </div>
+          <Button onClick={() => router.push("/admin/blog/new")}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Post
+          </Button>
         </div>
-        <Button onClick={() => router.push("/admin/blog/new")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create New Post
-        </Button>
-      </div>
 
       <Card className="mb-8">
         <CardHeader>
