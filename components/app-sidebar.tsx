@@ -156,10 +156,6 @@ export function AppSidebar() {
     }
   }, [typeof window !== 'undefined' && window.location.search])
 
-  const handleNewChat = () => {
-    router.push("/chat")
-  }
-
   const handleDeleteChat = (date: string, id: string) => {
     setItemToDelete({ date, id })
     setDeleteDialogOpen(true)
@@ -447,7 +443,7 @@ export function AppSidebar() {
                   : 'py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px] mb-3'
               }`}
               onClick={() => {
-                handleNewChat()
+                router.push("/chat")
                 if (isMobile) setTimeout(() => toggleSidebar(), 150)
               }}
             >
