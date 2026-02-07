@@ -29,6 +29,8 @@ import { useLanguage } from "@/contexts/language-context"
 import { useRoleCheck } from "@/hooks/use-role-check"
 import { useSidebar } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import { collection, query, where, getDocs } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 interface NavItem {
   title: string
@@ -56,6 +58,42 @@ export function AppSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
   const { isAdmin, isApprovedLawyer, loading: roleLoading } = useRoleCheck()
+  const [userChatsCount, setUserChatsCount] = useState(0)
+  const [userBookingsCount, setUserBookingsCount] = useState(0)
+  const [loadingMetrics, setLoadingMetrics] = useState(false)
+
+  // Fetch user-specific metrics
+  useEffect(() => {
+    if (!user || user.isAnonymous) {
+      setUserChatsCount(0)
+      setUserBookingsCount(0)
+      return
+    }
+
+    const fetchUserMetrics = async () => {
+      setLoadingMetrics(true)
+      try {
+        // Fetch user's chat count
+        const chatsRef = collection(db, "users", user.id, "chats")
+        const chatsSnapshot = await getDocs(chatsRef)
+        setUserChatsCount(chatsSnapshot.size)
+
+        // Fetch user's booking count
+        const bookingsRef = collection(db, "bookings")
+        const bookingsQuery = query(bookingsRef, where("userId", "==", user.id))
+        const bookingsSnapshot = await getDocs(bookingsQuery)
+        setUserBookingsCount(bookingsSnapshot.size)
+      } catch (error) {
+        console.error("Error fetching user metrics:", error)
+        setUserChatsCount(0)
+        setUserBookingsCount(0)
+      } finally {
+        setLoadingMetrics(false)
+      }
+    }
+
+    fetchUserMetrics()
+  }, [user])
 
   const handleSignOut = async () => {
     try {
@@ -239,32 +277,38 @@ export function AppSidebar() {
 
         <Separator className="my-4 bg-slate-800" />
 
-        {/* Stats Section */}
-        <div className="py-2">
-          <div className="px-2 py-2">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
-              METRICS
-            </h4>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-slate-400 font-mono">CHATS</span>
-                <MessageSquare className="h-3 w-3 text-blue-400" />
-              </div>
-              <p className="text-lg font-bold text-white font-mono">12</p>
+        {/* Stats Section - Only for authenticated users */}
+        {user && !user.isAnonymous && (
+          <div className="py-2">
+            <div className="px-2 py-2">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+                METRICS
+              </h4>
             </div>
             
-            <div className="px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs text-slate-400 font-mono">BOOKINGS</span>
-                <Calendar className="h-3 w-3 text-purple-400" />
+            <div className="space-y-2">
+              <div className="px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-slate-400 font-mono">CHATS</span>
+                  <MessageSquare className="h-3 w-3 text-blue-400" />
+                </div>
+                <p className="text-lg font-bold text-white font-mono">
+                  {loadingMetrics ? "..." : userChatsCount}
+                </p>
               </div>
-              <p className="text-lg font-bold text-white font-mono">3</p>
+              
+              <div className="px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-slate-400 font-mono">BOOKINGS</span>
+                  <Calendar className="h-3 w-3 text-purple-400" />
+                </div>
+                <p className="text-lg font-bold text-white font-mono">
+                  {loadingMetrics ? "..." : userBookingsCount}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </ScrollArea>
 
       {/* Footer */}
