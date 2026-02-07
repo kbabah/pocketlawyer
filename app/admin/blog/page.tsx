@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { MainLayout } from "@/components/layout/main-layout";
+import MainLayout from "@/components/layout/main-layout";
 import {
   Card,
   CardContent,
@@ -380,6 +380,7 @@ export default function BlogManagementPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </MainLayout>
   );
 }

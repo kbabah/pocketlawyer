@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MainLayout } from "@/components/layout/main-layout";
+import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,6 +123,7 @@ export default function AdminSetupPage() {
             </CardFooter>
           </form>
         </Card>
+        </div>
       </div>
     </MainLayout>
   );
