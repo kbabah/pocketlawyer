@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User, FileText, Home, Scale, Briefcase, Settings } from "lucide-react" 
+import { MessageSquare, Calendar, Loader2, Trash2, Pencil, MessageCircle, UserPlus, AlertTriangle, User, FileText, Home, Scale, Briefcase, Settings, BookOpen } from "lucide-react" 
 import { format } from "date-fns"
 import {
   AlertDialog,
@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/sidebar"
 import { toast } from "sonner"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { collection, query, where, getDocs } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 export function AppSidebar() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -56,6 +58,9 @@ export function AppSidebar() {
   const { toggleSidebar } = useSidebar()
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [sidebarHeight, setSidebarHeight] = useState<number>(0)
+  const [userChatsCount, setUserChatsCount] = useState(0)
+  const [userBookingsCount, setUserBookingsCount] = useState(0)
+  const [loadingMetrics, setLoadingMetrics] = useState(false)
 
   // Mobile navigation enhancements
   const [touchStart, setTouchStart] = useState<number | null>(null)
@@ -155,6 +160,39 @@ export function AppSidebar() {
       setCurrentChatId(id)
     }
   }, [typeof window !== 'undefined' && window.location.search])
+
+  // Fetch user-specific metrics
+  useEffect(() => {
+    if (!user || user.isAnonymous) {
+      setUserChatsCount(0)
+      setUserBookingsCount(0)
+      return
+    }
+
+    const fetchUserMetrics = async () => {
+      setLoadingMetrics(true)
+      try {
+        // Fetch user's chat count
+        const chatsRef = collection(db, "users", user.id, "chats")
+        const chatsSnapshot = await getDocs(chatsRef)
+        setUserChatsCount(chatsSnapshot.size)
+
+        // Fetch user's booking count
+        const bookingsRef = collection(db, "bookings")
+        const bookingsQuery = query(bookingsRef, where("userId", "==", user.id))
+        const bookingsSnapshot = await getDocs(bookingsQuery)
+        setUserBookingsCount(bookingsSnapshot.size)
+      } catch (error) {
+        console.error("Error fetching user metrics:", error)
+        setUserChatsCount(0)
+        setUserBookingsCount(0)
+      } finally {
+        setLoadingMetrics(false)
+      }
+    }
+
+    fetchUserMetrics()
+  }, [user])
 
   const handleDeleteChat = (date: string, id: string) => {
     setItemToDelete({ date, id })
@@ -404,6 +442,22 @@ export function AppSidebar() {
               <span className="truncate">{t("Find a Lawyer")}</span>
             </Button>
 
+            <Button
+              variant="ghost"
+              className={`w-full justify-start gap-2 touch-manipulation font-medium ${
+                isMobile 
+                  ? 'py-4 text-base min-h-[52px] px-3' 
+                  : 'py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]'
+              }`}
+              onClick={() => {
+                router.push("/blog")
+                if (isMobile) setTimeout(() => toggleSidebar(), 150)
+              }}
+            >
+              <BookOpen className={`text-muted-foreground flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-5 w-5 sm:h-4 sm:w-4'}`} />
+              <span className="truncate">{t("Blog")}</span>
+            </Button>
+
             {user && !user.isAnonymous && (
               <Button
                 variant="ghost"
@@ -419,6 +473,42 @@ export function AppSidebar() {
               >
                 <Calendar className={`text-muted-foreground flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-5 w-5 sm:h-4 sm:w-4'}`} />
                 <span className="truncate">{t("My Bookings")}</span>
+              </Button>
+            )}
+
+            {isApprovedLawyer && (
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 touch-manipulation font-medium ${
+                  isMobile 
+                    ? 'py-4 text-base min-h-[52px] px-3' 
+                    : 'py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]'
+                }`}
+                onClick={() => {
+                  router.push("/lawyer/dashboard")
+                  if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                }}
+              >
+                <Briefcase className={`text-muted-foreground flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-5 w-5 sm:h-4 sm:w-4'}`} />
+                <span className="truncate">{t("Lawyer Dashboard")}</span>
+              </Button>
+            )}
+
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                className={`w-full justify-start gap-2 touch-manipulation font-medium ${
+                  isMobile 
+                    ? 'py-4 text-base min-h-[52px] px-3' 
+                    : 'py-3 sm:py-2.5 text-base sm:text-sm min-h-[46px] sm:min-h-[40px]'
+                }`}
+                onClick={() => {
+                  router.push("/admin")
+                  if (isMobile) setTimeout(() => toggleSidebar(), 150)
+                }}
+              >
+                <Settings className={`text-muted-foreground flex-shrink-0 ${isMobile ? 'h-5 w-5' : 'h-5 w-5 sm:h-4 sm:w-4'}`} />
+                <span className="truncate">{t("Admin Dashboard")}</span>
               </Button>
             )}
           </div>
@@ -451,6 +541,39 @@ export function AppSidebar() {
               <span className="truncate">{t("Start New Conversation")}</span>
             </Button>
           </div>
+
+          {/* Metrics Section - Only for authenticated users */}
+          {user && !user.isAnonymous && (
+            <div className={isMobile ? "mb-5" : "mb-4"}>
+              <div className={`px-2 ${isMobile ? 'py-2 mb-3' : 'py-1 mb-2'}`}>
+                <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  {t("Metrics")}
+                </h4>
+              </div>
+              
+              <div className="space-y-2 px-1">
+                <div className="px-3 py-2 bg-secondary/40 dark:bg-secondary/20 rounded-lg border border-border/40">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground font-medium">{t("CHATS")}</span>
+                    <MessageSquare className="h-3 w-3 text-blue-400" />
+                  </div>
+                  <p className="text-lg font-bold">
+                    {loadingMetrics ? "..." : userChatsCount}
+                  </p>
+                </div>
+                
+                <div className="px-3 py-2 bg-secondary/40 dark:bg-secondary/20 rounded-lg border border-border/40">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground font-medium">{t("BOOKINGS")}</span>
+                    <Calendar className="h-3 w-3 text-purple-400" />
+                  </div>
+                  <p className="text-lg font-bold">
+                    {loadingMetrics ? "..." : userBookingsCount}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Trial Info - Enhanced for mobile */}
           {user?.isAnonymous && (
