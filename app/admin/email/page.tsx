@@ -295,6 +295,7 @@ export default function EmailDashboard() {
           <SubscribersList />
         </TabsContent>
       </Tabs>
+      </div>
     </MainLayout>
   );
 }
