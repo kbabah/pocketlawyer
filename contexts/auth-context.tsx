@@ -394,6 +394,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
             name: firebaseUser.displayName,
             profileImage: firebaseUser.photoURL,
             provider: firebaseUser.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+            isAnonymous: false,
             emailPreferences
           });
         } catch (error) {
