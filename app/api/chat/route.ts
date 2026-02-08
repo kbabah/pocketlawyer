@@ -25,7 +25,9 @@ function validateModel(requestedModel: string): string {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await req.json().then(body => ({ ...body, userId: body.userId }));
+    // Parse request body once
+    const body = await req.json();
+    const { userId, messages, documentContent, language = "en", model = OPENAI_MODELS.GPT41 } = body;
     
     // Rate limiting: 30 requests per minute for authenticated users, 10 for anonymous
     const identifier = getIdentifier(req, userId);
@@ -53,9 +55,6 @@ export async function POST(req: Request) {
         }
       );
     }
-
-    // Re-parse the full body now that we've passed rate limiting
-    const { messages, documentContent, language = "en", model = OPENAI_MODELS.GPT41 } = await req.json();
 
     // Validate the model parameter
     const validatedModel = validateModel(model);
