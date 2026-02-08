@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAuthenticated() {
-      return request.auth != null && request.time != null;
+      return request.auth != null;
     }
     
     function isOwner(userId) {
