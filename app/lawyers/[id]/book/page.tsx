@@ -25,7 +25,7 @@ import {
   CheckCircle
 } from "lucide-react"
 import { getLawyer } from "@/lib/services/lawyer-service"
-import { createBooking, isTimeSlotAvailable } from "@/lib/services/booking-service"
+import { createBooking } from "@/lib/services/booking-service"
 import type { Lawyer } from "@/types/lawyer"
 import { DURATION_OPTIONS, CONSULTATION_TYPES } from "@/types/lawyer"
 
@@ -137,17 +137,9 @@ export default function BookLawyerPage() {
       return
     }
 
-    // Check availability
+    // Create booking (availability check is done server-side in the API)
     setSubmitting(true)
     try {
-      const available = await isTimeSlotAvailable(lawyerId, consultationDate, duration)
-      
-      if (!available) {
-        toast.error(t("This time slot is no longer available. Please choose another time."))
-        setSubmitting(false)
-        return
-      }
-
       // Create booking
       const bookingData: any = {
         userId: user.id,
@@ -197,7 +189,7 @@ export default function BookLawyerPage() {
             bookingDate: emailConsultationDate.toISOString(),
             bookingTime: selectedTime,
             duration,
-            type: consultationType,
+            consultationType: consultationType,
             amount: calculateTotal(),
             bookingId: bookingId,
             meetingLink: consultationType === 'video' ? undefined : undefined,
@@ -217,7 +209,7 @@ export default function BookLawyerPage() {
             bookingDate: emailConsultationDate.toISOString(),
             bookingTime: selectedTime,
             duration,
-            type: consultationType,
+            consultationType: consultationType,
             amount: calculateTotal(),
             notes,
             bookingId: bookingId,
@@ -232,7 +224,12 @@ export default function BookLawyerPage() {
       toast.success(t("Booking confirmed! Check your email for details."))
     } catch (error: any) {
       console.error("Error creating booking:", error)
-      toast.error(t("Failed to create booking"))
+      // Show specific error message from server if available
+      if (error.message?.includes('time slot')) {
+        toast.error(t("This time slot is no longer available. Please choose another time."))
+      } else {
+        toast.error(error.message || t("Failed to create booking"))
+      }
     } finally {
       setSubmitting(false)
     }

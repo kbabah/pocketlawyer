@@ -43,42 +43,57 @@ function convertBookingData(data: any): any {
 }
 
 /**
- * Create a new booking
+ * Create a new booking via API endpoint (uses Admin SDK to bypass permission issues)
  */
 export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  const bookingRef = doc(collection(db, 'bookings'))
-  
-  // Convert Date to Timestamp for Firestore
-  const booking: any = {
-    userId: bookingData.userId,
-    userName: bookingData.userName,
-    userEmail: bookingData.userEmail,
-    lawyerId: bookingData.lawyerId,
-    lawyerName: bookingData.lawyerName,
-    lawyerEmail: bookingData.lawyerEmail,
-    date: Timestamp.fromDate(bookingData.date),
-    duration: bookingData.duration,
-    type: bookingData.type,
-    status: bookingData.status || 'pending',
-    totalAmount: bookingData.totalAmount,
-    paymentStatus: bookingData.paymentStatus || 'pending',
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  }
+  try {
+    // Get the current user's auth token
+    const { auth } = await import('@/lib/firebase');
+    const user = auth.currentUser;
+    
+    if (!user) {
+      throw new Error('User must be authenticated to create a booking');
+    }
 
-  // Add optional fields
-  if (bookingData.userPhone) {
-    booking.userPhone = bookingData.userPhone
-  }
-  if (bookingData.notes) {
-    booking.notes = bookingData.notes
-  }
-  if (bookingData.meetingLink) {
-    booking.meetingLink = bookingData.meetingLink
-  }
+    const token = await user.getIdToken();
 
-  await setDoc(bookingRef, booking)
-  return bookingRef.id
+    // Call the API endpoint instead of directly writing to Firestore
+    const response = await fetch('/api/bookings/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        userId: bookingData.userId,
+        userName: bookingData.userName,
+        userEmail: bookingData.userEmail,
+        lawyerId: bookingData.lawyerId,
+        lawyerName: bookingData.lawyerName,
+        lawyerEmail: bookingData.lawyerEmail,
+        date: bookingData.date.toISOString(),
+        duration: bookingData.duration,
+        type: bookingData.type,
+        status: bookingData.status || 'pending',
+        totalAmount: bookingData.totalAmount,
+        paymentStatus: bookingData.paymentStatus || 'pending',
+        userPhone: bookingData.userPhone,
+        notes: bookingData.notes,
+        meetingLink: bookingData.meetingLink,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Failed to create booking: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.bookingId;
+  } catch (error: any) {
+    console.error('Error creating booking:', error);
+    throw new Error(error.message || 'Failed to create booking');
+  }
 }
 
 /**
