@@ -12,7 +12,6 @@ service cloud.firestore {
     
     function isAdmin() {
       return request.auth != null && 
-        request.time != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
@@ -32,16 +31,16 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       
       // Allow users to create their own document initially
-      allow create: if isAuthenticated() && request.auth.uid == userId && request.time != null;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
       
       // Allow users to update their own document
-      allow update: if isOwner(userId) && request.time != null;
+      allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
 
       // Allow users to manage their own onboarding progress
       match /onboarding/{document=**} {
-        allow read: if request.auth.uid == userId && request.time != null;
-        allow write: if request.auth.uid == userId && request.time != null;
+        allow read: if request.auth.uid == userId;
+        allow write: if request.auth.uid == userId;
       }
 
       // Allow users to manage their own data in subcollections
