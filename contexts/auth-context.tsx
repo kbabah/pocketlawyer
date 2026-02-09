@@ -420,9 +420,16 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       await signInWithEmailAndPassword(auth, email, password);
       // Reset initialAuthChecked to allow redirect logic to run
       setInitialAuthChecked(false);
-      // Auth state change will trigger in onAuthStateChanged
-      // which will then trigger the redirect in useEffect
-      logger.info('Sign in successful, waiting for auth state change');
+      
+      // Immediate redirect for auth pages
+      const currentPath = window.location.pathname;
+      const authPages = ["/sign-in", "/sign-up", "/sign-in-new", "/sign-up-new"];
+      if (authPages.includes(currentPath)) {
+        logger.info('Sign in successful, redirecting from auth page');
+        router.push("/");
+      } else {
+        logger.info('Sign in successful, staying on current page');
+      }
     } catch (error: any) {
       logger.error('Sign in failed', error);
       throw new Error(error.message);
@@ -548,9 +555,16 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       
       // Reset initialAuthChecked to allow redirect logic to run
       setInitialAuthChecked(false);
-      logger.info('Google sign in successful, waiting for auth state change');
       
-      // Router push will happen in useEffect after auth state changes
+      // Immediate redirect for auth pages
+      const currentPath = window.location.pathname;
+      const authPages = ["/sign-in", "/sign-up", "/sign-in-new", "/sign-up-new"];
+      if (authPages.includes(currentPath)) {
+        logger.info('Google sign in successful, redirecting from auth page');
+        router.push("/");
+      } else {
+        logger.info('Google sign in successful, staying on current page');
+      }
     } catch (error: any) {
       throw new Error(error.message);
     }
