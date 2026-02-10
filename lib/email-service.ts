@@ -127,7 +127,7 @@ async function storeInitialTrackingData(
       recipient,
       subject,
       template,
-      campaignId,
+      ...(campaignId ? { campaignId } : {}),
       sentAt: Timestamp.now(),
       opened: false,
       openCount: 0,

@@ -51,8 +51,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
  */
 async function sendWithSendGrid(options: EmailOptions, from: string): Promise<boolean> {
   try {
-    const sgMail = require('@sendgrid/mail')
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const sgMail = require('@sendgrid/mail') as any
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY || '')
 
     await sgMail.send({
       from,
@@ -80,7 +81,8 @@ export async function sendBookingConfirmation(data: {
   bookingDate: Date | string
   bookingTime: string
   duration: number
-  type: string
+  type?: string
+  consultationType?: string
   amount: number
   bookingId: string
   meetingLink?: string
@@ -89,6 +91,8 @@ export async function sendBookingConfirmation(data: {
   const bookingDate = typeof data.bookingDate === 'string' 
     ? new Date(data.bookingDate) 
     : data.bookingDate
+  // Support both 'type' and 'consultationType' field names
+  const consultationType = data.consultationType || data.type || 'consultation'
   const html = `
     <!DOCTYPE html>
     <html>
@@ -133,7 +137,7 @@ export async function sendBookingConfirmation(data: {
             </div>
             <div class="detail-row">
               <span class="detail-label">Type</span>
-              <span class="detail-value">${data.type}</span>
+              <span class="detail-value">${consultationType}</span>
             </div>
             <div class="detail-row" style="border-bottom: none;">
               <span class="detail-label">Amount Paid</span>
@@ -176,7 +180,7 @@ export async function sendBookingConfirmation(data: {
     to: data.userEmail,
     subject: `✅ Consultation Confirmed with ${data.lawyerName}`,
     html,
-    text: `Your consultation with ${data.lawyerName} has been confirmed for ${data.bookingDate.toLocaleDateString()} at ${data.bookingTime}.`,
+    text: `Your consultation with ${data.lawyerName} has been confirmed for ${bookingDate.toLocaleDateString()} at ${data.bookingTime}.`,
   })
 }
 
@@ -191,7 +195,8 @@ export async function sendLawyerBookingNotification(data: {
   bookingDate: Date | string
   bookingTime: string
   duration: number
-  type: string
+  type?: string
+  consultationType?: string
   amount: number
   notes?: string
   bookingId: string
@@ -200,6 +205,8 @@ export async function sendLawyerBookingNotification(data: {
   const bookingDate = typeof data.bookingDate === 'string' 
     ? new Date(data.bookingDate) 
     : data.bookingDate
+  // Support both 'type' and 'consultationType' field names
+  const consultationType = data.consultationType || data.type || 'consultation'
   const html = `
     <!DOCTYPE html>
     <html>
@@ -256,7 +263,7 @@ export async function sendLawyerBookingNotification(data: {
             </div>
             <div class="detail-row">
               <span class="detail-label">Type</span>
-              <span class="detail-value">${data.type}</span>
+              <span class="detail-value">${consultationType}</span>
             </div>
             <div class="detail-row" style="border-bottom: none;">
               <span class="detail-label">Fee</span>
@@ -295,9 +302,9 @@ export async function sendLawyerBookingNotification(data: {
 
   return await sendEmail({
     to: data.lawyerEmail,
-    subject: `🔔 New Booking: ${data.userName} - ${data.bookingDate.toLocaleDateString()}`,
+    subject: `🔔 New Booking: ${data.userName} - ${bookingDate.toLocaleDateString()}`,
     html,
-    text: `New booking from ${data.userName} for ${data.bookingDate.toLocaleDateString()} at ${data.bookingTime}.`,
+    text: `New booking from ${data.userName} for ${bookingDate.toLocaleDateString()} at ${data.bookingTime}.`,
   })
 }
 
@@ -308,12 +315,15 @@ export async function sendBookingReminder(data: {
   userEmail: string
   userName: string
   lawyerName: string
-  bookingDate: Date
+  bookingDate: Date | string
   bookingTime: string
   type: string
   meetingLink?: string
   bookingId: string
 }) {
+  const bookingDate = typeof data.bookingDate === 'string' 
+    ? new Date(data.bookingDate) 
+    : data.bookingDate
   const html = `
     <!DOCTYPE html>
     <html>
@@ -341,7 +351,7 @@ export async function sendBookingReminder(data: {
           
           <div class="card" style="background: #fef3c7; border-color: #f59e0b;">
             <h2 style="margin-top: 0; color: #92400e;">Tomorrow at ${data.bookingTime}</h2>
-            <p style="margin: 0; font-size: 18px; color: #78350f;">${data.bookingDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            <p style="margin: 0; font-size: 18px; color: #78350f;">${bookingDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
           </div>
 
           ${data.meetingLink ? `
@@ -383,10 +393,13 @@ export async function sendCancellationEmail(data: {
   userEmail: string
   userName: string
   lawyerName: string
-  bookingDate: Date
+  bookingDate: Date | string
   reason: string
   cancelledBy: string
 }) {
+  const bookingDate = typeof data.bookingDate === 'string' 
+    ? new Date(data.bookingDate) 
+    : data.bookingDate
   const html = `
     <!DOCTYPE html>
     <html>
@@ -409,7 +422,7 @@ export async function sendCancellationEmail(data: {
         </div>
         <div class="content">
           <p>Hello ${data.userName},</p>
-          <p>Your consultation with <strong>${data.lawyerName}</strong> scheduled for ${data.bookingDate.toLocaleDateString()} has been cancelled.</p>
+          <p>Your consultation with <strong>${data.lawyerName}</strong> scheduled for ${bookingDate.toLocaleDateString()} has been cancelled.</p>
           
           <div class="card" style="background: #fee2e2; border-color: #ef4444;">
             <p style="margin: 0;"><strong>Reason:</strong> ${data.reason}</p>
