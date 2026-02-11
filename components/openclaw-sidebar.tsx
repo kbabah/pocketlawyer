@@ -131,8 +131,8 @@ export function AppSidebar() {
       {/* Header */}
       <div className="p-4 border-b border-slate-800">
         <div className="flex items-center gap-3 mb-4">
-          <div className="h-10 w-10 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
-            <Scale className="h-6 w-6 text-emerald-400" />
+          <div className="h-10 w-10 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <Scale className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1">
             <h2 className="text-lg font-bold text-white font-mono">POCKETLAWYER</h2>
@@ -143,8 +143,8 @@ export function AppSidebar() {
         {/* Status Indicator */}
         <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
           <div className="relative">
-            <div className="h-2 w-2 bg-emerald-400 rounded-full animate-pulse" />
-            <div className="absolute inset-0 h-2 w-2 bg-emerald-400 rounded-full animate-ping" />
+            <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
+            <div className="absolute inset-0 h-2 w-2 bg-primary rounded-full animate-ping" />
           </div>
           <span className="text-xs font-mono text-slate-300">SYSTEM ONLINE</span>
         </div>
@@ -155,9 +155,9 @@ export function AppSidebar() {
         <div className="p-4 border-b border-slate-800">
           <div className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors cursor-pointer"
                onClick={() => router.push("/profile")}>
-            <Avatar className="h-10 w-10 border-2 border-emerald-500/30">
+            <Avatar className="h-10 w-10 border-2 border-primary/30">
               <AvatarImage src={user?.profileImage || ""} />
-              <AvatarFallback className="bg-slate-800 text-emerald-400 font-mono">
+              <AvatarFallback className="bg-slate-800 text-primary font-mono">
                 {getUserInitials()}
               </AvatarFallback>
             </Avatar>
@@ -178,7 +178,7 @@ export function AppSidebar() {
       <div className="px-4 py-3">
         <Button
           onClick={() => router.push("/")}
-          className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono justify-start gap-2"
+          className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono justify-start gap-2"
         >
           <Plus className="h-4 w-4" />
           NEW CHAT
@@ -205,7 +205,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-sm transition-all",
                   active
-                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                    ? "bg-primary/20 text-primary border border-primary/30"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                 )}
               >
@@ -216,7 +216,7 @@ export function AppSidebar() {
                     {item.badge}
                   </span>
                 )}
-                {active && <Activity className="h-3 w-3 text-emerald-400 animate-pulse" />}
+                {active && <Activity className="h-3 w-3 text-primary animate-pulse" />}
               </button>
             )
           })}
@@ -229,7 +229,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
                   pathname === "/admin"
-                    ? "bg-emerald-500/10 text-emerald-400"
+                    ? "bg-primary/10 text-primary"
                     : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
                 )}
               >
@@ -241,7 +241,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
                   pathname === "/admin/users"
-                    ? "bg-emerald-500/10 text-emerald-400"
+                    ? "bg-primary/10 text-primary"
                     : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
                 )}
               >
@@ -253,7 +253,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
                   pathname === "/admin/lawyers"
-                    ? "bg-emerald-500/10 text-emerald-400"
+                    ? "bg-primary/10 text-primary"
                     : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
                 )}
               >
@@ -265,7 +265,7 @@ export function AppSidebar() {
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-xs transition-all",
                   pathname === "/admin/setup"
-                    ? "bg-emerald-500/10 text-emerald-400"
+                    ? "bg-primary/10 text-primary"
                     : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/30"
                 )}
               >
@@ -336,7 +336,7 @@ export function AppSidebar() {
         ) : (
           <Button
             onClick={() => router.push("/sign-in")}
-            className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+            className="w-full bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
           >
             <Terminal className="h-4 w-4 mr-2" />
             SIGN IN

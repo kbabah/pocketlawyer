@@ -23,7 +23,7 @@ export function OpenClawLayout({ children, className, fullWidth = false }: OpenC
         {/* Top Bar */}
         <div className="h-14 border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
-            <div className="h-2 w-2 bg-emerald-400 rounded-full animate-pulse" />
+            <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
             <span className="text-sm font-mono text-slate-400">
               {new Date().toLocaleTimeString('en-US', { 
                 hour: '2-digit', 
@@ -34,8 +34,8 @@ export function OpenClawLayout({ children, className, fullWidth = false }: OpenC
           </div>
           
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
-              <span className="text-xs font-mono text-emerald-400">ONLINE</span>
+            <div className="px-3 py-1 bg-primary/10 border border-primary/30 rounded-full">
+              <span className="text-xs font-mono text-primary">ONLINE</span>
             </div>
           </div>
         </div>

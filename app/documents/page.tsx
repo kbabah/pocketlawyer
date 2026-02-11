@@ -60,8 +60,8 @@ export default function DocumentsPage() {
     const newFile: ProcessedFile = {
       id: uploadFile.id,
       name: uploadFile.file.name,
-      extractedText: uploadFile.extractedText,
-      uploadedAt: uploadFile.uploadedAt,
+      extractedText: uploadFile.extractedText || '',
+      uploadedAt: uploadFile.uploadedAt || new Date(),
       analyses: []
     }
     

@@ -260,7 +260,7 @@ export function LegalTermsHighlighter({
       const escapedTerm = term.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
       const termRegex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
       
-      result = result.flatMap(item => {
+      result = result.flatMap((item): React.ReactNode[] => {
         if (typeof item !== 'string') {
           return [item];
         }
@@ -271,7 +271,7 @@ export function LegalTermsHighlighter({
         }
         
         const matches = item.match(termRegex) || [];
-        return parts.flatMap((part, i) => {
+        return parts.flatMap((part: string, i: number): React.ReactNode[] => {
           if (i === 0) return [part];
           
           const match = matches[i - 1];

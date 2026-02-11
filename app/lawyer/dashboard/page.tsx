@@ -201,7 +201,7 @@ export default function LawyerDashboardPage() {
       <MainLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <Terminal className="h-12 w-12 text-emerald-400 animate-pulse" />
+            <Terminal className="h-12 w-12 text-primary animate-pulse" />
             <p className="text-slate-400 font-mono">Initializing dashboard...</p>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function LawyerDashboardPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30'
-      case 'confirmed': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+      case 'confirmed': return 'bg-primary/10 text-primary border-primary/30'
       case 'completed': return 'bg-blue-500/10 text-blue-400 border-blue-500/30'
       case 'cancelled': return 'bg-red-500/10 text-red-400 border-red-500/30'
       default: return 'bg-slate-500/10 text-slate-400 border-slate-500/30'
@@ -246,7 +246,7 @@ export default function LawyerDashboardPage() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Scale className="h-8 w-8 text-emerald-400" />
+              <Scale className="h-8 w-8 text-primary" />
               <div>
                 <h1 className="text-xl font-bold text-white font-mono">LAWYER.CONTROL</h1>
                 <p className="text-sm text-slate-400 font-mono">{lawyer.name}</p>
@@ -257,7 +257,7 @@ export default function LawyerDashboardPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push("/lawyer/profile/edit")}
-                className="text-emerald-400 hover:text-emerald-300 font-mono"
+                className="text-primary hover:text-primary/80 font-mono"
               >
                 <Settings className="h-4 w-4 mr-1" />
                 EDIT PROFILE
@@ -300,9 +300,9 @@ export default function LawyerDashboardPage() {
             icon={<Zap className="h-5 w-5" />}
             label="UPCOMING"
             value={upcomingBookings.length}
-            color="text-emerald-400"
-            bgColor="bg-emerald-500/10"
-            borderColor="border-emerald-500/30"
+            color="text-primary"
+            bgColor="bg-primary/10"
+            borderColor="border-primary/30"
           />
           <StatCard
             icon={<CheckCircle className="h-5 w-5" />}
@@ -327,28 +327,28 @@ export default function LawyerDashboardPage() {
           <TabsList className="bg-slate-900/50 border border-slate-800 p-1">
             <TabsTrigger 
               value="pending" 
-              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
             >
               <Terminal className="h-4 w-4 mr-2" />
               PENDING ({pendingBookings.length})
             </TabsTrigger>
             <TabsTrigger 
               value="upcoming"
-              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
             >
               <Calendar className="h-4 w-4 mr-2" />
               UPCOMING ({upcomingBookings.length})
             </TabsTrigger>
             <TabsTrigger 
               value="completed"
-              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               HISTORY ({completedBookings.length})
             </TabsTrigger>
             <TabsTrigger 
               value="settings"
-              className="data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 font-mono"
+              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
             >
               <Settings className="h-4 w-4 mr-2" />
               CONFIG
@@ -428,7 +428,7 @@ export default function LawyerDashboardPage() {
                 </div>
                 <Button
                   onClick={() => setShowAvailabilityDialog(true)}
-                  className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+                  className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   EDIT
@@ -439,7 +439,7 @@ export default function LawyerDashboardPage() {
                 {DAYS.map(day => (
                   <div key={day} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
                     <div className="flex items-center gap-3">
-                      <div className={`h-2 w-2 rounded-full ${lawyer.availability[day].available ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                      <div className={`h-2 w-2 rounded-full ${lawyer.availability[day].available ? 'bg-primary' : 'bg-slate-600'}`} />
                       <span className="font-mono text-sm text-white uppercase">{day}</span>
                     </div>
                     <span className="text-sm font-mono text-slate-400">
@@ -499,7 +499,7 @@ export default function LawyerDashboardPage() {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="bg-slate-900 border-slate-800">
           <DialogHeader>
-            <DialogTitle className="font-mono text-emerald-400">CONFIRM BOOKING</DialogTitle>
+            <DialogTitle className="font-mono text-primary">CONFIRM BOOKING</DialogTitle>
             <DialogDescription className="font-mono text-slate-400">
               Approve this consultation request
             </DialogDescription>
@@ -526,7 +526,7 @@ export default function LawyerDashboardPage() {
             <Button
               onClick={handleConfirmBooking}
               disabled={actionLoading || (selectedBooking?.type === 'video' && !meetingLink)}
-              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+              className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CONFIRM'}
             </Button>
@@ -566,7 +566,7 @@ export default function LawyerDashboardPage() {
       <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
         <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-mono text-emerald-400">EDIT AVAILABILITY</DialogTitle>
+            <DialogTitle className="font-mono text-primary">EDIT AVAILABILITY</DialogTitle>
             <DialogDescription className="font-mono text-slate-400">
               Configure your weekly schedule
             </DialogDescription>
@@ -603,7 +603,7 @@ export default function LawyerDashboardPage() {
                           }}
                           className={`font-mono text-xs ${
                             availability[day].hours.includes(slot)
-                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                              ? 'bg-primary/20 text-primary border-primary/30'
                               : 'bg-slate-700/50 text-slate-400 border-slate-600'
                           }`}
                         >
@@ -628,7 +628,7 @@ export default function LawyerDashboardPage() {
             <Button
               onClick={handleSaveAvailability}
               disabled={savingAvailability}
-              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+              className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
             >
               {savingAvailability ? <Loader2 className="h-4 w-4 animate-spin" /> : 'SAVE'}
             </Button>
@@ -681,11 +681,11 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2 text-slate-300 font-mono">
-              <Calendar className="h-4 w-4 text-emerald-400" />
+              <Calendar className="h-4 w-4 text-primary" />
               <span>{format(bookingDate, 'MMM d, yyyy')}</span>
             </div>
             <div className="flex items-center gap-2 text-slate-300 font-mono">
-              <Clock className="h-4 w-4 text-emerald-400" />
+              <Clock className="h-4 w-4 text-primary" />
               <span>{format(bookingDate, 'HH:mm')} · {booking.duration}m</span>
             </div>
             <div className="flex items-center gap-2 text-slate-300 font-mono">
@@ -710,7 +710,7 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
                 href={booking.meetingLink} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-emerald-400 hover:text-emerald-300 font-mono flex items-center gap-2"
+                className="text-primary hover:text-primary/80 font-mono flex items-center gap-2"
               >
                 <Video className="h-4 w-4" />
                 {booking.meetingLink}
@@ -727,7 +727,7 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
                 <Button
                   onClick={onConfirm}
                   size="sm"
-                  className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+                  className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
                   CONFIRM

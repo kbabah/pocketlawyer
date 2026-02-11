@@ -80,25 +80,25 @@ export default function ChatPage() {
 
         {/* Info Section for Guest Users */}
         {user?.isAnonymous && (
-          <div className="bg-gradient-to-br from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-lg p-6">
+          <div className="bg-gradient-to-br from-primary/10 to-blue-500/10 border border-primary/20 rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-3 font-mono">
               {t('Unlock Full Access')}
             </h3>
             <div className="grid gap-3 text-sm text-muted-foreground mb-4">
               <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 bg-emerald-400 rounded-full" />
+                <div className="h-1.5 w-1.5 bg-primary rounded-full" />
                 {t('Unlimited conversations with AI legal assistant')}
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 bg-emerald-400 rounded-full" />
+                <div className="h-1.5 w-1.5 bg-primary rounded-full" />
                 {t('Save and access chat history anytime')}
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 bg-emerald-400 rounded-full" />
+                <div className="h-1.5 w-1.5 bg-primary rounded-full" />
                 {t('Upload and analyze legal documents')}
               </div>
               <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 bg-emerald-400 rounded-full" />
+                <div className="h-1.5 w-1.5 bg-primary rounded-full" />
                 {t('Book consultations with verified lawyers')}
               </div>
             </div>

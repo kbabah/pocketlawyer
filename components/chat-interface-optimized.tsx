@@ -538,8 +538,6 @@ export default function ChatInterface() {
         toast.error("Failed to save chat")
       }
     }
-
-    setActiveTab("chat")
   }
 
   // Scroll to bottom function

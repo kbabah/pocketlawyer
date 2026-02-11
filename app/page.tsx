@@ -111,7 +111,7 @@ const AuthenticatedDashboard = React.memo(() => {
       title: t('Start Chat'),
       description: t('Get instant AI legal assistance'),
       href: '/chat',
-      color: 'text-emerald-500 bg-emerald-500/10',
+      color: 'text-primary bg-primary/10',
     },
     {
       icon: FileText,
@@ -139,7 +139,7 @@ const AuthenticatedDashboard = React.memo(() => {
   return (
     <div className="space-y-8">
       {/* Welcome banner */}
-      <Card className="bg-gradient-to-br from-primary/5 to-emerald-500/5 border-primary/20">
+      <Card className="bg-gradient-to-br from-primary/5 to-primary/5 border-primary/20">
         <CardContent className="pt-6">
           <h2 className="text-2xl font-bold mb-2">{t('Welcome back!')}</h2>
           <p className="text-muted-foreground mb-4">

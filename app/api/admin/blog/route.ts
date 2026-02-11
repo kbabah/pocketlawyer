@@ -3,11 +3,13 @@ import { logger } from "@/lib/logger";
 import { adminDb } from "@/lib/firebase-admin";
 import { adminAuth } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
+import type { Query, DocumentData } from "firebase-admin/firestore";
 
 // Helper function to check admin permissions
 async function isAdmin(req: NextRequest) {
   try {
-    const sessionCookie = cookies().get("firebase-session")?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("firebase-session")?.value;
     
     if (!sessionCookie) {
       logger.info("No session cookie");
@@ -46,7 +48,7 @@ export async function GET(req: NextRequest) {
     const status = url.searchParams.get("status");
     
     // Build Firestore query
-    let query = adminDb.collection("blog-posts");
+    let query: Query<DocumentData, DocumentData> = adminDb.collection("blog-posts");
     
     if (category && category !== "all") {
       query = query.where("category", "==", category);

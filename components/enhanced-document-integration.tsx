@@ -270,7 +270,7 @@ export default function EnhancedDocumentIntegration({
         <TabsContent value="upload" className="space-y-4">
           <EnhancedDocumentUpload
             onFileProcessed={handleFileProcessed}
-            onAnalysisComplete={onAnalysisComplete}
+            onAnalysisComplete={onAnalysisComplete ? (question: string, answer: string, file: any) => onAnalysisComplete(question, answer, file?.id) : undefined}
             maxFiles={5}
             maxFileSize={10}
             className="min-h-[300px]"
@@ -336,7 +336,7 @@ export default function EnhancedDocumentIntegration({
               <p className="text-muted-foreground mb-4">
                 {t('Upload documents to start analyzing them with AI')}
               </p>
-              <Button onClick={() => document.querySelector('[value="upload"]')?.click()}>
+              <Button onClick={() => (document.querySelector('[value="upload"]') as HTMLElement)?.click()}>
                 <Plus className="h-4 w-4 mr-2" />
                 {t('Upload Document')}
               </Button>
@@ -430,7 +430,7 @@ export default function EnhancedDocumentIntegration({
               <p className="text-muted-foreground mb-4">
                 {t('Select a document from the Documents tab to start analysis')}
               </p>
-              <Button onClick={() => document.querySelector('[value="documents"]')?.click()}>
+              <Button onClick={() => (document.querySelector('[value="documents"]') as HTMLElement)?.click()}>
                 {t('Browse Documents')}
               </Button>
             </Card>

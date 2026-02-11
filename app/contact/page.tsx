@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Scale } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import MainLayout from "@/components/layout/main-layout"
 
 export default function ContactPage() {
   const [name, setName] = useState("")
@@ -34,20 +34,10 @@ export default function ContactPage() {
   }
   
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Scale className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">PocketLawyer</span>
-          </Link>
-        </div>
-      </header>
-
-      <main className="container py-10">
-        <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader>
+    <MainLayout>
+      <div className="max-w-md mx-auto">
+        <Card className="bg-slate-900/50 border-slate-800">
+          <CardHeader>
               <CardTitle>Contact Us</CardTitle>
               <CardDescription>Have questions or feedback? Send us a message below.</CardDescription>
             </CardHeader>
@@ -87,14 +77,13 @@ export default function ContactPage() {
                     {submitting ? "Sending..." : "Send Message"}
                   </Button>
                   <Link href="/">
-                    <Button variant="outline">Back to Home</Button>
+                    <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">Back to Home</Button>
                   </Link>
                 </div>
               </form>
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+    </MainLayout>
   )
 }

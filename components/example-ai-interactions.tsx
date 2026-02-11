@@ -57,7 +57,7 @@ export function ExampleAIInteractions() {
   }
 
   // Get the current language
-  const currentLanguage = useLanguage().currentLanguage || "en"
+  const currentLanguage = useLanguage().language || "en"
   
   // Get examples for the current language
   const examples = exampleInteractions[currentLanguage] || exampleInteractions.en

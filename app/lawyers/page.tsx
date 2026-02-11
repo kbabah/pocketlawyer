@@ -67,7 +67,7 @@ export default function LawyersPage() {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(lawyer =>
         lawyer.name.toLowerCase().includes(query) ||
-        lawyer.location.toLowerCase().includes(query) ||
+        (lawyer.location || '').toLowerCase().includes(query) ||
         lawyer.specializations.some(spec => spec.toLowerCase().includes(query)) ||
         lawyer.bio.toLowerCase().includes(query)
       )

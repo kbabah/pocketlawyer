@@ -15,6 +15,7 @@ import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { AuthErrorBoundary } from "@/components/error-boundaries"
 import { AvatarUpload } from "@/components/avatar-upload"
+import MainLayout from "@/components/layout/main-layout"
 
 export default function Profile() {
   const { user, updateProfile, updatePassword } = useAuth()
@@ -102,12 +103,12 @@ export default function Profile() {
 
   return (
     <AuthErrorBoundary>
-      <div className="min-h-screen w-full flex items-center justify-center bg-pattern-light dark:bg-pattern-dark p-4">
+      <MainLayout>
         <div className="w-full max-w-md mx-auto">
-          <Card>
+          <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Scale className="h-6 w-6" />
+            <CardTitle className="text-2xl flex items-center gap-2 font-mono">
+              <Scale className="h-6 w-6 text-primary" />
               Profile Settings
             </CardTitle>
             <CardDescription>
@@ -266,7 +267,7 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </MainLayout>
     </AuthErrorBoundary>
   )
 }

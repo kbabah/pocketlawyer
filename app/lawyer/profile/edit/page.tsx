@@ -74,19 +74,19 @@ export default function EditLawyerProfile() {
       }
 
       const data = lawyerDoc.data() as Lawyer
-      setLawyer({ id: lawyerDoc.id, ...data })
+      setLawyer({ ...data, id: lawyerDoc.id })
 
       // Populate form
       setName(data.name || "")
       setEmail(data.email || "")
       setPhone(data.phone || "")
       setBio(data.bio || "")
-      setSpecialties(data.specialties || [])
+      setSpecialties(data.specializations || [])
       setExperience(data.experience?.toString() || "")
-      setEducation(data.education || "")
+      setEducation(Array.isArray(data.education) ? data.education.join(", ") : (data.education as string) || "")
       setBarNumber(data.barNumber || "")
       setHourlyRate(data.hourlyRate?.toString() || "")
-      setPhotoUrl(data.photoUrl || "")
+      setPhotoUrl(data.profileImage || "")
       setLanguages(data.languages || ["English", "French"])
     } catch (error) {
       console.error("Error loading profile:", error)

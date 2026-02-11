@@ -146,10 +146,10 @@ export default function TermsPage() {
             <h2 className="text-2xl font-semibold">9. Contact and Complaints</h2>
             <p>
               <LegalTermsHighlighter
-                text={t("If you have questions or complaints about PocketLawyer, contact us via our <link>Contact Page</link>.", {
-                  link: (text) => <Link href="/contact" className="text-primary underline">{text}</Link>
-                })}
+                text={t("If you have questions or complaints about PocketLawyer, contact us via our Contact Page.")}
               />
+              {" "}
+              <Link href="/contact" className="text-primary underline">{t("Contact Page")}</Link>
             </p>
           </section>
 

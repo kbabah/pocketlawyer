@@ -63,7 +63,8 @@ export async function checkAdminPermission(
   try {
     // CASE 1: Input is a NextRequest - extract session cookie
     if (typeof input !== 'string') {
-      const sessionCookie = cookies().get("firebase-session")?.value;
+      const cookieStore = await cookies();
+      const sessionCookie = cookieStore.get("firebase-session")?.value;
       
       if (!sessionCookie) {
         verbose && logger.info("No session cookie found");

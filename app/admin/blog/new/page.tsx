@@ -65,9 +65,11 @@ const blogPostSchema = z.object({
   category: z.string({
     required_error: "Please select a category.",
   }),
-  tags: z.string().transform(val => val.split(",").map(tag => tag.trim()).filter(tag => tag !== "")),
+  tags: z.string(),
   published: z.boolean().default(false),
 });
+
+type BlogPostFormValues = z.infer<typeof blogPostSchema>;
 
 export default function NewBlogPostPage() {
   const router = useRouter();
@@ -76,7 +78,7 @@ export default function NewBlogPostPage() {
   const [previewMode, setPreviewMode] = useState(false);
 
   // Initialize form
-  const form = useForm<z.infer<typeof blogPostSchema>>({
+  const form = useForm<BlogPostFormValues>({
     resolver: zodResolver(blogPostSchema),
     defaultValues: {
       title: "",
@@ -107,7 +109,7 @@ export default function NewBlogPostPage() {
     }
   };
 
-  async function onSubmit(values: z.infer<typeof blogPostSchema>) {
+  async function onSubmit(values: BlogPostFormValues) {
     if (!user) {
       toast.error("You must be logged in to create blog posts");
       return;
@@ -119,6 +121,7 @@ export default function NewBlogPostPage() {
       // Prepare data for API
       const blogPostData = {
         ...values,
+        tags: values.tags.split(",").map((tag: string) => tag.trim()).filter((tag: string) => tag !== ""),
         author: {
           id: user.id,
           name: user.name || "Admin",

@@ -42,7 +42,7 @@ export default function HomePage() {
             </div>
             <div className="flex gap-2">
               <Button
-                className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+                className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
                 asChild
               >
                 <Link href="/lawyers">
@@ -76,16 +76,16 @@ export default function HomePage() {
             icon={<FileText className="h-5 w-5" />}
             label="DOCUMENTS"
             value="8"
-            color="text-emerald-400"
-            bgColor="bg-emerald-500/10"
-            borderColor="border-emerald-500/30"
+            color="text-primary"
+            bgColor="bg-primary/10"
+            borderColor="border-primary/30"
           />
         </div>
 
         {/* Chat Interface */}
         <div className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
           <div className="border-b border-slate-800 p-4">
-            <h2 className="font-mono text-emerald-400 font-bold flex items-center gap-2">
+            <h2 className="font-mono text-primary font-bold flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
               AI.ASSISTANT
             </h2>
@@ -102,7 +102,7 @@ export default function HomePage() {
             description="Connect with verified legal professionals"
             icon={<Scale className="h-6 w-6" />}
             href="/lawyers"
-            color="emerald"
+            color="primary"
           />
           <ActionCard
             title="UPLOAD DOCUMENT"
@@ -159,7 +159,7 @@ function WelcomeView() {
         {/* Hero */}
         <div className="text-center py-12">
           <div className="mb-6">
-            <Scale className="h-20 w-20 text-emerald-400 mx-auto mb-4" />
+            <Scale className="h-20 w-20 text-primary mx-auto mb-4" />
           </div>
           <h1 className="text-5xl font-bold text-white font-mono mb-4">
             POCKETLAWYER.AI
@@ -170,7 +170,7 @@ function WelcomeView() {
           <div className="flex gap-4 justify-center">
             <Button
               size="lg"
-              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+              className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
               asChild
             >
               <Link href="/sign-up">
@@ -202,8 +202,8 @@ function WelcomeView() {
                 key={index}
                 className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 hover:border-slate-700 transition-colors"
               >
-                <div className="h-12 w-12 bg-emerald-500/20 border border-emerald-500/30 rounded-lg flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-emerald-400" />
+                <div className="h-12 w-12 bg-primary/20 border border-primary/30 rounded-lg flex items-center justify-center mb-4">
+                  <feature.icon className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-bold text-white font-mono mb-2">
                   {feature.title}
@@ -217,7 +217,7 @@ function WelcomeView() {
         </div>
 
         {/* CTA */}
-        <div className="bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/30 rounded-lg p-8 text-center">
+        <div className="bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/30 rounded-lg p-8 text-center">
           <h2 className="text-3xl font-bold text-white font-mono mb-4">
             READY TO START?
           </h2>
@@ -226,7 +226,7 @@ function WelcomeView() {
           </p>
           <Button
             size="lg"
-            className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
             asChild
           >
             <Link href="/sign-up">
@@ -252,13 +252,13 @@ function StatCard({ icon, label, value, color, bgColor, borderColor }: any) {
   )
 }
 
-function ActionCard({ title, description, icon, href, color }: any) {
+function ActionCard({ title, description, icon, href, color }: { title: string; description: string; icon: React.ReactNode; href: string; color: 'primary' | 'blue' }) {
   const colors = {
-    emerald: {
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/30",
-      text: "text-emerald-400",
-      hover: "hover:bg-emerald-500/20"
+    primary: {
+      bg: "bg-primary/10",
+      border: "border-primary/30",
+      text: "text-primary",
+      hover: "hover:bg-primary/20"
     },
     blue: {
       bg: "bg-blue-500/10",
@@ -266,7 +266,7 @@ function ActionCard({ title, description, icon, href, color }: any) {
       text: "text-blue-400",
       hover: "hover:bg-blue-500/20"
     }
-  }[color]
+  }[color]!
 
   return (
     <Link href={href}>

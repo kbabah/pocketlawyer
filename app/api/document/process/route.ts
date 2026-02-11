@@ -80,12 +80,9 @@ async function extractTextFromPDF(buffer: Buffer, options?: { language?: string 
       logger.info(`Using language(s): ${languagesToTry.join(', ')}`);
       
       // Simple Tesseract processing without the PDF.js complexity
-      const worker = await createWorker({ 
+      const worker = await createWorker(languagesToTry.join('+'), 1, {
         logger: (m: TesseractLoggerMessage) => logger.info(`OCR: ${m.status}`)
       });
-      
-      await worker.loadLanguage(languagesToTry);
-      await worker.initialize(languagesToTry[0]);
       
       // Treat the PDF as an image directly - this only works well for single-page PDFs
       // but is more reliable in serverless environments

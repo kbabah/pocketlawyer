@@ -133,7 +133,7 @@ export default function UserBookingsPage() {
       await createReview({
         bookingId: selectedBooking.id,
         userId: user.id,
-        userName: user.name || user.email,
+        userName: user.name || user.email || 'Anonymous',
         lawyerId: selectedBooking.lawyerId,
         rating: reviewRating,
         comment: reviewComment,

@@ -3,6 +3,7 @@ import { logger } from "@/lib/logger";
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { adminDb } from '@/lib/firebase-admin'
+import type { Query, DocumentData } from 'firebase-admin/firestore'
 
 export async function POST(request: NextRequest) {
   try {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
         })
       }
     } catch (statsError) {
-      logger.warn('Failed to update message stats:', statsError)
+      logger.warn('Failed to update message stats:', statsError as Record<string, unknown>)
       // Don't fail the main operation if stats update fails
     }
 
@@ -125,7 +126,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'messageId or chatId is required' }, { status: 400 })
     }
 
-    let query = adminDb.collection('messageFeedback')
+    let query: Query<DocumentData, DocumentData> = adminDb.collection('messageFeedback')
 
     if (messageId) {
       query = query.where('messageId', '==', messageId)
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Only return user's own feedback unless user is admin
-    if (!session.user.isAdmin) {
+    if (!(session.user as any).isAdmin) {
       query = query.where('userId', '==', session.user.id)
     }
 

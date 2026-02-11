@@ -271,7 +271,7 @@ export default function UserManagementPage() {
   const getRoleBadge = (user: User) => {
     if (user.isAdmin || user.role === "admin") {
       return (
-        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 font-mono">
+        <Badge className="bg-primary/20 text-primary border-primary/30 font-mono">
           ADMIN
         </Badge>
       )
@@ -305,7 +305,7 @@ export default function UserManagementPage() {
       <MainLayout>
         <div className="flex items-center justify-center py-12">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-12 w-12 text-emerald-400 animate-spin" />
+            <Loader2 className="h-12 w-12 text-primary animate-spin" />
             <p className="text-slate-400 font-mono">LOADING USERS...</p>
           </div>
         </div>
@@ -333,7 +333,7 @@ export default function UserManagementPage() {
             onClick={() => router.push("/admin")}
             className="text-slate-400 hover:text-white font-mono"
           >
-            <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+            <ChevronLeft className="h-4 w-4 mr-2" />
             BACK TO ADMIN
           </Button>
         </div>
@@ -350,12 +350,12 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+          <div className="bg-primary/10 border border-primary/30 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-emerald-400 font-mono font-bold">ADMINS</span>
-              <Shield className="h-5 w-5 text-emerald-400" />
+              <span className="text-xs text-primary font-mono font-bold">ADMINS</span>
+              <Shield className="h-5 w-5 text-primary" />
             </div>
-            <div className="text-3xl font-bold text-emerald-400 font-mono">
+            <div className="text-3xl font-bold text-primary font-mono">
               {users.filter(u => u.isAdmin || u.role === "admin").length}
             </div>
           </div>
@@ -397,7 +397,7 @@ export default function UserManagementPage() {
         {/* Users Table */}
         <div className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
           <div className="border-b border-slate-800 p-4">
-            <h3 className="font-mono text-emerald-400 font-bold">USER DATABASE</h3>
+            <h3 className="font-mono text-primary font-bold">USER DATABASE</h3>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -484,7 +484,7 @@ export default function UserManagementPage() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="bg-slate-900 border-slate-800">
           <DialogHeader>
-            <DialogTitle className="font-mono text-emerald-400">EDIT USER</DialogTitle>
+            <DialogTitle className="font-mono text-primary">EDIT USER</DialogTitle>
             <DialogDescription className="font-mono text-slate-400">
               Update user information and permissions
             </DialogDescription>
@@ -542,7 +542,7 @@ export default function UserManagementPage() {
             <Button
               onClick={confirmEdit}
               disabled={actionLoading}
-              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 font-mono"
+              className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "SAVE"}
             </Button>

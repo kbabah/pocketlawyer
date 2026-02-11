@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminDb } from '../../../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import { EmailTemplate, SendEmailParams } from '../../../../lib/email-service-client';
-import admin from '@/lib/firebase-admin';
-import { sendEmail } from '@/lib/email-service';
+import { sendEmail, type EmailTemplate } from '@/lib/email-service';
 
 /**
  * Generate a unique email ID for tracking
@@ -154,7 +152,7 @@ function stripHtml(html: string): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const params: SendEmailParams = await req.json();
+    const params = await req.json();
     const { to, subject, template, data, attachments = [], trackingEnabled = true, campaignId, scheduledFor } = params;
 
     // Route handling now moved to email-service.ts
@@ -162,7 +160,7 @@ export async function POST(req: NextRequest) {
     const result = await sendEmail({
       to,
       subject,
-      template,
+      template: template as EmailTemplate,
       data,
       attachments,
       trackingEnabled,
