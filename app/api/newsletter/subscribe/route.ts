@@ -69,7 +69,6 @@ export async function POST(request: Request) {
       { error: "Failed to process subscription" },
       { status: 500 }
 
-export const dynamic = "force-dynamic";
     );
   }
 }

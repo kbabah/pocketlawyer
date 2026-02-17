@@ -166,7 +166,6 @@ export async function POST(req: Request) {
       testMode,
       results: testMode ? results : undefined // Only return detailed results in test mode
 
-export const dynamic = "force-dynamic";
     });
   } catch (error) {
     logger.error('Bulk email send failed:', error);

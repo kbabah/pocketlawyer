@@ -34,7 +34,6 @@ export async function POST(req: Request) {
       success: false, 
       error: String(error) 
 
-export const dynamic = "force-dynamic";
     }, { status: 500 });
   }
 }

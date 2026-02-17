@@ -65,7 +65,6 @@ export async function POST(req: Request) {
       { success: false, message: "Server error", error },
       { status: 500 }
 
-export const dynamic = "force-dynamic";
     );
   }
 }

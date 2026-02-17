@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
       { success: false, error: error.message, sent: 0, failed: -1 }, 
       { status: 500 }
 
-export const dynamic = "force-dynamic";
     );
   }
 }
