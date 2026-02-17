@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+
+export const dynamic = "force-dynamic";
 import { logger } from "@/lib/logger";
 import { sendEmail, testEmailService } from '@/lib/email-service';
 import { adminAuth } from '@/lib/firebase-admin';

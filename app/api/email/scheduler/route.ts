@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+export const dynamic = "force-dynamic";
 import { processScheduledEmails, processScheduledCampaigns } from "@/lib/email-service";
 import { verifyApiKey } from "@/lib/utils";
 

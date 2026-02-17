@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+
+export const dynamic = "force-dynamic";
 import { sendEmail, EmailTemplate } from '@/lib/email-service';
 
 export async function POST(request: Request) {

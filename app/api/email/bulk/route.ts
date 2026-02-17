@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = "force-dynamic";
 import { adminDb } from '../../../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { EmailTemplate } from '../../../../lib/email-service-client';
