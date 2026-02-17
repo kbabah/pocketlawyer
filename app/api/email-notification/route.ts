@@ -1,8 +1,9 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-export const dynamic = "force-dynamic";
 import { sendEmail, EmailTemplate } from '@/lib/email-service';
+
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
@@ -24,6 +25,8 @@ export async function POST(request: Request) {
         details: process.env.NODE_ENV === 'development' ? error.message : undefined 
       },
       { status: 500 }
+
+export const dynamic = "force-dynamic";
     );
   }
 }

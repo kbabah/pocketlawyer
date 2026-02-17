@@ -1,11 +1,12 @@
-export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = "force-dynamic";
 import crypto from 'crypto';
 import { adminDb } from '../../../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { sendEmail, type EmailTemplate } from '@/lib/email-service';
+
+
+export const dynamic = "force-dynamic";
 
 /**
  * Generate a unique email ID for tracking
@@ -177,6 +178,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { success: false, error: error.message }, 
       { status: 500 }
+
+export const dynamic = "force-dynamic";
     );
   }
 }

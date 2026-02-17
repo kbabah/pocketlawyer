@@ -1,9 +1,8 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
-
-export const dynamic = "force-dynamic";
 import { processScheduledEmails, processScheduledCampaigns } from "@/lib/email-service";
 import { verifyApiKey } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 /**
  * This endpoint is meant to be called by a cron job service (like Vercel Cron)
@@ -34,6 +33,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       success: false, 
       error: String(error) 
+
+export const dynamic = "force-dynamic";
     }, { status: 500 });
   }
 }

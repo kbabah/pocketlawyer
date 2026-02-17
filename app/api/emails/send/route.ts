@@ -1,11 +1,10 @@
-export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
-
-export const dynamic = "force-dynamic";
 import { 
   sendBookingConfirmation, 
   sendLawyerBookingNotification 
 } from '@/lib/services/email-service'
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,6 +42,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }
+
+export const dynamic = "force-dynamic";
     )
   }
 }

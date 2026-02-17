@@ -1,11 +1,12 @@
-export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
-export const dynamic = "force-dynamic";
 import { adminDb } from '../../../../lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import { EmailTemplate } from '../../../../lib/email-service-client';
 import { sendBulkEmails } from '@/lib/email-service';
+
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,6 +61,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { success: false, error: error.message, sent: 0, failed: -1 }, 
       { status: 500 }
+
+export const dynamic = "force-dynamic";
     );
   }
 }
