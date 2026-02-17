@@ -1,11 +1,12 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-export const dynamic = "force-dynamic";
+
 import { logger } from "@/lib/logger";
 import { adminDb } from '@/lib/firebase-admin';
 import { sendEmail } from '@/lib/email-service';
 import * as z from 'zod';
+export const dynamic = "force-dynamic";
+
 
 // Schema for email validation
 const subscribeSchema = z.object({

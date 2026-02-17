@@ -1,11 +1,12 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-export const dynamic = "force-dynamic";
+
 import { logger } from "@/lib/logger";
 import { sendEmail, testEmailService } from '@/lib/email-service';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
+export const dynamic = "force-dynamic";
+
 
 // Function to verify if a user is an admin
 async function isAdmin(userId: string): Promise<boolean> {

@@ -1,9 +1,10 @@
-export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+
 import { logger } from "@/lib/logger";
 import { sendEmail } from "@/lib/email-service";
+export const dynamic = "force-dynamic";
+
 
 export async function POST(req: Request) {
   try {

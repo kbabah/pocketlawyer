@@ -1,8 +1,9 @@
-export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server'
 
-export const dynamic = "force-dynamic";
+
 import { 
+export const dynamic = "force-dynamic";
+
   sendBookingConfirmation, 
   sendLawyerBookingNotification 
 } from '@/lib/services/email-service'
