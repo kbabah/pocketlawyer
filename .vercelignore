@@ -1,0 +1,19 @@
+# Debug and test files
+**/debug-*.js
+**/test-*.js
+**/test-*.sh
+**/clear-*.js
+**/diagnose-*.js
+*.log
+.DS_Store
+
+# Development files
+*.local
+.env.local.backup
+
+# Scripts
+browser-update-availability.js
+update-lawyer-availability.js
+add-test-availability.js
+scripts/add-availability.sh
+scripts/add-test-availability.js
