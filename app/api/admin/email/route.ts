@@ -1,11 +1,10 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
 export const dynamic = "force-dynamic";
 import { logger } from "@/lib/logger";
 import { sendEmail, testEmailService } from '@/lib/email-service';
-import { adminAuth } from '@/lib/firebase-admin';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { cookies } from 'next/headers';
 
 // Function to verify if a user is an admin
@@ -102,13 +101,13 @@ export async function POST(req: Request) {
     
     // Query users based on target groups
     if (targetGroups.includes('all')) {
-      const usersSnapshot = await getDocs(collection(db, 'users'));
+      const usersSnapshot = await adminDb.collection('users').get();
       targetUsers = usersSnapshot.docs
-        .map(doc => ({
-          email: doc.data().email,
-          name: doc.data().name
+        .map((doc: FirebaseFirestore.DocumentSnapshot) => ({
+          email: doc.data()?.email as string,
+          name: doc.data()?.name as string | undefined
         }))
-        .filter(user => !!user.email);
+        .filter((user: { email: string }) => !!user.email);
     } else {
       // Handle specific target groups - example implementation
       if (targetGroups.includes('inactive')) {

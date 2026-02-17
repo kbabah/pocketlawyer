@@ -9,18 +9,17 @@ import crypto from 'crypto';
 import { adminDb } from './firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 
-// Initialize Postmark client lazily
-let client: ServerClient | null = null;
-
+// Lazy-initialize Postmark client (avoid build-time token validation)
+let _client: ServerClient | null = null;
 function getPostmarkClient(): ServerClient {
-  if (!client) {
+  if (!_client) {
     const token = process.env.POSTMARK_SERVER_TOKEN;
     if (!token) {
-      throw new Error('POSTMARK_SERVER_TOKEN is not configured');
+      throw new Error('POSTMARK_SERVER_TOKEN environment variable is not set');
     }
-    client = new ServerClient(token);
+    _client = new ServerClient(token);
   }
-  return client;
+  return _client;
 }
 
 // Email template types
