@@ -51,8 +51,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
  */
 async function sendWithSendGrid(options: EmailOptions, from: string): Promise<boolean> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const sgMail = require('@sendgrid/mail') as any
+    // @ts-ignore - sendgrid is an optional dependency
+    const sgMail = await import(/* webpackIgnore: true */ '@sendgrid/mail').then(m => m.default || m) as any
     sgMail.setApiKey(process.env.SENDGRID_API_KEY || '')
 
     await sgMail.send({
