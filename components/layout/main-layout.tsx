@@ -2,8 +2,10 @@
 
 import { ReactNode } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarProvider } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import { Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface MainLayoutProps {
   children: ReactNode
@@ -49,10 +51,21 @@ export function MainLayout({
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
-          <div className="h-14 border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-6">
+          <div className="h-14 border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
+            {/* Left side with mobile menu */}
             <div className="flex items-center gap-3">
+              {/* Mobile Menu Button - Only visible on small screens */}
+              <div className="lg:hidden">
+                <SidebarTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                </SidebarTrigger>
+              </div>
+              
               <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
-              <span className="text-sm font-mono text-slate-400">
+              <span className="text-sm font-mono text-slate-400 hidden sm:inline">
                 {new Date().toLocaleTimeString('en-US', { 
                   hour: '2-digit', 
                   minute: '2-digit',
@@ -61,8 +74,9 @@ export function MainLayout({
               </span>
             </div>
             
+            {/* Right side */}
             <div className="flex items-center gap-2">
-              <div className="px-3 py-1 bg-primary/10 border border-primary/30 rounded-full">
+              <div className="px-2 sm:px-3 py-1 bg-primary/10 border border-primary/30 rounded-full">
                 <span className="text-xs font-mono text-primary">ONLINE</span>
               </div>
             </div>
@@ -71,11 +85,11 @@ export function MainLayout({
           {/* Content Area */}
           <div className={cn(
             "flex-1 overflow-auto",
-            fullWidth ? "p-0" : "p-6",
+            fullWidth ? "p-0" : "p-4 sm:p-6",
             className
           )}>
             <div className={cn(
-              "h-full",
+              "h-full w-full",
               !fullWidth && "max-w-7xl mx-auto"
             )}>
               {children}
