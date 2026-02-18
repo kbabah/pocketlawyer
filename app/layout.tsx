@@ -4,7 +4,6 @@ import "./globals.css"
 import "./mobile-optimizations.css"
 import "@/styles/chat-interface.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { SidebarProvider } from "@/components/ui/sidebar"
 import { AuthProvider } from "@/contexts/auth-context"
 import { LanguageProvider } from "@/contexts/language-context"
 import { Toaster } from "sonner"
@@ -169,12 +168,10 @@ export default function RootLayout({
                 }
               >
                 <AuthProvider>
-                  <SidebarProvider>
-                    {/* Main application content */}
-                    <main className="flex-1 relative min-h-screen">
-                      {children}
-                    </main>
-                  </SidebarProvider>
+                  {/* Main application content */}
+                  <main className="flex-1 relative min-h-screen">
+                    {children}
+                  </main>
                   
                   {/* Global toast notifications */}
                   <Toaster 

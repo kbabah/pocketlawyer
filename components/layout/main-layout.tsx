@@ -4,8 +4,6 @@ import { ReactNode } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
-import { Menu } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 interface MainLayoutProps {
   children: ReactNode
@@ -56,12 +54,7 @@ export function MainLayout({
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button - Only visible on small screens */}
               <div className="lg:hidden">
-                <SidebarTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle menu</span>
-                  </Button>
-                </SidebarTrigger>
+                <SidebarTrigger className="h-9 w-9" />
               </div>
               
               <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
