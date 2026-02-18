@@ -170,40 +170,19 @@ export default function RootLayout({
               >
                 <AuthProvider>
                   <SidebarProvider>
-                    <>
-                      {/* Main application content */}
-                      <main className="flex-1 relative min-h-screen">
-                        <ErrorBoundary
-                          fallback={
-                            <div className="min-h-screen flex items-center justify-center bg-background p-4">
-                              <div className="text-center space-y-4 max-w-md">
-                                <div className="text-lg font-bold text-destructive">Page Error</div>
-                                <p className="text-muted-foreground">
-                                  There was an error loading this page. Please try again.
-                                </p>
-                                <ErrorFallbackButton 
-                                  variant="home"
-                                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-                                >
-                                  Go to Home
-                                </ErrorFallbackButton>
-                              </div>
-                            </div>
-                          }
-                        >
-                          {children}
-                        </ErrorBoundary>
-                      </main>
-                      
-                      {/* Global toast notifications */}
-                      <Toaster 
-                        position="top-right"
-                        expand={true}
-                        richColors={true}
-                        closeButton={true}
-                      />
-                    </>
+                    {/* Main application content */}
+                    <main className="flex-1 relative min-h-screen">
+                      {children}
+                    </main>
                   </SidebarProvider>
+                  
+                  {/* Global toast notifications */}
+                  <Toaster 
+                    position="top-right"
+                    expand={true}
+                    richColors={true}
+                    closeButton={true}
+                  />
                 </AuthProvider>
               </ErrorBoundary>
             </LanguageProvider>
