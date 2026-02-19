@@ -429,14 +429,30 @@ export default function AdminLawyersPage() {
                     <CheckCircle className="h-4 w-4 mr-2" />
                     {t("Approve")}
                   </Button>
-                  <Button variant="destructive" onClick={() => selectedLawyer && openRejectDialog(selectedLawyer)} disabled={actionLoading}>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (!selectedLawyer) return
+                      setShowDetailsDialog(false)
+                      openRejectDialog(selectedLawyer)
+                    }}
+                    disabled={actionLoading}
+                  >
                     <XCircle className="h-4 w-4 mr-2" />
                     {t("Reject")}
                   </Button>
                 </>
               )}
               {selectedLawyer?.status === "approved" && (
-                <Button variant="destructive" onClick={() => selectedLawyer && openSuspendDialog(selectedLawyer)} disabled={actionLoading}>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (!selectedLawyer) return
+                    setShowDetailsDialog(false)
+                    openSuspendDialog(selectedLawyer)
+                  }}
+                  disabled={actionLoading}
+                >
                   <UserX className="h-4 w-4 mr-2" />
                   {t("Suspend")}
                 </Button>
