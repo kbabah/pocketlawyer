@@ -132,20 +132,30 @@ export async function getUserBookings(userId: string): Promise<Booking[]> {
 }
 
 /**
- * Get lawyer's bookings
+ * Get lawyer's bookings via API (uses Admin SDK to bypass Firestore rules mismatch
+ * where lawyerId in bookings is the Firestore doc ID, not the auth UID)
  */
-export async function getLawyerBookings(lawyerId: string): Promise<Booking[]> {
-  const q = query(
-    collection(db, 'bookings'),
-    where('lawyerId', '==', lawyerId),
-    orderBy('date', 'desc')
-  )
-  
-  const snapshot = await getDocs(q)
-  
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...convertBookingData(doc.data()),
+export async function getLawyerBookings(_lawyerId: string): Promise<Booking[]> {
+  const { auth } = await import('@/lib/firebase')
+  const user = auth.currentUser
+  if (!user) throw new Error('Not authenticated')
+
+  const token = await user.getIdToken()
+  const response = await fetch('/api/bookings/lawyer', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to fetch bookings')
+  }
+
+  const { bookings } = await response.json()
+  return (bookings as any[]).map(b => ({
+    ...b,
+    date: new Date(b.date),
+    createdAt: b.createdAt ? new Date(b.createdAt) : new Date(),
+    updatedAt: b.updatedAt ? new Date(b.updatedAt) : new Date(),
   } as Booking))
 }
 
@@ -172,6 +182,30 @@ export async function getLawyerUpcomingBookings(lawyerId: string): Promise<Booki
 }
 
 /**
+ * Call a booking action via API (confirm / cancel / complete)
+ */
+async function callBookingAction(bookingId: string, body: object): Promise<void> {
+  const { auth } = await import('@/lib/firebase')
+  const user = auth.currentUser
+  if (!user) throw new Error('Not authenticated')
+
+  const token = await user.getIdToken()
+  const response = await fetch(`/api/bookings/${bookingId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json()
+    throw new Error(errorData.error || 'Failed to update booking')
+  }
+}
+
+/**
  * Update booking status
  */
 export async function updateBookingStatus(
@@ -190,18 +224,7 @@ export async function updateBookingStatus(
  * Confirm booking
  */
 export async function confirmBooking(bookingId: string, meetingLink?: string): Promise<void> {
-  const bookingRef = doc(db, 'bookings', bookingId)
-  
-  const updates: any = {
-    status: 'confirmed',
-    updatedAt: new Date(),
-  }
-  
-  if (meetingLink) {
-    updates.meetingLink = meetingLink
-  }
-  
-  await updateDoc(bookingRef, updates)
+  await callBookingAction(bookingId, { action: 'confirm', meetingLink })
 }
 
 /**
@@ -212,26 +235,14 @@ export async function cancelBooking(
   cancelledBy: 'user' | 'lawyer' | 'admin',
   reason: string
 ): Promise<void> {
-  const bookingRef = doc(db, 'bookings', bookingId)
-  
-  await updateDoc(bookingRef, {
-    status: 'cancelled',
-    cancelledBy,
-    cancellationReason: reason,
-    updatedAt: new Date(),
-  })
+  await callBookingAction(bookingId, { action: 'cancel', cancelledBy, reason })
 }
 
 /**
  * Complete booking
  */
 export async function completeBooking(bookingId: string): Promise<void> {
-  const bookingRef = doc(db, 'bookings', bookingId)
-  
-  await updateDoc(bookingRef, {
-    status: 'completed',
-    updatedAt: new Date(),
-  })
+  await callBookingAction(bookingId, { action: 'complete' })
 }
 
 /**

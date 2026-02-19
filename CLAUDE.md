@@ -49,7 +49,7 @@ Full lawyer marketplace: registration with credential documents → admin approv
 
 ### Email
 
-Postmark is the primary email provider (`lib/email-service.ts`). Mailgun and Nodemailer are fallback options. The admin dashboard includes full email campaign management (`app/admin/email/`).
+`lib/services/email-service.ts` sends emails via SendGrid (set `EMAIL_SERVICE=sendgrid` + `SENDGRID_API_KEY`). If no provider is configured, emails are silently skipped (logged in dev). The admin dashboard includes full email campaign management (`app/admin/email/`).
 
 ### UI Layer
 
@@ -70,7 +70,7 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY / RECAPTCHA_SECRET_KEY
 UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
 NEXT_PUBLIC_BASE_URL
 ADMIN_SETUP_SECRET            # Used for initial admin bootstrap
-SENTRY_ORG / SENTRY_PROJECT   # Optional; needed for source map uploads
+SENDGRID_API_KEY              # Optional; needed for transactional email
 ```
 
 ### Deployment
@@ -79,4 +79,3 @@ SENTRY_ORG / SENTRY_PROJECT   # Optional; needed for source map uploads
 - **Docker**: multi-stage `Dockerfile` using Node 23 Alpine, non-root user.
 - **Self-hosted**: PM2 config in `ecosystem.config.js`.
 - Health check endpoint: `GET /api/health`.
-- Sentry error tracking is configured for client, server, and Edge Runtime (`sentry.*.config.ts`).

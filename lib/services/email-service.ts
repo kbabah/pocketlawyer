@@ -1,10 +1,5 @@
 // Email Service for PocketLawyer
-// Supports Resend and SendGrid
-
-import { Resend } from 'resend'
-
-const emailProvider = process.env.EMAIL_SERVICE || 'resend'
-const resend = emailProvider === 'resend' ? new Resend(process.env.RESEND_API_KEY) : null
+// Supports SendGrid; falls back to console logging in development
 
 export interface EmailOptions {
   to: string | string[]
@@ -23,23 +18,20 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     const from = options.from || process.env.EMAIL_FROM || 'noreply@pocketlawyer.cm'
     const fromName = process.env.EMAIL_FROM_NAME || 'PocketLawyer'
     const fromAddress = `${fromName} <${from}>`
+    const emailProvider = process.env.EMAIL_SERVICE || ''
 
-    if (emailProvider === 'resend' && resend) {
-      await resend.emails.send({
-        from: fromAddress,
-        to: Array.isArray(options.to) ? options.to : [options.to],
-        subject: options.subject,
-        html: options.html,
-        text: options.text,
-        replyTo: options.replyTo,
-      })
-      return true
-    } else if (emailProvider === 'sendgrid') {
+    if (emailProvider === 'sendgrid' && process.env.SENDGRID_API_KEY) {
       return await sendWithSendGrid(options, fromAddress)
-    } else {
-      console.error('No email provider configured')
-      return false
     }
+
+    // No provider configured — log in dev, silently skip in prod
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Email skipped — no provider configured]', {
+        to: options.to,
+        subject: options.subject,
+      })
+    }
+    return false
   } catch (error) {
     console.error('Email sending error:', error)
     return false
