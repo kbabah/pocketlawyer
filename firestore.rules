@@ -143,7 +143,7 @@ service cloud.firestore {
         isOwner(resource.data.userId) ||
         resource.data.suspendedReason == null;
       allow create: if isAuthenticated();  // Any authenticated user can add a lawyer
-      allow update: if isAdmin() || isOwner(resource.data.userId);  // Admin can update status; owner can update profile
+      allow update: if isAdmin() || (isOwner(resource.data.userId) && request.resource.data.status == resource.data.status);  // Admin can update status; owner can update profile but not status
       allow delete: if isAdmin() || isOwner(resource.data.userId);  // Only admin or creator can delete
     }
 
