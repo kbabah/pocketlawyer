@@ -34,7 +34,7 @@ export function MainLayout({
   if (!showSidebar) {
     // If no sidebar requested, just return the content
     return (
-      <div className={cn("min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950", className)}>
+      <div className={cn("min-h-dvh bg-background", className)}>
         {children}
       </div>
     )
@@ -42,14 +42,14 @@ export function MainLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-hidden">
+      <div className="flex h-dvh bg-background overflow-hidden">
         {/* Sidebar */}
         <AppSidebar />
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
-          <div className="h-14 border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
+          <div className="h-14 border-b border-border bg-background/95 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
             {/* Left side with mobile menu */}
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button - Only visible on small screens */}
@@ -58,7 +58,7 @@ export function MainLayout({
               </div>
               
               <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
-              <span className="text-sm font-mono text-slate-400 hidden sm:inline">
+              <span className="text-sm font-mono text-muted-foreground hidden sm:inline">
                 {new Date().toLocaleTimeString('en-US', { 
                   hour: '2-digit', 
                   minute: '2-digit',
