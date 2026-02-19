@@ -243,49 +243,49 @@ export default function LawyerDashboardPage() {
     <MainLayout>
       {/* Header */}
       <div className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl mb-6">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Scale className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="text-xl font-bold text-white font-mono">LAWYER.CONTROL</h1>
-                <p className="text-sm text-slate-400 font-mono">{lawyer.name}</p>
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              <Scale className="h-7 w-7 md:h-8 md:w-8 text-primary flex-shrink-0" />
+              <div className="min-w-0">
+                <h1 className="text-base md:text-xl font-bold text-white font-mono truncate">LAWYER.CONTROL</h1>
+                <p className="text-xs md:text-sm text-slate-400 font-mono truncate">{lawyer.name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push("/lawyer/profile/edit")}
-                className="text-primary hover:text-primary/80 font-mono"
+                className="text-primary hover:text-primary/80 font-mono px-2 md:px-3"
               >
-                <Settings className="h-4 w-4 mr-1" />
-                EDIT PROFILE
+                <Settings className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">EDIT PROFILE</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push("/")}
-                className="text-slate-400 hover:text-white font-mono"
+                className="text-slate-400 hover:text-white font-mono px-2 md:px-3"
               >
-                <ChevronRight className="h-4 w-4 mr-1" />
-                CLIENT VIEW
+                <ChevronRight className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">CLIENT VIEW</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => signOut()}
-                className="text-red-400 hover:text-red-300 font-mono"
+                className="text-red-400 hover:text-red-300 font-mono px-2 md:px-3"
               >
-                <LogOut className="h-4 w-4 mr-1" />
-                EXIT
+                <LogOut className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">EXIT</span>
               </Button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
@@ -324,36 +324,41 @@ export default function LawyerDashboardPage() {
 
         {/* Main Content */}
         <Tabs defaultValue="pending" className="space-y-6">
-          <TabsList className="bg-slate-900/50 border border-slate-800 p-1">
-            <TabsTrigger 
-              value="pending" 
-              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
-            >
-              <Terminal className="h-4 w-4 mr-2" />
-              PENDING ({pendingBookings.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="upcoming"
-              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              UPCOMING ({upcomingBookings.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="completed"
-              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              HISTORY ({completedBookings.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="settings"
-              className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono"
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              CONFIG
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-1 px-1">
+            <TabsList className="bg-slate-900/50 border border-slate-800 p-1 w-max min-w-full">
+              <TabsTrigger
+                value="pending"
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
+              >
+                <Terminal className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
+                <span>PENDING</span>
+                <span className="ml-1">({pendingBookings.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="upcoming"
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
+              >
+                <Calendar className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
+                <span>UPCOMING</span>
+                <span className="ml-1">({upcomingBookings.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="completed"
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
+              >
+                <BarChart3 className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
+                <span>HISTORY</span>
+                <span className="ml-1">({completedBookings.length})</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="settings"
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
+              >
+                <Settings className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
+                CONFIG
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="pending" className="space-y-4">
             {pendingBookings.length === 0 ? (

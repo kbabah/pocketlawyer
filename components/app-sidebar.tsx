@@ -55,7 +55,7 @@ export function AppSidebar() {
   const { isAdmin, isApprovedLawyer } = useRoleCheck()
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const isMobile = useIsMobile()
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, openMobile, setOpenMobile } = useSidebar()
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [sidebarHeight, setSidebarHeight] = useState<number>(0)
   const [userChatsCount, setUserChatsCount] = useState(0)
@@ -96,23 +96,24 @@ export function AppSidebar() {
 
   const handleTouchEnd = useCallback(() => {
     if (!isMobile || !touchStart || !touchEnd) return
-    
+
     const distance = touchStart - touchEnd
     const isLeftSwipe = distance > minSwipeDistance
     const isRightSwipe = distance < -minSwipeDistance
 
-    // Close sidebar on left swipe, open on right swipe (when sidebar is closed)
-    if (isLeftSwipe) {
-      toggleSidebar()
+    // Directional swipe: left swipe closes if open, right swipe opens if closed
+    if (isLeftSwipe && openMobile) {
+      setOpenMobile(false)
+    } else if (isRightSwipe && !openMobile) {
+      setOpenMobile(true)
     }
-    
+
     // Reset pull-to-refresh
     if (isPullToRefresh) {
-      // Trigger refresh action here if needed
       setIsPullToRefresh(false)
     }
     setRefreshOffset(0)
-  }, [isMobile, touchStart, touchEnd, toggleSidebar, isPullToRefresh])
+  }, [isMobile, touchStart, touchEnd, openMobile, setOpenMobile, isPullToRefresh])
 
   // Add touch event listeners for mobile swipe navigation
   useEffect(() => {
