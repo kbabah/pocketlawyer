@@ -28,7 +28,7 @@ service cloud.firestore {
 
     // Allow users to manage their profiles and related data
     match /users/{userId} {
-      // Allow any authenticated user to read basic user data
+      // Allow authenticated users to read their own user document
       // Allow admins to read ALL user documents
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       
