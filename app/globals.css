@@ -175,12 +175,6 @@
     }
   }
 
-  body {
-    height: 100vh;
-    height: -webkit-fill-available;
-    overscroll-behavior-y: none;
-  }
-
   /* Improve touch targets */
   @media (max-width: 768px) {
 
@@ -272,7 +266,7 @@
     --background: 20 14.3% 4.1%;
     --foreground: 60 9.1% 97.8%;
 
-    --card: 20 14.3% 4.1%;
+    --card: 20 14.3% 7%;
     --card-foreground: 60 9.1% 97.8%;
 
     --popover: 20 14.3% 4.1%;
@@ -294,8 +288,8 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 60 9.1% 97.8%;
 
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
+    --border: 12 6.5% 22%;
+    --input: 12 6.5% 22%;
     --ring: 24 94% 50%;
 
     --sidebar-background: 20 14.3% 4.1%;

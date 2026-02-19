@@ -202,7 +202,7 @@ export default function LawyerDashboardPage() {
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Terminal className="h-12 w-12 text-primary animate-pulse" />
-            <p className="text-slate-400 font-mono">Initializing dashboard...</p>
+            <p className="text-muted-foreground font-mono">Initializing dashboard...</p>
           </div>
         </div>
       </MainLayout>
@@ -226,7 +226,7 @@ export default function LawyerDashboardPage() {
       case 'confirmed': return 'bg-primary/10 text-primary border-primary/30'
       case 'completed': return 'bg-blue-500/10 text-blue-400 border-blue-500/30'
       case 'cancelled': return 'bg-red-500/10 text-red-400 border-red-500/30'
-      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/30'
+      default: return 'bg-muted/50 text-muted-foreground border-border'
     }
   }
 
@@ -242,14 +242,14 @@ export default function LawyerDashboardPage() {
   return (
     <MainLayout>
       {/* Header */}
-      <div className="border-b border-slate-800 bg-slate-950/50 backdrop-blur-xl mb-6">
+      <div className="border-b border-border bg-background/95 backdrop-blur-xl mb-6">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 min-w-0">
               <Scale className="h-7 w-7 md:h-8 md:w-8 text-primary flex-shrink-0" />
               <div className="min-w-0">
-                <h1 className="text-base md:text-xl font-bold text-white font-mono truncate">LAWYER.CONTROL</h1>
-                <p className="text-xs md:text-sm text-slate-400 font-mono truncate">{lawyer.name}</p>
+                <h1 className="text-base md:text-xl font-bold text-foreground font-mono truncate">LAWYER.CONTROL</h1>
+                <p className="text-xs md:text-sm text-muted-foreground font-mono truncate">{lawyer.name}</p>
               </div>
             </div>
             <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
@@ -266,7 +266,7 @@ export default function LawyerDashboardPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push("/")}
-                className="text-slate-400 hover:text-white font-mono px-2 md:px-3"
+                className="text-muted-foreground hover:text-foreground font-mono px-2 md:px-3"
               >
                 <ChevronRight className="h-4 w-4 md:mr-1" />
                 <span className="hidden md:inline">CLIENT VIEW</span>
@@ -325,7 +325,7 @@ export default function LawyerDashboardPage() {
         {/* Main Content */}
         <Tabs defaultValue="pending" className="space-y-6">
           <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="bg-slate-900/50 border border-slate-800 p-1 w-max min-w-full">
+            <TabsList className="bg-muted/50 border border-border p-1 w-max min-w-full">
               <TabsTrigger
                 value="pending"
                 className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
@@ -423,11 +423,11 @@ export default function LawyerDashboardPage() {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">
-            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-mono">AVAILABILITY CONFIG</h3>
-                  <p className="text-sm text-slate-400 font-mono mt-1">
+                  <h3 className="text-lg font-bold text-foreground font-mono">AVAILABILITY CONFIG</h3>
+                  <p className="text-sm text-muted-foreground font-mono mt-1">
                     Configure your weekly schedule
                   </p>
                 </div>
@@ -442,12 +442,12 @@ export default function LawyerDashboardPage() {
               
               <div className="space-y-3">
                 {DAYS.map(day => (
-                  <div key={day} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                  <div key={day} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border">
                     <div className="flex items-center gap-3">
-                      <div className={`h-2 w-2 rounded-full ${lawyer.availability[day].available ? 'bg-primary' : 'bg-slate-600'}`} />
-                      <span className="font-mono text-sm text-white uppercase">{day}</span>
+                      <div className={`h-2 w-2 rounded-full ${lawyer.availability[day].available ? 'bg-primary' : 'bg-muted-foreground/40'}`} />
+                      <span className="font-mono text-sm text-foreground uppercase">{day}</span>
                     </div>
-                    <span className="text-sm font-mono text-slate-400">
+                    <span className="text-sm font-mono text-muted-foreground">
                       {lawyer.availability[day].available 
                         ? `${lawyer.availability[day].hours.length} slots` 
                         : 'OFFLINE'
@@ -458,11 +458,11 @@ export default function LawyerDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-white font-mono">PROFILE SETTINGS</h3>
-                  <p className="text-sm text-slate-400 font-mono mt-1">
+                  <h3 className="text-lg font-bold text-foreground font-mono">PROFILE SETTINGS</h3>
+                  <p className="text-sm text-muted-foreground font-mono mt-1">
                     Manage your professional profile
                   </p>
                 </div>
@@ -485,8 +485,8 @@ export default function LawyerDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6">
-              <h3 className="text-lg font-bold text-white font-mono mb-4">ACCOUNT</h3>
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h3 className="text-lg font-bold text-foreground font-mono mb-4">ACCOUNT</h3>
               <Button
                 onClick={() => signOut()}
                 variant="outline"
@@ -502,21 +502,21 @@ export default function LawyerDashboardPage() {
 
       {/* Confirm Dialog */}
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent className="bg-slate-900 border-slate-800">
+        <DialogContent className="bg-background border-border">
           <DialogHeader>
             <DialogTitle className="font-mono text-primary">CONFIRM BOOKING</DialogTitle>
-            <DialogDescription className="font-mono text-slate-400">
+            <DialogDescription className="font-mono text-muted-foreground">
               Approve this consultation request
             </DialogDescription>
           </DialogHeader>
           {selectedBooking?.type === 'video' && (
             <div className="space-y-2">
-              <Label className="font-mono text-slate-300">Meeting Link</Label>
+              <Label className="font-mono text-foreground">Meeting Link</Label>
               <Input
                 placeholder="https://meet.google.com/xxx-yyyy-zzz"
                 value={meetingLink}
                 onChange={(e) => setMeetingLink(e.target.value)}
-                className="bg-slate-800 border-slate-700 text-white font-mono"
+                className="font-mono"
               />
             </div>
           )}
@@ -541,10 +541,10 @@ export default function LawyerDashboardPage() {
 
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="bg-slate-900 border-slate-800">
+        <DialogContent className="bg-background border-border">
           <DialogHeader>
             <DialogTitle className="font-mono text-red-400">CANCEL BOOKING</DialogTitle>
-            <DialogDescription className="font-mono text-slate-400">
+            <DialogDescription className="font-mono text-muted-foreground">
               This action cannot be undone
             </DialogDescription>
           </DialogHeader>
@@ -569,10 +569,10 @@ export default function LawyerDashboardPage() {
 
       {/* Availability Dialog */}
       <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
-        <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-background border-border max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono text-primary">EDIT AVAILABILITY</DialogTitle>
-            <DialogDescription className="font-mono text-slate-400">
+            <DialogDescription className="font-mono text-muted-foreground">
               Configure your weekly schedule
             </DialogDescription>
           </DialogHeader>
@@ -580,14 +580,14 @@ export default function LawyerDashboardPage() {
           {availability && (
             <div className="space-y-4">
               {DAYS.map(day => (
-                <div key={day} className="border border-slate-800 rounded-lg p-4 bg-slate-800/50">
+                <div key={day} className="border border-border rounded-lg p-4 bg-muted/50">
                   <div className="flex items-center gap-3 mb-3">
                     <Checkbox
                       checked={availability[day].available}
                       onCheckedChange={() => toggleDayAvailability(day)}
-                      className="border-slate-600"
+                      className="border-border"
                     />
-                    <Label className="font-mono text-white uppercase cursor-pointer">
+                    <Label className="font-mono text-foreground uppercase cursor-pointer">
                       {day}
                     </Label>
                   </div>
@@ -609,7 +609,7 @@ export default function LawyerDashboardPage() {
                           className={`font-mono text-xs ${
                             availability[day].hours.includes(slot)
                               ? 'bg-primary/20 text-primary border-primary/30'
-                              : 'bg-slate-700/50 text-slate-400 border-slate-600'
+                              : 'bg-muted/50 text-muted-foreground border-border'
                           }`}
                         >
                           {slot}
@@ -667,16 +667,16 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
   const isPast = bookingDate < new Date() && isConfirmed
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-6 hover:border-slate-700 transition-colors">
+    <div className="bg-card border border-border rounded-lg p-6 hover:border-border/70 transition-colors">
       <div className="flex flex-col md:flex-row gap-4">
         {/* Info */}
         <div className="flex-1 space-y-4">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white font-mono">{booking.userName}</h3>
-              <p className="text-sm text-slate-400 font-mono">{booking.userEmail}</p>
+              <h3 className="text-lg font-bold text-foreground font-mono">{booking.userName}</h3>
+              <p className="text-sm text-muted-foreground font-mono">{booking.userEmail}</p>
               {booking.userPhone && (
-                <p className="text-sm text-slate-400 font-mono">{booking.userPhone}</p>
+                <p className="text-sm text-muted-foreground font-mono">{booking.userPhone}</p>
               )}
             </div>
             <Badge className={`${getStatusColor(booking.status)} font-mono border`}>
@@ -685,27 +685,27 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 text-slate-300 font-mono">
+            <div className="flex items-center gap-2 text-foreground font-mono">
               <Calendar className="h-4 w-4 text-primary" />
               <span>{format(bookingDate, 'MMM d, yyyy')}</span>
             </div>
-            <div className="flex items-center gap-2 text-slate-300 font-mono">
+            <div className="flex items-center gap-2 text-foreground font-mono">
               <Clock className="h-4 w-4 text-primary" />
               <span>{format(bookingDate, 'HH:mm')} · {booking.duration}m</span>
             </div>
-            <div className="flex items-center gap-2 text-slate-300 font-mono">
+            <div className="flex items-center gap-2 text-foreground font-mono">
               {getBookingIcon(booking.type)}
               <span className="capitalize">{booking.type.replace('-', ' ')}</span>
             </div>
-            <div className="flex items-center gap-2 text-slate-300 font-mono">
+            <div className="flex items-center gap-2 text-foreground font-mono">
               <DollarSign className="h-4 w-4 text-purple-400" />
               <span>{booking.totalAmount.toLocaleString()} XAF</span>
             </div>
           </div>
 
           {booking.notes && (
-            <div className="text-sm bg-slate-800/50 rounded p-3 border border-slate-700">
-              <p className="text-slate-400 font-mono italic">"{booking.notes}"</p>
+            <div className="text-sm bg-muted/50 rounded p-3 border border-border">
+              <p className="text-muted-foreground font-mono italic">"{booking.notes}"</p>
             </div>
           )}
 
@@ -779,9 +779,9 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
 // Empty State Component
 function EmptyState({ message }: { message: string }) {
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-12 text-center">
-      <Terminal className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-      <p className="text-slate-500 font-mono">{message}</p>
+    <div className="bg-card border border-border rounded-lg p-12 text-center">
+      <Terminal className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+      <p className="text-muted-foreground font-mono">{message}</p>
     </div>
   )
 }
@@ -789,9 +789,9 @@ function EmptyState({ message }: { message: string }) {
 // Metric Item Component
 function MetricItem({ label, value }: { label: string; value: any }) {
   return (
-    <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
-      <p className="text-xs text-slate-500 font-mono mb-1">{label}</p>
-      <p className="text-lg font-bold text-white font-mono">{value}</p>
+    <div className="bg-muted/50 rounded-lg p-3 border border-border">
+      <p className="text-xs text-muted-foreground font-mono mb-1">{label}</p>
+      <p className="text-lg font-bold text-foreground font-mono">{value}</p>
     </div>
   )
 }

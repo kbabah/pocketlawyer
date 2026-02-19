@@ -13,7 +13,6 @@ import {
   BookOpen, Keyboard, Info, ArrowRight, Check, Copy, Share, ThumbsUp,
   ThumbsDown, MoreHorizontal, ArrowDown, Paperclip
 } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { 
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger 
@@ -128,15 +127,12 @@ const ChatMessage = memo(({
             <div className={`${isMobile ? "w-8" : "w-10"} ${message.role === "user" ? "order-last" : "order-first"}`}></div>
           )}
           
-          <div 
-            className={`relative rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 max-w-[85%] sm:max-w-[90%] 
-              ${message.role === "user" 
-                ? "bg-primary text-primary-foreground dark:shadow-md ml-2 rounded-tr-none" 
-                : "bg-secondary/40 dark:bg-secondary/20 border border-slate-200 dark:border-slate-700 mr-2 rounded-tl-none"
-              }
-              ${!isLastInGroup && message.role === "user" ? "rounded-br-none" : ""}
-              ${!isLastInGroup && message.role !== "user" ? "rounded-bl-none" : ""}
-              shadow-sm hover:shadow transition-all duration-200`}
+          <div
+            className={`relative max-w-[85%] sm:max-w-[90%] transition-all duration-200
+              ${message.role === "user"
+                ? "rounded-2xl px-4 py-2.5 bg-primary text-primary-foreground dark:shadow-md ml-2 shadow-sm hover:shadow"
+                : "mr-2 py-1"
+              }`}
           >
             <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
             
@@ -647,7 +643,7 @@ export default function ChatInterface() {
         <Avatar className={`${isMobile ? "h-8 w-8" : "h-10 w-10"} bg-secondary/30`}>
           <Scale className="p-1.5" />
         </Avatar>
-        <div className="rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 bg-secondary/40 dark:bg-secondary/20 border border-slate-200 dark:border-slate-700 mr-2 rounded-tl-none">
+        <div className="rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 border border-border mr-2">
           <div className="flex space-x-2">
             <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }}></div>
             <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -944,7 +940,7 @@ export default function ChatInterface() {
   return (
     <ChatErrorBoundary>
       <div 
-        className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] overflow-hidden"
+        className="flex flex-col h-full"
         role="region"
         aria-label={t("Chat conversation")}
       >
@@ -973,115 +969,106 @@ export default function ChatInterface() {
             </div>
           )}
 
-          {/* Chat content with proper scroll containment */}
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-4">
-            <Card className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <CardContent className="flex flex-col h-full p-0 overflow-hidden">
-                {/* Fixed message search panel */}
-                {showMessageSearch && (
-                  <div className="flex-shrink-0">
-                    <MessageSearchPanel
-                      messageSearchQuery={messageSearchQuery}
-                      setMessageSearchQuery={setMessageSearchQuery}
-                      handleMessageSearch={handleMessageSearch}
-                      navigateSearchResults={navigateSearchResults}
-                      searchResults={searchResults}
-                      currentSearchResultIndex={currentSearchResultIndex}
-                      messageSearchInputRef={messageSearchInputRef}
-                      t={t}
-                      setShowMessageSearch={setShowMessageSearch}
-                    />
-                  </div>
-                )}
+          {/* Message search panel */}
+          {showMessageSearch && (
+            <div className="flex-shrink-0">
+              <MessageSearchPanel
+                messageSearchQuery={messageSearchQuery}
+                setMessageSearchQuery={setMessageSearchQuery}
+                handleMessageSearch={handleMessageSearch}
+                navigateSearchResults={navigateSearchResults}
+                searchResults={searchResults}
+                currentSearchResultIndex={currentSearchResultIndex}
+                messageSearchInputRef={messageSearchInputRef}
+                t={t}
+                setShowMessageSearch={setShowMessageSearch}
+              />
+            </div>
+          )}
 
-                {/* Fixed trial limit alert */}
-                {isTrialLimitReached() && (
-                  <div className="flex-shrink-0 p-4">
-                    <TrialLimitAlert />
-                  </div>
-                )}
+          {/* Trial limit alert */}
+          {isTrialLimitReached() && (
+            <div className="flex-shrink-0 px-4 pt-4">
+              <TrialLimitAlert />
+            </div>
+          )}
 
-                {/* Scrollable messages container */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden chat-messages-container px-4">
-                  {renderMessages()}
-                </div>
+          {/* Scrollable messages container */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden chat-messages-container px-4">
+            {renderMessages()}
+          </div>
 
-                {/* Scroll to bottom button */}
-                {scrollToBottomVisible && (
-                  <div className="absolute bottom-20 right-8 z-10">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="rounded-full shadow-lg bg-background hover:bg-background/90 transition-all duration-200 hover:scale-105"
-                      onClick={scrollToBottom}
-                      aria-label={t("Scroll to bottom")}
-                    >
-                      <ArrowDown className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+          {/* Scroll to bottom button */}
+          {scrollToBottomVisible && (
+            <div className="absolute bottom-20 right-8 z-10">
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full shadow-lg bg-background hover:bg-background/90 transition-all duration-200 hover:scale-105"
+                onClick={scrollToBottom}
+                aria-label={t("Scroll to bottom")}
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
 
-                {/* Fixed input area at bottom */}
-                <div className="flex-shrink-0 bg-background/95 backdrop-blur border-t">
-                  <div className="p-3 sm:p-4">
-                    <form onSubmit={handleSubmit} className="flex gap-2 w-full max-w-4xl mx-auto">
-                      <div className="relative flex-1 flex items-center">
-                        <Textarea
-                          ref={inputRef}
-                          value={input}
-                          onChange={handleInputChange}
-                          placeholder={t("Type your legal question...")}
-                          className="flex-1 min-h-[44px] max-h-[200px] pr-10 resize-none py-3 text-base sm:text-sm"
-                          disabled={isSubmitting}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                              e.preventDefault()
-                              handleSubmit()
-                            }
-                          }}
-                        />
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
-                          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => {
-                            // Document upload functionality would go here
-                            toast.info("Document upload coming soon")
-                          }}
-                        >
-                          <Paperclip className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <Button 
-                        type="submit" 
-                        disabled={isSubmitting || !input.trim()} 
-                        className={`h-11 w-11 sm:h-9 sm:w-9 p-0 flex-shrink-0 rounded-full transition-all duration-200 ${
-                          isSubmitting ? 'bg-muted' : ''
-                        }`}
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="h-5 w-5 sm:h-4 sm:w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-5 w-5 sm:h-4 sm:w-4" />
-                        )}
-                      </Button>
-                    </form>
-
-                    {user?.isAnonymous && !isTrialLimitReached() && (
-                      <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
-                        <span>
-                          {getTrialConversationsRemaining()} {t("trial conversations remaining")}
-                        </span>
-                        <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
-                          {t("Sign up for unlimited access")}
-                        </Button>
-                      </div>
+          {/* Input area - Claude AI style */}
+          <div className="flex-shrink-0 px-4 py-3 bg-background border-t border-border">
+            <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full">
+              <div className="rounded-2xl border border-border bg-background shadow-md flex flex-col">
+                <Textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder={t("Type your legal question...")}
+                  className="border-0 focus-visible:ring-0 bg-transparent resize-none min-h-[52px] max-h-[200px] py-3.5 px-4 text-sm"
+                  disabled={isSubmitting}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault()
+                      handleSubmit()
+                    }
+                  }}
+                />
+                <div className="flex items-center justify-between px-3 pb-2.5">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                    onClick={() => {
+                      toast.info("Document upload coming soon")
+                    }}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !input.trim()}
+                    className={`h-9 w-9 p-0 rounded-xl transition-all duration-200 ${
+                      isSubmitting ? 'bg-muted' : ''
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
                     )}
-                  </div>
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              {user?.isAnonymous && !isTrialLimitReached() && (
+                <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
+                  <span>
+                    {getTrialConversationsRemaining()} {t("trial conversations remaining")}
+                  </span>
+                  <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
+                    {t("Sign up for unlimited access")}
+                  </Button>
+                </div>
+              )}
+            </form>
           </div>
         </div>
       </TooltipProvider>
