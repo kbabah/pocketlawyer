@@ -62,8 +62,18 @@ export default function AdminLawyersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
   useEffect(() => {
+    if (isAdmin === false) {
+      router.replace("/")
+      return
+    }
+  }, [isAdmin, router])
+
+  useEffect(() => {
+    if (!isAdmin) {
+      return
+    }
     loadLawyers()
-  }, [])
+  }, [isAdmin])
 
   useEffect(() => {
     let result = lawyers
