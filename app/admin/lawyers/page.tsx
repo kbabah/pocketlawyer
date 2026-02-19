@@ -194,13 +194,13 @@ export default function AdminLawyersPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "approved":
-        return <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>
+        return <Badge className="bg-green-100 text-green-800 border-green-200">{t("Approved")}</Badge>
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">{t("Pending")}</Badge>
       case "rejected":
-        return <Badge className="bg-red-100 text-red-800 border-red-200">Rejected</Badge>
+        return <Badge className="bg-red-100 text-red-800 border-red-200">{t("Rejected")}</Badge>
       case "suspended":
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Suspended</Badge>
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">{t("Suspended")}</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
