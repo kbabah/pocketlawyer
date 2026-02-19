@@ -83,10 +83,16 @@ export default function KnowledgeBasePage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      // Reset input so same file can be re-selected
+      e.target.value = ""
+      return
+    }
     const ext = file.name.split(".").pop()?.toLowerCase()
     if (ext !== "txt" && ext !== "pdf") {
       toast.error(t("Only .txt and .pdf files are supported"))
+      // Reset input so same file can be re-selected
+      e.target.value = ""
       return
     }
     // Auto-populate title from filename
