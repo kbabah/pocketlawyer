@@ -67,11 +67,6 @@ ${knowledgeContext}${caseContext}`
       model: openai(model),
       system: systemPrompt,
       messages,
-      tools: {
-        web_search_preview: openai.tools.webSearchPreview({
-          searchContextSize: "high",
-        }),
-      },
     })
 
     return result.toDataStreamResponse()
