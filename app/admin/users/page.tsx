@@ -164,6 +164,7 @@ export default function UserManagementPage() {
 
   const loadUsers = async () => {
     try {
+      setLoading(true)
       const usersQuery = query(
         collection(db, "users"),
         orderBy("createdAt", "desc")
@@ -177,9 +178,15 @@ export default function UserManagementPage() {
       
       setUsers(usersData)
       setFilteredUsers(usersData)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading users:", error)
-      toast.error("Failed to load users")
+      if (error?.code === "permission-denied") {
+        toast.error("Firestore permission denied — deploy updated rules")
+      } else {
+        toast.error("Failed to load users")
+      }
+    } finally {
+      setLoading(false)
     }
   }
 

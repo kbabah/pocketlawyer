@@ -142,6 +142,45 @@ export async function searchLawyersBySpecialization(specialization: string): Pro
 }
 
 /**
+ * Get ALL lawyers regardless of status (for admin)
+ */
+export async function getAllLawyers(): Promise<Lawyer[]> {
+  const q = query(
+    collection(db, 'lawyers'),
+    orderBy('createdAt', 'desc')
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+  } as Lawyer))
+}
+
+/**
+ * Suspend an approved lawyer (admin only)
+ */
+export async function suspendLawyer(lawyerId: string, reason: string): Promise<void> {
+  const lawyerRef = doc(db, 'lawyers', lawyerId)
+  await updateDoc(lawyerRef, {
+    status: 'suspended',
+    suspendedReason: reason,
+    updatedAt: new Date(),
+  })
+}
+
+/**
+ * Reinstate / activate a suspended lawyer (admin only)
+ */
+export async function reinstateLawyer(lawyerId: string): Promise<void> {
+  const lawyerRef = doc(db, 'lawyers', lawyerId)
+  await updateDoc(lawyerRef, {
+    status: 'approved',
+    suspendedReason: null,
+    updatedAt: new Date(),
+  })
+}
+
+/**
  * Get pending lawyers (for admin)
  */
 export async function getPendingLawyers(): Promise<Lawyer[]> {
