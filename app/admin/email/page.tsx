@@ -186,7 +186,7 @@ export default function EmailDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {analyticsData?.summary.totalSent.toLocaleString()}
+                      {(analyticsData?.summary?.totalSent ?? 0).toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       In the last {selectedPeriod === "30days" ? "30" : selectedPeriod === "7days" ? "7" : "90"} days
@@ -203,10 +203,10 @@ export default function EmailDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {analyticsData?.summary.openRate.toFixed(1)}%
+                      {(analyticsData?.summary?.openRate ?? 0).toFixed(1)}%
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {analyticsData?.summary.totalOpens.toLocaleString()} emails opened
+                      {(analyticsData?.summary?.totalOpens ?? 0).toLocaleString()} emails opened
                     </p>
                   </CardContent>
                 </Card>
@@ -220,10 +220,10 @@ export default function EmailDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {analyticsData?.summary.clickRate.toFixed(1)}%
+                      {(analyticsData?.summary?.clickRate ?? 0).toFixed(1)}%
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {analyticsData?.summary.totalClicks.toLocaleString()} emails clicked
+                      {(analyticsData?.summary?.totalClicks ?? 0).toLocaleString()} emails clicked
                     </p>
                   </CardContent>
                 </Card>
@@ -237,10 +237,10 @@ export default function EmailDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {analyticsData?.summary.bounceRate.toFixed(1)}%
+                      {(analyticsData?.summary?.bounceRate ?? 0).toFixed(1)}%
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {analyticsData?.summary.totalBounces.toLocaleString()} emails bounced
+                      {(analyticsData?.summary?.totalBounces ?? 0).toLocaleString()} emails bounced
                     </p>
                   </CardContent>
                 </Card>

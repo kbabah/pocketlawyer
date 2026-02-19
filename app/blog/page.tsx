@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { ThemeLogo } from "@/components/theme-logo"
@@ -43,6 +44,7 @@ type BlogPost = {
 
 export default function BlogPage() {
   const { t } = useLanguage();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -222,9 +224,7 @@ export default function BlogPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <Link href="/examples">
-                  <Button variant="outline">{t("View Examples")}</Button>
-                </Link>
+                <Button variant="outline" onClick={() => router.push("/examples")}>{t("View Examples")}</Button>
               </div>
             </div>
             
@@ -290,9 +290,7 @@ export default function BlogPage() {
                     <div className="border-t mt-4 pt-4">
                       <h3 className="font-medium mb-2">{t("Have a Legal Question?")}</h3>
                       <p className="text-sm text-muted-foreground mb-3">{t("Use our AI assistant to get instant answers to your Cameroonian legal questions.")}</p>
-                      <Link href="/">
-                        <Button className="w-full">{t("Chat with PocketLawyer")}</Button>
-                      </Link>
+                      <Button className="w-full" onClick={() => router.push("/")}>{t("Chat with PocketLawyer")}</Button>
                     </div>
                   </div>
                 </div>
