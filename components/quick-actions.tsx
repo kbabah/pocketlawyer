@@ -44,7 +44,7 @@ export function QuickActions() {
       label: t("Draft Contract"),
       icon: FileEdit,
       onClick: () => {
-        toast.info(t("Contract drafting feature coming soon"))
+        router.push("/draft-contract")
       },
       color: "text-purple-600 dark:text-purple-400"
     },
@@ -53,7 +53,7 @@ export function QuickActions() {
       label: t("Legal Research"),
       icon: Search,
       onClick: () => {
-        toast.info(t("Legal research feature coming soon"))
+        router.push("/legal-research")
       },
       color: "text-green-600 dark:text-green-400"
     },
@@ -62,7 +62,7 @@ export function QuickActions() {
       label: t("Case Review"),
       icon: BookOpen,
       onClick: () => {
-        toast.info(t("Case review feature coming soon"))
+        router.push("/case-review")
       },
       color: "text-orange-600 dark:text-orange-400"
     },

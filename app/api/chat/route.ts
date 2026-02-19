@@ -4,6 +4,7 @@ import { streamText } from "ai"
 import { OPENAI_MODELS } from '@/lib/openai'
 import { rateLimit, getIdentifier } from '@/lib/rate-limit'
 import { NextResponse } from 'next/server'
+import { getKnowledgeContext } from '@/lib/knowledge-base'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
@@ -97,6 +98,15 @@ ${language === "fr" ?
     // If document content is provided, add it to the system prompt
     if (documentContent) {
       systemPrompt += `\n\nThe user has provided the following Cameroonian legal document for analysis. Use this document to inform your responses when relevant to Cameroonian law:\n\n${documentContent}`
+    }
+
+    // Inject knowledge base context based on user's latest message
+    const lastUserMessage = messages?.filter((m: any) => m.role === "user").pop()?.content || ""
+    if (lastUserMessage) {
+      const knowledgeContext = getKnowledgeContext(lastUserMessage)
+      if (knowledgeContext) {
+        systemPrompt += knowledgeContext
+      }
     }
 
     const result = streamText({
