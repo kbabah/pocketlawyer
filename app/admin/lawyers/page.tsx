@@ -23,9 +23,6 @@ import {
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
-import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 import { toast } from "sonner"
@@ -43,10 +40,10 @@ import { useRouter } from "next/navigation"
 type StatusFilter = "all" | "pending" | "approved" | "rejected" | "suspended"
 
 export default function AdminLawyersPage() {
-  const { user } = useAuth()
+  useAuth()
   const { t } = useLanguage()
   const router = useRouter()
-  const { isAdmin } = useRoleCheck()
+  const { isAdmin, loading: roleLoading } = useRoleCheck()
 
   const [loading, setLoading] = useState(true)
   const [lawyers, setLawyers] = useState<Lawyer[]>([])
@@ -62,11 +59,11 @@ export default function AdminLawyersPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
   useEffect(() => {
-    if (isAdmin === false) {
+    if (!roleLoading && isAdmin === false) {
       router.replace("/")
       return
     }
-  }, [isAdmin, router])
+  }, [isAdmin, roleLoading, router])
 
   useEffect(() => {
     if (!isAdmin) {
@@ -366,8 +363,10 @@ export default function AdminLawyersPage() {
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedLawyer?.name}</DialogTitle>
-              <DialogDescription>
-                {selectedLawyer && getStatusBadge(selectedLawyer.status)}
+              <DialogDescription asChild>
+                <div>
+                  {selectedLawyer && getStatusBadge(selectedLawyer.status)}
+                </div>
               </DialogDescription>
             </DialogHeader>
             {selectedLawyer && (
