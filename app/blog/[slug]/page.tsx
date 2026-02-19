@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { ThemeLogo } from "@/components/theme-logo"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ThemeSwitcher } from "@/components/theme-switcher"
@@ -125,6 +125,7 @@ export default function BlogPostPage() {
   }
   
   return (
+    <SidebarProvider>
     <div className="flex min-h-[100dvh] bg-pattern-light dark:bg-pattern-dark">
       <AppSidebar />
       <SidebarInset className="flex flex-col flex-1">
@@ -320,5 +321,6 @@ export default function BlogPostPage() {
         </div>
       </SidebarInset>
     </div>
+    </SidebarProvider>
   )
 }
