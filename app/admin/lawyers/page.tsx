@@ -411,10 +411,10 @@ export default function AdminLawyersPage() {
                     </div>
                   </div>
                 )}
-                {(selectedLawyer as any).suspendedReason && (
+                {selectedLawyer.suspendedReason && (
                   <div className="p-3 bg-red-50 rounded border border-red-200">
                     <p className="font-semibold text-red-800">{t("Suspension Reason")}</p>
-                    <p className="text-red-700">{(selectedLawyer as any).suspendedReason}</p>
+                    <p className="text-red-700">{selectedLawyer.suspendedReason}</p>
                   </div>
                 )}
               </div>
