@@ -34,6 +34,15 @@ export function useRoleCheck(): RoleCheckResult {
         setLoading(true)
         setError(null)
 
+        // Skip Firestore check for anonymous/guest users — they have no Firebase auth token
+        if (user.isAnonymous) {
+          setIsAdmin(false)
+          setIsLawyer(false)
+          setIsApprovedLawyer(false)
+          setLoading(false)
+          return
+        }
+
         // Check admin status
         const userDoc = await getDoc(doc(db, "users", user.id))
         if (userDoc.exists()) {
