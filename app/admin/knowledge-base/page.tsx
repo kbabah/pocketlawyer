@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Database, Plus, Trash2, Save, Loader2, BookOpen, Search, FileText, Upload,
+  ArrowLeft, Database, Plus, Trash2, Save, Loader2, BookOpen, Search, FileText, Upload,
 } from "lucide-react"
 import { toast } from "sonner"
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "firebase/firestore"
@@ -209,6 +209,15 @@ export default function KnowledgeBasePage() {
       subtitle={t("Add and manage offline legal resources")}
     >
       <div className="max-w-5xl mx-auto space-y-6 p-4 md:p-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-1"
+          onClick={() => router.push("/admin")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {t("Back to Admin")}
+        </Button>
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
             <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />

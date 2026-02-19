@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
+  ArrowLeft,
   BarChart3,
   Calendar,
   Loader2,
@@ -98,6 +99,15 @@ export default function EmailDashboard() {
   return (
     <MainLayout>
       <div className="container py-8">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mb-4 -ml-1"
+        onClick={() => router.push("/admin")}
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Admin
+      </Button>
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Email Management</h1>
