@@ -39,6 +39,7 @@ export interface Lawyer {
   createdAt: Date
   updatedAt: Date
   rejectionReason?: string
+  suspendedReason?: string | null
   location?: string
   officeAddress?: string
 }
