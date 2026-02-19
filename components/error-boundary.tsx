@@ -67,22 +67,23 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   }
 
-  logErrorToService = (error: Error, errorInfo: ErrorInfo) => {
-    // Here you would typically send the error to your logging service
-    // For now, we'll just log to console with additional context
-    const errorData = {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
+  logErrorToService = (error: unknown, errorInfo: ErrorInfo) => {
+    const message =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+        ? error
+        : 'Unknown error'
+    const stack = error instanceof Error ? error.stack : undefined
+
+    console.error('Error Boundary - Full Error Details:', {
+      message,
+      stack,
+      componentStack: errorInfo?.componentStack ?? undefined,
       timestamp: new Date().toISOString(),
       userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unknown',
       url: typeof window !== 'undefined' ? window.location.href : 'Unknown',
-    }
-    
-    console.error('Error Boundary - Full Error Details:', errorData)
-    
-    // You could send this to services like Sentry, LogRocket, etc.
-    // Example: Sentry.captureException(error, { contexts: { errorBoundary: errorData } })
+    })
   }
 
   resetErrorBoundary = () => {

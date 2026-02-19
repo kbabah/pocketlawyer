@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Users, Mail, FileText, Settings, Activity, ArrowLeft, BellRing, BarChart } from "lucide-react"
+import { Shield, Users, Mail, FileText, Settings, Activity, ArrowLeft, BellRing, BarChart, Database } from "lucide-react"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/users")}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">User Management</CardTitle>
@@ -156,6 +156,19 @@ export default function AdminDashboard() {
               <div className="text-2xl font-bold">--</div>
               <p className="text-xs text-muted-foreground">
                 Manage email templates
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push("/admin/knowledge-base")}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Knowledge Base</CardTitle>
+              <Database className="h-5 w-5 text-teal-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">--</div>
+              <p className="text-xs text-muted-foreground">
+                Upload legal resources
               </p>
             </CardContent>
           </Card>
@@ -317,19 +330,19 @@ export default function AdminDashboard() {
             
             <Card>
               <CardHeader>
-                <CardTitle>Content Management</CardTitle>
+                <CardTitle>Knowledge Base</CardTitle>
                 <CardDescription>
-                  Manage legal content, templates, and documents.
+                  Upload and manage offline legal resources for AI responses.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="rounded-md bg-muted p-4">
-                  <p className="text-sm">Content management functionality coming soon.</p>
+                  <p className="text-sm">Add statutes, case law, procedures, and contract templates to supplement the built-in Cameroonian law database.</p>
                 </div>
               </CardContent>
               <CardFooter>
-                <Button onClick={() => router.push("/admin/content")} disabled>
-                  Manage Content
+                <Button onClick={() => router.push("/admin/knowledge-base")}>
+                  Manage Knowledge Base
                 </Button>
               </CardFooter>
             </Card>

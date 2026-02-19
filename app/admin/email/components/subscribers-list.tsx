@@ -101,8 +101,9 @@ export function SubscribersList() {
       }
       
       const data = await response.json();
-      setSubscribers(data);
-      setFilteredSubscribers(data);
+      const list: Subscriber[] = Array.isArray(data) ? data : (data.subscribers ?? []);
+      setSubscribers(list);
+      setFilteredSubscribers(list);
     } catch (error) {
       console.error("Error fetching subscribers:", error);
       toast.error("Failed to load subscribers");

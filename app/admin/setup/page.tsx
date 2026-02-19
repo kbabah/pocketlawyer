@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AdminSetupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -64,7 +66,18 @@ export default function AdminSetupPage() {
   
   return (
     <MainLayout>
-      <div className="container flex items-center justify-center min-h-[60vh] py-10">
+      <div className="container py-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-6 -ml-1"
+          onClick={() => router.push("/admin")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Admin
+        </Button>
+      </div>
+      <div className="container flex items-center justify-center min-h-[50vh] py-4">
         <div className="w-full max-w-md">
           <Alert className="mb-6 border-amber-500/50 bg-amber-500/10">
             <ShieldAlert className="h-4 w-4" />

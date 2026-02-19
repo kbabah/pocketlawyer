@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Database, Plus, Trash2, Save, Loader2, BookOpen, Search, FileText, Upload,
+  ArrowLeft, Database, Plus, Trash2, Save, Loader2, BookOpen, Search, FileText, Upload,
 } from "lucide-react"
 import { toast } from "sonner"
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "firebase/firestore"
@@ -45,7 +45,7 @@ const CATEGORIES = [
 export default function KnowledgeBasePage() {
   const { user } = useAuth()
   const { t } = useLanguage()
-  const { isAdmin } = useRoleCheck()
+  const { isAdmin, loading: roleLoading } = useRoleCheck()
   const router = useRouter()
   const [entries, setEntries] = useState<KBEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,12 +62,13 @@ export default function KnowledgeBasePage() {
   const [source, setSource] = useState("")
 
   useEffect(() => {
+    if (roleLoading) return
     if (!isAdmin) {
       router.push("/")
       return
     }
     fetchEntries()
-  }, [isAdmin, router])
+  }, [isAdmin, roleLoading, router])
 
   const fetchEntries = async () => {
     try {
@@ -114,8 +115,24 @@ export default function KnowledgeBasePage() {
       }
       reader.readAsText(file)
     } else {
-      // PDF: inform admin to use copy-paste since we can't parse without a library
-      toast.info(t("PDF detected — please copy-paste the text content into the Content field below, or use a PDF-to-text converter first."))
+      // PDF: extract text via the document processing API
+      setFileUploading(true)
+      try {
+        const formData = new FormData()
+        formData.append("file", file)
+        const res = await fetch("/api/document/process", { method: "POST", body: formData })
+        const data = await res.json()
+        if (data.success && data.text) {
+          setContent(data.text)
+          toast.success(t("PDF text extracted successfully"))
+        } else {
+          toast.error(data.error || t("Failed to extract PDF text"))
+        }
+      } catch {
+        toast.error(t("Failed to process PDF"))
+      } finally {
+        setFileUploading(false)
+      }
     }
     // Reset input so same file can be re-selected
     e.target.value = ""
@@ -192,6 +209,15 @@ export default function KnowledgeBasePage() {
       subtitle={t("Add and manage offline legal resources")}
     >
       <div className="max-w-5xl mx-auto space-y-6 p-4 md:p-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="-ml-1"
+          onClick={() => router.push("/admin")}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {t("Back to Admin")}
+        </Button>
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
             <Database className="h-6 w-6 text-blue-600 dark:text-blue-400" />
