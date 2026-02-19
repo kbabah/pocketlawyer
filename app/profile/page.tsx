@@ -145,8 +145,13 @@ export default function Profile() {
                         userId={user.id}
                         userType="user"
                         userName={user.name || undefined}
-                        onUploadComplete={(url) => {
-                          setSuccess(t("Profile picture updated!"))
+                        onUploadComplete={async (url) => {
+                          try {
+                            await updateProfile({ photoURL: url })
+                            setSuccess(t("Profile picture updated successfully!"))
+                          } catch (err: any) {
+                            setError(err.message || t("Failed to save profile picture"))
+                          }
                         }}
                         size="lg"
                         editable={true}

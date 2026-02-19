@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { 
-  Database, Plus, Trash2, Save, Loader2, BookOpen, Search
+  Database, Plus, Trash2, Save, Loader2, BookOpen, Search, FileText, Upload,
 } from "lucide-react"
 import { toast } from "sonner"
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "firebase/firestore"
@@ -50,6 +50,7 @@ export default function KnowledgeBasePage() {
   const [entries, setEntries] = useState<KBEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [fileUploading, setFileUploading] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
   // Form state
@@ -78,6 +79,40 @@ export default function KnowledgeBasePage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const ext = file.name.split(".").pop()?.toLowerCase()
+    if (ext !== "txt" && ext !== "pdf") {
+      toast.error(t("Only .txt and .pdf files are supported"))
+      return
+    }
+    // Auto-populate title from filename
+    if (!title) {
+      setTitle(file.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "))
+    }
+    if (ext === "txt") {
+      setFileUploading(true)
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string
+        setContent(text || "")
+        toast.success(t("Text file loaded into content field"))
+        setFileUploading(false)
+      }
+      reader.onerror = () => {
+        toast.error(t("Failed to read file"))
+        setFileUploading(false)
+      }
+      reader.readAsText(file)
+    } else {
+      // PDF: inform admin to use copy-paste since we can't parse without a library
+      toast.info(t("PDF detected — please copy-paste the text content into the Content field below, or use a PDF-to-text converter first."))
+    }
+    // Reset input so same file can be re-selected
+    e.target.value = ""
   }
 
   const handleSave = async () => {
@@ -185,6 +220,38 @@ export default function KnowledgeBasePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* File Upload */}
+            <div className="space-y-2">
+              <Label>{t("Upload Document")} (.txt / .pdf)</Label>
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="kb-file-upload"
+                  className="flex items-center gap-2 px-4 py-2 rounded-md border border-dashed border-border hover:border-primary cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {fileUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  {fileUploading ? t("Reading file...") : t("Choose file")}
+                  <input
+                    id="kb-file-upload"
+                    type="file"
+                    accept=".txt,.pdf"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    disabled={fileUploading}
+                  />
+                </label>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5" />
+                  <span>{t("TXT files auto-populate the content field. For PDFs, paste text manually.")}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4" />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>{t("Title")} *</Label>

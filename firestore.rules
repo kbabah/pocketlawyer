@@ -29,7 +29,8 @@ service cloud.firestore {
     // Allow users to manage their profiles and related data
     match /users/{userId} {
       // Allow any authenticated user to read basic user data
-      allow read: if isAuthenticated();
+      // Allow admins to read ALL user documents
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       
       // Allow users to create their own document initially
       allow create: if isAuthenticated() && request.auth.uid == userId;
@@ -137,7 +138,14 @@ service cloud.firestore {
     match /lawyers/{lawyerId} {
       allow read: if true;  // Public read access for lawyer profiles
       allow create: if isAuthenticated();  // Any authenticated user can add a lawyer
-      allow update, delete: if isAdmin() || isOwner(resource.data.userId);  // Only admin or creator can edit/delete
+      allow update: if isAdmin() || isOwner(resource.data.userId);  // Admin can update status; owner can update profile
+      allow delete: if isAdmin() || isOwner(resource.data.userId);  // Only admin or creator can delete
+    }
+
+    // Knowledge base (admin-managed legal resources)
+    match /knowledge_base/{entryId} {
+      allow read: if isAuthenticated();  // Any authenticated user can read KB entries
+      allow create, update, delete: if isAdmin();  // Only admins can manage
     }
 
     // Bookings collection

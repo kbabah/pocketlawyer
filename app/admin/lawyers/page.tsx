@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
+import { useRoleCheck } from "@/hooks/use-role-check"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -17,55 +18,93 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table"
 import { toast } from "sonner"
-import { Scale, Loader2, CheckCircle, XCircle, Eye, Mail, Phone, MapPin } from "lucide-react"
-import { getPendingLawyers, approveLawyer, rejectLawyer } from "@/lib/services/lawyer-service"
+import {
+  Scale, Loader2, CheckCircle, XCircle, Eye,
+  ChevronLeft, MoreVertical, UserX, UserCheck, Search,
+} from "lucide-react"
+import {
+  getAllLawyers, approveLawyer, rejectLawyer,
+  suspendLawyer, reinstateLawyer,
+} from "@/lib/services/lawyer-service"
 import type { Lawyer } from "@/types/lawyer"
 import { useRouter } from "next/navigation"
+
+type StatusFilter = "all" | "pending" | "approved" | "rejected" | "suspended"
 
 export default function AdminLawyersPage() {
   const { user } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
+  const { isAdmin } = useRoleCheck()
+
   const [loading, setLoading] = useState(true)
   const [lawyers, setLawyers] = useState<Lawyer[]>([])
+  const [filteredLawyers, setFilteredLawyers] = useState<Lawyer[]>([])
   const [selectedLawyer, setSelectedLawyer] = useState<Lawyer | null>(null)
   const [showDetailsDialog, setShowDetailsDialog] = useState(false)
   const [showRejectDialog, setShowRejectDialog] = useState(false)
+  const [showSuspendDialog, setShowSuspendDialog] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
+  const [suspendReason, setSuspendReason] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
   useEffect(() => {
-    loadPendingLawyers()
+    loadLawyers()
   }, [])
 
-  const loadPendingLawyers = async () => {
+  useEffect(() => {
+    let result = lawyers
+    if (statusFilter !== "all") {
+      result = result.filter((l) => l.status === statusFilter)
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(
+        (l) =>
+          l.name?.toLowerCase().includes(q) ||
+          l.email?.toLowerCase().includes(q) ||
+          l.barNumber?.toLowerCase().includes(q) ||
+          l.location?.toLowerCase().includes(q)
+      )
+    }
+    setFilteredLawyers(result)
+  }, [lawyers, statusFilter, searchQuery])
+
+  const loadLawyers = async () => {
     try {
       setLoading(true)
-      const data = await getPendingLawyers()
+      const data = await getAllLawyers()
       setLawyers(data)
     } catch (error: any) {
-      console.error("Error loading pending lawyers:", error)
-      toast.error(t("Failed to load pending lawyers"))
+      console.error("Error loading lawyers:", error)
+      toast.error(t("Failed to load lawyers"))
     } finally {
       setLoading(false)
     }
   }
 
   const handleApprove = async (lawyer: Lawyer) => {
-    if (!confirm(t("Are you sure you want to approve this lawyer?"))) {
-      return
-    }
-
+    if (!confirm(t("Are you sure you want to approve this lawyer?"))) return
     setActionLoading(true)
     try {
       await approveLawyer(lawyer.id)
       toast.success(t("Lawyer approved successfully!"))
-      // Remove from list
-      setLawyers(prev => prev.filter(l => l.id !== lawyer.id))
+      setLawyers(prev => prev.map(l => l.id === lawyer.id ? { ...l, status: "approved" } : l))
       setShowDetailsDialog(false)
     } catch (error: any) {
-      console.error("Error approving lawyer:", error)
       toast.error(t("Failed to approve lawyer"))
     } finally {
       setActionLoading(false)
@@ -77,22 +116,59 @@ export default function AdminLawyersPage() {
       toast.error(t("Please provide a rejection reason"))
       return
     }
-
     setActionLoading(true)
     try {
       await rejectLawyer(selectedLawyer.id, rejectionReason)
       toast.success(t("Lawyer registration rejected"))
-      // Remove from list
-      setLawyers(prev => prev.filter(l => l.id !== selectedLawyer.id))
+      setLawyers(prev => prev.map(l => l.id === selectedLawyer.id ? { ...l, status: "rejected" } : l))
       setShowRejectDialog(false)
       setShowDetailsDialog(false)
       setRejectionReason("")
     } catch (error: any) {
-      console.error("Error rejecting lawyer:", error)
       toast.error(t("Failed to reject lawyer"))
     } finally {
       setActionLoading(false)
     }
+  }
+
+  const handleSuspend = async () => {
+    if (!selectedLawyer || !suspendReason.trim()) {
+      toast.error(t("Please provide a suspension reason"))
+      return
+    }
+    setActionLoading(true)
+    try {
+      await suspendLawyer(selectedLawyer.id, suspendReason)
+      toast.success(t("Lawyer suspended"))
+      setLawyers(prev => prev.map(l => l.id === selectedLawyer.id ? { ...l, status: "suspended" } : l))
+      setShowSuspendDialog(false)
+      setShowDetailsDialog(false)
+      setSuspendReason("")
+    } catch (error: any) {
+      toast.error(t("Failed to suspend lawyer"))
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const handleReinstate = async (lawyer: Lawyer) => {
+    if (!confirm(t("Reinstate this lawyer's account?"))) return
+    setActionLoading(true)
+    try {
+      await reinstateLawyer(lawyer.id)
+      toast.success(t("Lawyer reinstated successfully"))
+      setLawyers(prev => prev.map(l => l.id === lawyer.id ? { ...l, status: "approved" } : l))
+      setShowDetailsDialog(false)
+    } catch (error: any) {
+      toast.error(t("Failed to reinstate lawyer"))
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const openDetailsDialog = (lawyer: Lawyer) => {
+    setSelectedLawyer(lawyer)
+    setShowDetailsDialog(true)
   }
 
   const openRejectDialog = (lawyer: Lawyer) => {
@@ -100,9 +176,32 @@ export default function AdminLawyersPage() {
     setShowRejectDialog(true)
   }
 
-  const openDetailsDialog = (lawyer: Lawyer) => {
+  const openSuspendDialog = (lawyer: Lawyer) => {
     setSelectedLawyer(lawyer)
-    setShowDetailsDialog(true)
+    setShowSuspendDialog(true)
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "approved":
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Approved</Badge>
+      case "pending":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pending</Badge>
+      case "rejected":
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Rejected</Badge>
+      case "suspended":
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Suspended</Badge>
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
+
+  const counts = {
+    all: lawyers.length,
+    pending: lawyers.filter(l => l.status === "pending").length,
+    approved: lawyers.filter(l => l.status === "approved").length,
+    rejected: lawyers.filter(l => l.status === "rejected").length,
+    suspended: lawyers.filter(l => l.status === "suspended").length,
   }
 
   if (loading) {
@@ -121,140 +220,134 @@ export default function AdminLawyersPage() {
     <MainLayout>
       <div className="container max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="mb-6">
+          <button
+            onClick={() => router.push("/admin")}
+            className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            {t("Back to Admin")}
+          </button>
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg">
               <Scale className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{t("Lawyer Approvals")}</h1>
-              <p className="text-muted-foreground">
-                {t("Review and approve lawyer registrations")}
+              <h1 className="text-2xl font-bold">{t("Lawyer Management")}</h1>
+              <p className="text-muted-foreground text-sm">
+                {t("View, approve, reject, suspend and reinstate lawyers")}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold">{lawyers.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {t("Pending Approvals")}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Status Tabs */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {(["all", "pending", "approved", "rejected", "suspended"] as StatusFilter[]).map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                statusFilter === s
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background border-border hover:bg-muted"
+              }`}
+            >
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+              <span className="ml-1.5 text-xs opacity-70">({counts[s]})</span>
+            </button>
+          ))}
         </div>
 
-        {/* Pending Lawyers List */}
-        {lawyers.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">
-                {t("No pending lawyer registrations")}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("Search by name, email, bar number or location...")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* Table */}
+        {filteredLawyers.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <Scale className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p>{t("No lawyers found")}</p>
+          </div>
         ) : (
-          <div className="space-y-4">
-            {lawyers.map((lawyer) => (
-              <Card key={lawyer.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {/* Left: Basic Info */}
-                    <div className="flex-1 space-y-4">
-                      <div>
-                        <h3 className="text-xl font-bold mb-1">{lawyer.name}</h3>
-                        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {lawyer.email}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-3 w-3" />
-                            {lawyer.phone}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {lawyer.location}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium mb-1">{t("Bar Number")}</p>
-                        <p className="text-sm text-muted-foreground">{lawyer.barNumber}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium mb-2">{t("Specializations")}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {lawyer.specializations.map((spec) => (
-                            <Badge key={spec} variant="secondary" className="text-xs">
-                              {spec}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-sm font-medium mb-2">{t("Languages")}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {lawyer.languages.map((lang) => (
-                            <Badge key={lang} variant="outline" className="text-xs">
-                              {lang}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">{t("Experience")}</p>
-                          <p className="font-medium">{lawyer.experience} {t("years")}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">{t("Hourly Rate")}</p>
-                          <p className="font-medium">{lawyer.hourlyRate.toLocaleString()} XAF</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Actions */}
-                    <div className="flex flex-col gap-2 md:w-48">
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => openDetailsDialog(lawyer)}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        {t("View Details")}
-                      </Button>
-                      <Button
-                        variant="default"
-                        className="w-full"
-                        onClick={() => handleApprove(lawyer)}
-                        disabled={actionLoading}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        {t("Approve")}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        className="w-full"
-                        onClick={() => openRejectDialog(lawyer)}
-                        disabled={actionLoading}
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        {t("Reject")}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("Name")}</TableHead>
+                  <TableHead className="hidden sm:table-cell">{t("Email")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("Bar #")}</TableHead>
+                  <TableHead className="hidden md:table-cell">{t("Location")}</TableHead>
+                  <TableHead>{t("Status")}</TableHead>
+                  <TableHead className="text-right">{t("Actions")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLawyers.map((lawyer) => (
+                  <TableRow key={lawyer.id}>
+                    <TableCell className="font-medium">{lawyer.name}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{lawyer.email}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm">{lawyer.barNumber}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm">{lawyer.location}</TableCell>
+                    <TableCell>{getStatusBadge(lawyer.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>{t("Actions")}</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => openDetailsDialog(lawyer)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            {t("View Details")}
+                          </DropdownMenuItem>
+                          {lawyer.status === "pending" && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleApprove(lawyer)}>
+                                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                                {t("Approve")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => openRejectDialog(lawyer)}>
+                                <XCircle className="h-4 w-4 mr-2 text-red-600" />
+                                {t("Reject")}
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {lawyer.status === "approved" && (
+                            <DropdownMenuItem onClick={() => openSuspendDialog(lawyer)}>
+                              <UserX className="h-4 w-4 mr-2 text-orange-600" />
+                              {t("Suspend")}
+                            </DropdownMenuItem>
+                          )}
+                          {lawyer.status === "suspended" && (
+                            <DropdownMenuItem onClick={() => handleReinstate(lawyer)}>
+                              <UserCheck className="h-4 w-4 mr-2 text-green-600" />
+                              {t("Reinstate")}
+                            </DropdownMenuItem>
+                          )}
+                          {lawyer.status === "rejected" && (
+                            <DropdownMenuItem onClick={() => handleApprove(lawyer)}>
+                              <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                              {t("Approve Anyway")}
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
 
@@ -263,99 +356,87 @@ export default function AdminLawyersPage() {
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedLawyer?.name}</DialogTitle>
-              <DialogDescription>{t("Full lawyer profile details")}</DialogDescription>
+              <DialogDescription>
+                {selectedLawyer && getStatusBadge(selectedLawyer.status)}
+              </DialogDescription>
             </DialogHeader>
-
             {selectedLawyer && (
-              <div className="space-y-4">
+              <div className="space-y-4 text-sm">
                 <div>
-                  <h4 className="font-medium mb-2">{t("Contact Information")}</h4>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p>Email: {selectedLawyer.email}</p>
-                    <p>Phone: {selectedLawyer.phone}</p>
-                    <p>Location: {selectedLawyer.location}</p>
-                    {selectedLawyer.officeAddress && (
-                      <p>Office: {selectedLawyer.officeAddress}</p>
-                    )}
+                  <h4 className="font-semibold mb-1">{t("Contact")}</h4>
+                  <p className="text-muted-foreground">Email: {selectedLawyer.email}</p>
+                  <p className="text-muted-foreground">Phone: {selectedLawyer.phone}</p>
+                  <p className="text-muted-foreground">Location: {selectedLawyer.location}</p>
+                  {selectedLawyer.officeAddress && (
+                    <p className="text-muted-foreground">Office: {selectedLawyer.officeAddress}</p>
+                  )}
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-1">{t("Professional")}</h4>
+                  <p className="text-muted-foreground">Bar #: {selectedLawyer.barNumber}</p>
+                  <p className="text-muted-foreground">Experience: {selectedLawyer.experience} yrs</p>
+                  <p className="text-muted-foreground">Rate: {selectedLawyer.hourlyRate?.toLocaleString()} XAF/hr</p>
+                </div>
+                {selectedLawyer.bio && (
+                  <div>
+                    <h4 className="font-semibold mb-1">{t("Bio")}</h4>
+                    <p className="text-muted-foreground whitespace-pre-wrap">{selectedLawyer.bio}</p>
                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">{t("Professional Information")}</h4>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p>Bar Number: {selectedLawyer.barNumber}</p>
-                    <p>Experience: {selectedLawyer.experience} years</p>
-                    <p>Hourly Rate: {selectedLawyer.hourlyRate.toLocaleString()} XAF</p>
+                )}
+                {selectedLawyer.education?.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-1">{t("Education")}</h4>
+                    <ul className="list-disc list-inside text-muted-foreground">
+                      {selectedLawyer.education.map((edu, i) => <li key={i}>{edu}</li>)}
+                    </ul>
                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">{t("Bio")}</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {selectedLawyer.bio}
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">{t("Education")}</h4>
-                  <ul className="text-sm text-muted-foreground list-disc list-inside">
-                    {selectedLawyer.education.map((edu, idx) => (
-                      <li key={idx}>{edu}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">{t("Specializations")}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedLawyer.specializations.map((spec) => (
-                      <Badge key={spec} variant="secondary">
-                        {spec}
-                      </Badge>
-                    ))}
+                )}
+                {selectedLawyer.specializations?.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-1">{t("Specializations")}</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedLawyer.specializations.map((s) => (
+                        <Badge key={s} variant="secondary">{s}</Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-2">{t("Languages")}</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedLawyer.languages.map((lang) => (
-                      <Badge key={lang} variant="outline">
-                        {lang}
-                      </Badge>
-                    ))}
+                )}
+                {(selectedLawyer as any).suspendedReason && (
+                  <div className="p-3 bg-red-50 rounded border border-red-200">
+                    <p className="font-semibold text-red-800">{t("Suspension Reason")}</p>
+                    <p className="text-red-700">{(selectedLawyer as any).suspendedReason}</p>
                   </div>
-                </div>
+                )}
               </div>
             )}
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowDetailsDialog(false)}
-              >
+            <DialogFooter className="flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
                 {t("Close")}
               </Button>
-              <Button
-                variant="default"
-                onClick={() => selectedLawyer && handleApprove(selectedLawyer)}
-                disabled={actionLoading}
-              >
-                {actionLoading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                )}
-                {t("Approve")}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => selectedLawyer && openRejectDialog(selectedLawyer)}
-                disabled={actionLoading}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                {t("Reject")}
-              </Button>
+              {selectedLawyer?.status === "pending" && (
+                <>
+                  <Button onClick={() => selectedLawyer && handleApprove(selectedLawyer)} disabled={actionLoading}>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {t("Approve")}
+                  </Button>
+                  <Button variant="destructive" onClick={() => selectedLawyer && openRejectDialog(selectedLawyer)} disabled={actionLoading}>
+                    <XCircle className="h-4 w-4 mr-2" />
+                    {t("Reject")}
+                  </Button>
+                </>
+              )}
+              {selectedLawyer?.status === "approved" && (
+                <Button variant="destructive" onClick={() => selectedLawyer && openSuspendDialog(selectedLawyer)} disabled={actionLoading}>
+                  <UserX className="h-4 w-4 mr-2" />
+                  {t("Suspend")}
+                </Button>
+              )}
+              {selectedLawyer?.status === "suspended" && (
+                <Button onClick={() => selectedLawyer && handleReinstate(selectedLawyer)} disabled={actionLoading}>
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  {t("Reinstate")}
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -366,50 +447,59 @@ export default function AdminLawyersPage() {
             <DialogHeader>
               <DialogTitle>{t("Reject Lawyer Registration")}</DialogTitle>
               <DialogDescription>
-                {t("Please provide a reason for rejecting this registration")}
+                {t("Provide a reason for rejecting this registration")}
               </DialogDescription>
             </DialogHeader>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="reason">{t("Rejection Reason")} *</Label>
-                <Textarea
-                  id="reason"
-                  placeholder={t("e.g., Invalid bar number, incomplete documentation...")}
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  rows={4}
-                />
-              </div>
+            <div>
+              <Label htmlFor="rejection-reason">{t("Rejection Reason")} *</Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder={t("e.g., Invalid bar number, incomplete documentation...")}
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={4}
+                className="mt-1"
+              />
             </div>
-
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowRejectDialog(false)
-                  setRejectionReason("")
-                }}
-                disabled={actionLoading}
-              >
+              <Button variant="outline" onClick={() => { setShowRejectDialog(false); setRejectionReason("") }} disabled={actionLoading}>
                 {t("Cancel")}
               </Button>
-              <Button
-                variant="destructive"
-                onClick={handleReject}
-                disabled={actionLoading || !rejectionReason.trim()}
-              >
-                {actionLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t("Rejecting...")}
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-4 w-4 mr-2" />
-                    {t("Reject Registration")}
-                  </>
-                )}
+              <Button variant="destructive" onClick={handleReject} disabled={actionLoading || !rejectionReason.trim()}>
+                {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <XCircle className="h-4 w-4 mr-2" />}
+                {t("Reject")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Suspend Dialog */}
+        <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("Suspend Lawyer Account")}</DialogTitle>
+              <DialogDescription>
+                {t("Provide a reason for suspending this lawyer")}
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <Label htmlFor="suspend-reason">{t("Suspension Reason")} *</Label>
+              <Textarea
+                id="suspend-reason"
+                placeholder={t("e.g., Client complaints, license revoked...")}
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setShowSuspendDialog(false); setSuspendReason("") }} disabled={actionLoading}>
+                {t("Cancel")}
+              </Button>
+              <Button variant="destructive" onClick={handleSuspend} disabled={actionLoading || !suspendReason.trim()}>
+                {actionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserX className="h-4 w-4 mr-2" />}
+                {t("Suspend")}
               </Button>
             </DialogFooter>
           </DialogContent>
