@@ -2,6 +2,9 @@
 
 /** @type {import('next').NextConfig} */
 const config = {
+  // Packages that use Node.js APIs (fs, native addons, etc.) must NOT be bundled
+  // by webpack — let Node resolve them from node_modules at runtime.
+  serverExternalPackages: ['pdf-parse', 'jszip'],
   typescript: {
     ignoreBuildErrors: false,
   },

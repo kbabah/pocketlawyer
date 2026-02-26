@@ -35,6 +35,7 @@ interface UploadFile {
   error?: string
   uploadedAt?: Date
   language?: string
+  ocr?: boolean
 }
 
 interface EnhancedDocumentUploadProps {
@@ -52,24 +53,24 @@ const SUPPORTED_TYPES = {
     extension: '.pdf',
     icon: FileText,
     name: 'PDF Document',
-    maxSize: 5 // MB
+    maxSize: 10 // MB
   },
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': {
     extension: '.docx',
     icon: FileText,
     name: 'Word Document',
-    maxSize: 5 // MB
+    maxSize: 10 // MB
   },
   'text/plain': {
     extension: '.txt',
     icon: File,
     name: 'Text File',
-    maxSize: 2 // MB
+    maxSize: 5 // MB
   }
 }
 
 const DEFAULT_MAX_FILES = 5
-const DEFAULT_MAX_FILE_SIZE = 5 // MB
+const DEFAULT_MAX_FILE_SIZE = 10 // MB
 
 export default function EnhancedDocumentUpload({
   onFileProcessed,
@@ -199,9 +200,9 @@ export default function EnhancedDocumentUpload({
       }
 
       const data = await response.json()
-      
-      if (!data.text) {
-        throw new Error("No text extracted from document")
+
+      if (!data.success || !data.text) {
+        throw new Error(data.error || 'No text could be extracted from this document')
       }
 
       // Update file status to completed
@@ -210,7 +211,8 @@ export default function EnhancedDocumentUpload({
         status: 'completed',
         progress: 100,
         extractedText: data.text,
-        uploadedAt: new Date()
+        uploadedAt: new Date(),
+        ocr: data.ocr ?? false,
       }
 
       setFiles(prev => prev.map(f => 
@@ -403,10 +405,10 @@ export default function EnhancedDocumentUpload({
               {/* File Info */}
               <div className="text-xs text-muted-foreground space-y-1">
                 <p>
-                  {t('Supported formats')}: PDF, DOCX, TXT • {t('Max')}: {maxFileSize}MB • {t('Limit')}: {maxFiles} files
+                  {t('Supported formats')}: PDF, DOCX, TXT &bull; {t('Max')}: {maxFileSize}MB {t('per file')} &bull; {t('Limit')}: {maxFiles} {t('files')}
                 </p>
                 <p>
-                  {t('Documents will be processed with OCR for text extraction')}
+                  {t('PDFs are extracted with pdf-parse; scanned documents use OCR automatically')}
                 </p>
               </div>
             </div>
@@ -572,9 +574,12 @@ export default function EnhancedDocumentUpload({
                           <CheckCircle className="h-3 w-3" />
                           {t('Text extracted successfully')}
                           {uploadFile.extractedText && (
-                            <span>• {uploadFile.extractedText.length} characters</span>
-                          )}
-                        </div>
+                            <span>• {uploadFile.extractedText.length.toLocaleString()} {t('characters')}</span>
+                          )}                          {uploadFile.ocr && (
+                            <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-medium">
+                              OCR
+                            </span>
+                          )}                        </div>
                       )}
                     </div>
                   </div>
