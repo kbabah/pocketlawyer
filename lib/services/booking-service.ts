@@ -44,8 +44,9 @@ function convertBookingData(data: any): any {
 
 /**
  * Create a new booking via API endpoint (uses Admin SDK to bypass permission issues)
+ * Returns booking ID and meeting details if video consultation
  */
-export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ bookingId: string; meetingLink?: string; meetingProvider?: string }> {
   try {
     // Get the current user's auth token
     const { auth } = await import('@/lib/firebase');
@@ -89,7 +90,11 @@ export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt
     }
 
     const result = await response.json();
-    return result.bookingId;
+    return {
+      bookingId: result.bookingId,
+      meetingLink: result.meetingLink,
+      meetingProvider: result.meetingProvider,
+    };
   } catch (error: any) {
     console.error('Error creating booking:', error);
     throw new Error(error.message || 'Failed to create booking');

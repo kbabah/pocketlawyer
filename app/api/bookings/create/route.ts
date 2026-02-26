@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { adminAuth } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
+import { generateMeetingLink, MeetingDetails } from '@/lib/server/meeting-service';
 
 /**
  * Check if a time slot is available (server-side, using Admin SDK)
@@ -124,6 +125,23 @@ export async function POST(req: NextRequest) {
     const bookingsRef = adminDb.collection('bookings');
     const bookingDoc = bookingsRef.doc();
 
+    // Generate meeting link for video consultations
+    let meetingDetails: MeetingDetails | null = null;
+    if (bookingData.type === 'video') {
+      try {
+        meetingDetails = await generateMeetingLink({
+          bookingId: bookingDoc.id,
+          lawyerName: bookingData.lawyerName,
+          userName: bookingData.userName,
+          startTime: consultationDate,
+          duration: bookingData.duration,
+          provider: 'jitsi',
+        });
+      } catch (error) {
+        console.error('Failed to generate meeting link:', error);
+      }
+    }
+
     const booking: any = {
       userId: bookingData.userId,
       userName: bookingData.userName,
@@ -147,8 +165,10 @@ export async function POST(req: NextRequest) {
     if (bookingData.notes) {
       booking.notes = bookingData.notes;
     }
-    if (bookingData.meetingLink) {
-      booking.meetingLink = bookingData.meetingLink;
+    if (meetingDetails) {
+      booking.meetingLink = meetingDetails.meetingLink;
+      booking.meetingId = meetingDetails.meetingId;
+      booking.meetingProvider = meetingDetails.provider;
     }
 
     await bookingDoc.set(booking);
@@ -158,6 +178,8 @@ export async function POST(req: NextRequest) {
         success: true,
         bookingId: bookingDoc.id,
         message: 'Booking created successfully',
+        meetingLink: meetingDetails?.meetingLink || null,
+        meetingProvider: meetingDetails?.provider || null,
       },
       { status: 201 }
     );

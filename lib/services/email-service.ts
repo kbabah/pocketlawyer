@@ -11,7 +11,8 @@ export interface EmailOptions {
 }
 
 /**
- * Send an email using configured provider
+ * Send an email using configured provider.
+ * Priority: Postmark (POSTMARK_SERVER_TOKEN) → SendGrid (EMAIL_SERVICE=sendgrid) → skip
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
@@ -19,6 +20,11 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     const fromName = process.env.EMAIL_FROM_NAME || 'PocketLawyer'
     const fromAddress = `${fromName} <${from}>`
     const emailProvider = process.env.EMAIL_SERVICE || ''
+
+    // Postmark is the primary provider
+    if (process.env.POSTMARK_SERVER_TOKEN) {
+      return await sendWithPostmark(options, fromAddress)
+    }
 
     if (emailProvider === 'sendgrid' && process.env.SENDGRID_API_KEY) {
       return await sendWithSendGrid(options, fromAddress)
@@ -34,6 +40,33 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return false
   } catch (error) {
     console.error('Email sending error:', error)
+    return false
+  }
+}
+
+/**
+ * Send email using Postmark
+ */
+async function sendWithPostmark(options: EmailOptions, from: string): Promise<boolean> {
+  try {
+    const { ServerClient } = await import('postmark')
+    const client = new ServerClient(process.env.POSTMARK_SERVER_TOKEN!)
+
+    const to = Array.isArray(options.to) ? options.to.join(',') : options.to
+
+    await client.sendEmail({
+      From: from,
+      To: to,
+      Subject: options.subject,
+      HtmlBody: options.html,
+      TextBody: options.text,
+      ReplyTo: options.replyTo,
+      MessageStream: 'outbound',
+    })
+
+    return true
+  } catch (error) {
+    console.error('Postmark error:', error)
     return false
   }
 }

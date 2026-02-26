@@ -1,15 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from "@/lib/logger";
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { adminDb } from '@/lib/firebase-admin'
+import { adminAuth, adminDb } from '@/lib/firebase-admin'
 import type { Query, DocumentData } from 'firebase-admin/firestore'
+
+/**
+ * Verify Firebase Bearer token from Authorization header.
+ * Returns the decoded uid on success, or null on failure.
+ */
+async function verifyToken(request: NextRequest): Promise<{ uid: string; isAdmin: boolean } | null> {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) return null
+  try {
+    const token = authHeader.split('Bearer ')[1]
+    const decoded = await adminAuth.verifyIdToken(token)
+    const isAdmin = decoded.admin === true
+    return { uid: decoded.uid, isAdmin }
+  } catch {
+    return null
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
+    const user = await verifyToken(request)
+
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -24,7 +39,7 @@ export async function POST(request: NextRequest) {
     const feedbackData = {
       messageId,
       chatId: chatId || null,
-      userId: session.user.id,
+      userId: user.uid,
       feedbackType,
       feedbackText: feedbackText || null,
       timestamp: Date.now(),
@@ -37,7 +52,7 @@ export async function POST(request: NextRequest) {
     const existingFeedback = await adminDb
       .collection('messageFeedback')
       .where('messageId', '==', messageId)
-      .where('userId', '==', session.user.id)
+      .where('userId', '==', user.uid)
       .limit(1)
       .get()
 
@@ -112,9 +127,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
+    const user = await verifyToken(request)
+
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -136,17 +151,16 @@ export async function GET(request: NextRequest) {
       query = query.where('chatId', '==', chatId)
     }
 
-    // Only return user's own feedback unless user is admin
-    if (!(session.user as any).isAdmin) {
-      query = query.where('userId', '==', session.user.id)
+    // Only return user's own feedback unless admin
+    if (!user.isAdmin) {
+      query = query.where('userId', '==', user.uid)
     }
 
-    const feedbackSnapshot = await query.orderBy('timestamp', 'desc').limit(50).get()
-    
-    const feedback = feedbackSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }))
+    const feedbackSnapshot = await query.limit(50).get()
+
+    const feedback = feedbackSnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0))
 
     return NextResponse.json({ feedback })
 

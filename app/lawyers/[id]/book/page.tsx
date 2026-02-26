@@ -164,7 +164,9 @@ export default function BookLawyerPage() {
         bookingData.notes = notes
       }
 
-      const bookingId = await createBooking(bookingData)
+      const createResult = await createBooking(bookingData)
+      const bookingId = createResult.bookingId
+      const createdMeetingLink = createResult.meetingLink
       setCreatedBookingId(bookingId)
 
       // PAYMENT DISABLED: Skip payment dialog and send emails directly
@@ -192,7 +194,7 @@ export default function BookLawyerPage() {
             consultationType: consultationType,
             amount: calculateTotal(),
             bookingId: bookingId,
-            meetingLink: consultationType === 'video' ? undefined : undefined,
+            meetingLink: consultationType === 'video' ? createdMeetingLink : undefined,
           })
         })
 

@@ -315,6 +315,48 @@ export default function ChatInterface() {
 
   const { saveChat, updateChat } = useChatHistory(user?.id)
 
+  // Ref to track the chatId of the conversation currently being edited, which may
+  // differ from the URL param before the first save creates a Firestore document.
+  const currentChatIdRef = useRef<string | undefined>(chatId)
+  // Sync whenever the URL chatId changes (e.g. user navigates to an existing chat)
+  useEffect(() => {
+    currentChatIdRef.current = chatId
+  }, [chatId])
+
+  // Track previous isLoading to detect the moment the AI finishes responding
+  const prevIsLoadingRef = useRef(false)
+
+  // Persist chat after every AI response
+  useEffect(() => {
+    const wasLoading = prevIsLoadingRef.current
+    prevIsLoadingRef.current = isLoading
+
+    // Only act on the falling edge (loading just finished) with real content
+    if (!wasLoading || isLoading) return
+    // Only save for authenticated, non-anonymous users
+    if (!user?.id || user?.isAnonymous) return
+    // Need at least one user message + one assistant message
+    if (messages.length < 2) return
+
+    const persist = async () => {
+      try {
+        if (currentChatIdRef.current) {
+          await updateChat(currentChatIdRef.current, messages)
+        } else {
+          const newId = await saveChat(messages)
+          if (newId) {
+            currentChatIdRef.current = newId
+            router.replace(`/chat?chatId=${newId}`, { scroll: false })
+          }
+        }
+      } catch (err) {
+        console.error('Failed to persist chat:', err)
+      }
+    }
+    persist()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading])
+
   // Group messages by sender for better visual presentation
   const groupedMessages = messages.reduce((groups: Message[][], message, index) => {
     const prevMessage = messages[index - 1]
@@ -356,9 +398,6 @@ export default function ChatInterface() {
     try {
       setIsSubmitting(true)
       setError(null)
-      
-      // Store the input value for later use with chat saving
-      const userInput = input
       
       // Clear the input right away for better UX
       handleInputChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>)
@@ -451,11 +490,12 @@ export default function ChatInterface() {
     loadExistingChat()
   }, [chatId, user?.id, initialLoadComplete, setMessages, router])
 
-  // Clear messages when starting a new conversation (chatId undefined)
+  // Clear messages and reset tracking ref when starting a new conversation
   useEffect(() => {
     if (!chatId) {
       setMessages([])
       setInitialLoadComplete(false)
+      currentChatIdRef.current = undefined
     }
   }, [chatId, setMessages])
 
@@ -520,12 +560,14 @@ export default function ChatInterface() {
     // Save chat if user is authenticated
     if (user?.id && !user?.isAnonymous) {
       try {
-        if (chatId) {
-          await updateChat(chatId, newMessages)
+        const activeChatId = currentChatIdRef.current || chatId
+        if (activeChatId) {
+          await updateChat(activeChatId, newMessages)
         } else {
           const newChatId = await saveChat(newMessages)
           if (newChatId) {
-            router.replace(`/?chatId=${newChatId}`, { scroll: false })
+            currentChatIdRef.current = newChatId
+            router.replace(`/chat?chatId=${newChatId}`, { scroll: false })
             toast.success("Chat saved successfully")
           }
         }

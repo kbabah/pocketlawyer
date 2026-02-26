@@ -264,13 +264,37 @@ export async function verifyPayment(paymentId: string): Promise<PaymentResult> {
       updatedAt: serverTimestamp(),
     })
 
-    // If completed, update booking
+    // If completed, update booking via API (so server can auto-generate meeting link)
     if (status === 'completed') {
-      await updateDoc(doc(db, 'bookings', payment.bookingId), {
-        paymentStatus: 'completed',
-        status: 'confirmed',
-        updatedAt: new Date(),
-      })
+      try {
+        const { auth } = await import('@/lib/firebase')
+        const user = auth.currentUser
+        if (!user) {
+          // Fallback to direct update if no auth context (should be rare in client flows)
+          await updateDoc(doc(db, 'bookings', payment.bookingId), {
+            paymentStatus: 'completed',
+            status: 'confirmed',
+            updatedAt: new Date(),
+          })
+        } else {
+          const token = await user.getIdToken()
+          // First, persist paymentStatus; then trigger confirm action which will generate meeting link if needed
+          await updateDoc(doc(db, 'bookings', payment.bookingId), {
+            paymentStatus: 'completed',
+            updatedAt: new Date(),
+          })
+          await fetch(`/api/bookings/${payment.bookingId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ action: 'confirm' }),
+          })
+        }
+      } catch (e) {
+        console.error('Error confirming booking after payment:', e)
+      }
 
       // TODO: Send confirmation email
 

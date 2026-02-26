@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
+import { generateMeetingLink } from '@/lib/server/meeting-service';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function PATCH(
@@ -58,7 +59,7 @@ export async function PATCH(
     const updates: Record<string, any> = { updatedAt: FieldValue.serverTimestamp() };
 
     switch (action) {
-      case 'confirm':
+      case 'confirm': {
         if (!isLawyer) {
           return NextResponse.json({ error: 'Only the lawyer can confirm bookings' }, { status: 403 });
         }
@@ -66,8 +67,33 @@ export async function PATCH(
           return NextResponse.json({ error: 'Booking is not pending' }, { status: 400 });
         }
         updates.status = 'confirmed';
-        if (meetingLink) updates.meetingLink = meetingLink;
+
+        // If this is a video consultation and no meeting link is provided or exists, auto-generate one
+        const isVideo = booking.type === 'video';
+        const hasExistingLink = Boolean(booking.meetingLink);
+
+        if (meetingLink) {
+          updates.meetingLink = meetingLink;
+        } else if (isVideo && !hasExistingLink) {
+          try {
+            const startTime: Date = booking.date?.toDate ? booking.date.toDate() : new Date(booking.date);
+            const details = await generateMeetingLink({
+              bookingId: bookingId,
+              lawyerName: booking.lawyerName,
+              userName: booking.userName,
+              startTime,
+              duration: booking.duration,
+            });
+            updates.meetingLink = details.meetingLink;
+            updates.meetingId = details.meetingId;
+            updates.meetingProvider = details.provider;
+          } catch (e) {
+            console.error('Failed to auto-generate meeting link on confirm:', e);
+            // Do not fail confirmation due to link generation issues
+          }
+        }
         break;
+      }
 
       case 'cancel':
         if (booking.status === 'completed') {

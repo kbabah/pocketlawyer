@@ -32,10 +32,15 @@ export function useChatFeedback() {
     }))
 
     try {
+      const { auth } = await import('@/lib/firebase')
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) throw new Error('Not authenticated')
+
       const response = await fetch('/api/chat/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       })
@@ -99,12 +104,21 @@ export function useChatFeedback() {
   }, [])
 
   const loadExistingFeedback = useCallback(async (chatId?: string, messageId?: string) => {
+    // Nothing to query
+    if (!chatId && !messageId) return []
+
     try {
+      const { auth } = await import('@/lib/firebase')
+      const token = await auth.currentUser?.getIdToken()
+      if (!token) return []
+
       const params = new URLSearchParams()
       if (chatId) params.append('chatId', chatId)
       if (messageId) params.append('messageId', messageId)
 
-      const response = await fetch(`/api/chat/feedback?${params.toString()}`)
+      const response = await fetch(`/api/chat/feedback?${params.toString()}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
       
       if (!response.ok) {
         throw new Error('Failed to load existing feedback')
@@ -127,8 +141,7 @@ export function useChatFeedback() {
       return feedback
 
     } catch (error: any) {
-      console.error('Failed to load existing feedback:', error)
-      // Don't show toast for this error as it's not critical
+      // Non-critical — don't surface to user
       return []
     }
   }, [])
