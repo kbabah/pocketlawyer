@@ -11,7 +11,7 @@ import {
   User, Search, Sparkles, Scale, FileText, Send, Loader2, AlertTriangle, 
   MessageCircle, ChevronUp, ChevronDown, X, HelpCircle, 
   BookOpen, Keyboard, Info, ArrowRight, Check, Copy, Share, ThumbsUp,
-  ThumbsDown, MoreHorizontal, ArrowDown, Paperclip
+  ThumbsDown, MoreHorizontal, ArrowDown, Paperclip, Lock
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { 
@@ -386,13 +386,14 @@ export default function ChatInterface() {
     
     if (!input.trim() || isLoading) return
     
-    if (user?.isAnonymous && !hasStartedConversation) {
+    // Check guest message limit on every submission
+    if (user?.isAnonymous) {
       if (isTrialLimitReached()) {
-        toast.error("Trial limit reached. Please sign up to continue.")
+        toast.error(t("Free message limit reached. Create a free account to continue."))
         return
       }
-      setHasStartedConversation(true)
       incrementTrialConversations()
+      setHasStartedConversation(true)
     }
     
     try {
@@ -596,32 +597,34 @@ export default function ChatInterface() {
     if (!user?.isAnonymous || !isTrialLimitReached()) return null;
     
     return (
-      <div className="mb-4 p-4 border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50 dark:bg-amber-900/30 animate-in fade-in duration-300">
-        <div className="flex flex-col gap-3">
+      <div className="mb-4 p-5 border-2 border-amber-300 dark:border-amber-700 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 animate-in fade-in duration-300 shadow-sm">
+        <div className="flex flex-col gap-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full">
+              <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
             <div className="flex-1">
-              <h3 className="font-medium text-amber-800 dark:text-amber-400 mb-1">
-                {t("Trial Access Complete")}
+              <h3 className="font-semibold text-lg text-amber-900 dark:text-amber-300 mb-1">
+                {t("You've used all 10 free messages")}
               </h3>
-              <p className="text-sm text-amber-700 dark:text-amber-300">
-                {t("You've reached your free trial limit. Create an account to continue receiving unlimited legal assistance and save your conversation history.")}
+              <p className="text-sm text-amber-800 dark:text-amber-300/80">
+                {t("Create a free account to get unlimited AI legal assistance and save your conversation history.")}
               </p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <Button 
-              size="sm" 
+              size="default"
               onClick={() => router.push("/sign-up")} 
-              className="bg-amber-600 hover:bg-amber-700 w-full transition-all duration-200"
+              className="bg-amber-600 hover:bg-amber-700 w-full font-semibold transition-all duration-200"
             >
               {t("Create Free Account")}
             </Button>
             <Button 
-              size="sm" 
+              size="default"
               variant="outline" 
               onClick={() => router.push("/sign-in")} 
-              className="border-amber-600 text-amber-600 hover:bg-amber-50 dark:border-amber-500 dark:text-amber-400 dark:hover:bg-amber-950/50 w-full transition-all duration-200"
+              className="border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-950/50 w-full transition-all duration-200"
             >
               {t("Sign In")}
             </Button>
@@ -1028,13 +1031,6 @@ export default function ChatInterface() {
             </div>
           )}
 
-          {/* Trial limit alert */}
-          {isTrialLimitReached() && (
-            <div className="flex-shrink-0 px-4 pt-4">
-              <TrialLimitAlert />
-            </div>
-          )}
-
           {/* Scrollable messages container */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden chat-messages-container px-4">
             {renderMessages()}
@@ -1055,8 +1051,11 @@ export default function ChatInterface() {
             </div>
           )}
 
-          {/* Input area - Claude AI style */}
+          {/* Input area - blocked for guests who hit the limit */}
           <div className="flex-shrink-0 px-4 py-3 bg-background border-t border-border">
+            {user?.isAnonymous && isTrialLimitReached() ? (
+              <TrialLimitAlert />
+            ) : (
             <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full">
               <div className="rounded-2xl border border-border bg-background shadow-md flex flex-col">
                 <Textarea
@@ -1100,10 +1099,10 @@ export default function ChatInterface() {
                   </Button>
                 </div>
               </div>
-              {user?.isAnonymous && !isTrialLimitReached() && (
+              {user?.isAnonymous && (
                 <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
-                  <span>
-                    {getTrialConversationsRemaining()} {t("trial conversations remaining")}
+                  <span className={getTrialConversationsRemaining() <= 3 ? 'text-amber-600 dark:text-amber-400 font-medium' : ''}>
+                    {getTrialConversationsRemaining()} {t("free messages remaining")}
                   </span>
                   <Button variant="link" className="px-1 py-0 h-auto text-xs" onClick={() => router.push("/sign-up")}>
                     {t("Sign up for unlimited access")}
@@ -1111,6 +1110,7 @@ export default function ChatInterface() {
                 </div>
               )}
             </form>
+            )}
           </div>
         </div>
       </TooltipProvider>

@@ -90,7 +90,10 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
     // Check for existing anonymous ID
     let anonymousId = localStorage.getItem(ANONYMOUS_ID_KEY) || uuidv4();
     localStorage.setItem(ANONYMOUS_ID_KEY, anonymousId);
-    localStorage.setItem(TRIAL_CONVERSATIONS_KEY, "0");
+    // Only initialise the counter if it has never been set — preserves count across page reloads
+    if (localStorage.getItem(TRIAL_CONVERSATIONS_KEY) === null) {
+      localStorage.setItem(TRIAL_CONVERSATIONS_KEY, "0");
+    }
     
     const trialConversationsUsed = parseInt(localStorage.getItem(TRIAL_CONVERSATIONS_KEY) || "0", 10);
     
