@@ -28,6 +28,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLanguage } from "@/contexts/language-context"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { ThemeLogo } from "@/components/theme-logo"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { useChatHistory } from "@/hooks/use-chat-history"
 import { FeedbackDialog } from "@/components/feedback-dialog"
 import { QuickActions } from "@/components/quick-actions"
@@ -380,6 +381,7 @@ export function AppSidebar() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <ThemeSwitcher 
                 isWelcomePage={false} 
                 className={`touch-manipulation ${isMobile ? 'h-10 w-10' : 'h-8 w-8'}`} 

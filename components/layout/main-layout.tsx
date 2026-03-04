@@ -3,6 +3,7 @@
 import { ReactNode } from "react"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { cn } from "@/lib/utils"
 
 interface MainLayoutProps {
@@ -69,6 +70,7 @@ export function MainLayout({
             
             {/* Right side */}
             <div className="flex items-center gap-2">
+              <LanguageSwitcher />
               <div className="px-2 sm:px-3 py-1 bg-primary/10 border border-primary/30 rounded-full">
                 <span className="text-xs font-mono text-primary">ONLINE</span>
               </div>

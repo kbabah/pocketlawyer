@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import MainLayout from "@/components/layout/main-layout"
+import { useLanguage } from "@/contexts/language-context"
 
 export default function ContactPage() {
+  const { t } = useLanguage()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState("")
@@ -25,9 +27,9 @@ export default function ContactPage() {
       setName("")
       setEmail("")
       setMessage("")
-      alert("Your message has been sent successfully!")
+      alert(t("contact.success"))
     } catch (error) {
-      alert("Failed to send message. Please try again later.")
+      alert(t("contact.error"))
     } finally {
       setSubmitting(false)
     }
@@ -38,13 +40,13 @@ export default function ContactPage() {
       <div className="max-w-md mx-auto">
         <Card className="bg-slate-900/50 border-slate-800">
           <CardHeader>
-              <CardTitle>Contact Us</CardTitle>
-              <CardDescription>Have questions or feedback? Send us a message below.</CardDescription>
+              <CardTitle>{t("contact.title")}</CardTitle>
+              <CardDescription>{t("contact.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{t("contact.name")}</Label>
                   <Input
                     id="name"
                     value={name}
@@ -53,7 +55,7 @@ export default function ContactPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t("contact.email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -63,7 +65,7 @@ export default function ContactPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
+                  <Label htmlFor="message">{t("contact.message")}</Label>
                   <Textarea
                     id="message"
                     value={message}
@@ -74,10 +76,10 @@ export default function ContactPage() {
                 </div>
                 <div className="flex gap-4">
                   <Button type="submit" disabled={submitting}>
-                    {submitting ? "Sending..." : "Send Message"}
+                    {submitting ? t("contact.sending") : t("contact.send")}
                   </Button>
                   <Link href="/">
-                    <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">Back to Home</Button>
+                    <Button variant="outline" className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800">{t("contact.back")}</Button>
                   </Link>
                 </div>
               </form>

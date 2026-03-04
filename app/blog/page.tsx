@@ -231,17 +231,17 @@ export default function BlogPage() {
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2 text-muted-foreground">Loading articles...</span>
+                <span className="ml-2 text-muted-foreground">{t("Loading articles...")}</span>
               </div>
             ) : error ? (
               <div className="bg-destructive/10 text-destructive p-4 rounded-lg text-center">
-                <p>{error}</p>
+                <p>{t(error)}</p>
                 <Button 
                   onClick={() => window.location.reload()} 
                   variant="outline" 
                   className="mt-2"
                 >
-                  Try Again
+                  {t("Try Again")}
                 </Button>
               </div>
             ) : (

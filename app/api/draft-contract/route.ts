@@ -4,7 +4,7 @@ import { OPENAI_MODELS } from "@/lib/openai"
 import { logger } from "@/lib/logger"
 import { rateLimit, getIdentifier } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
-import { getKnowledgeContext } from "@/lib/knowledge-base"
+import { getCombinedKnowledgeContext } from '@/lib/knowledge-base'
 
 export const maxDuration = 30
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     }
 
     const lastUserMessage = messages?.filter((m: any) => m.role === "user").pop()?.content || ""
-    const knowledgeContext = getKnowledgeContext(
+    const knowledgeContext = await getCombinedKnowledgeContext(
       contractType || lastUserMessage,
       "contract_template"
     )

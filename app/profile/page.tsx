@@ -109,10 +109,10 @@ export default function Profile() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl flex items-center gap-2 font-mono">
               <Scale className="h-6 w-6 text-primary" />
-              Profile Settings
+              {t("profile.settings.title")}
             </CardTitle>
             <CardDescription>
-              Update your profile information and password
+              {t("profile.settings.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -123,15 +123,15 @@ export default function Profile() {
                   className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2"
                 >
                   <Shield className="h-4 w-4" />
-                  Go To Admin
+                  {t("profile.go.to.admin")}
                 </Button>
               </div>
             )}
             
             <Tabs defaultValue="profile" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="password">Password</TabsTrigger>
+                <TabsTrigger value="profile">{t("profile.tab")}</TabsTrigger>
+                <TabsTrigger value="password">{t("profile.password.tab")}</TabsTrigger>
               </TabsList>
               
               <TabsContent value="profile">
@@ -160,7 +160,7 @@ export default function Profile() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">{t("profile.name")}</Label>
                     <Input
                       id="name"
                       value={name}
@@ -169,7 +169,7 @@ export default function Profile() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t("profile.email")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -179,7 +179,7 @@ export default function Profile() {
                     />
                     {user.provider === "google" && (
                       <p className="text-sm text-muted-foreground">
-                        Email cannot be changed for Google accounts
+                        {t("profile.email.google")}
                       </p>
                     )}
                   </div>
@@ -197,7 +197,7 @@ export default function Profile() {
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Update Profile"
+                      t("profile.update.button")
                     )}
                   </Button>
                 </form>
@@ -206,7 +206,7 @@ export default function Profile() {
               <TabsContent value="password">
                 <form onSubmit={handlePasswordUpdate} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Label htmlFor="currentPassword">{t("profile.current.password")}</Label>
                     <Input
                       id="currentPassword"
                       type="password"
@@ -217,7 +217,7 @@ export default function Profile() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword">{t("profile.new.password")}</Label>
                     <Input
                       id="newPassword"
                       type="password"
@@ -228,7 +228,7 @@ export default function Profile() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
+                    <Label htmlFor="confirmNewPassword">{t("profile.confirm.password")}</Label>
                     <Input
                       id="confirmNewPassword"
                       type="password"
@@ -241,7 +241,7 @@ export default function Profile() {
                   {user.provider === "google" && (
                     <Alert>
                       <AlertDescription>
-                        Password management is handled by Google for Google accounts
+                        {t("profile.password.google")}
                       </AlertDescription>
                     </Alert>
                   )}
@@ -263,7 +263,7 @@ export default function Profile() {
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Update Password"
+                      t("profile.update.password.button")
                     )}
                   </Button>
                 </form>

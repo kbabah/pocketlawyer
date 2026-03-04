@@ -16,6 +16,7 @@ import { toast } from "sonner"
 import { doc, getDoc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Lawyer } from "@/types/lawyer"
+import { useLanguage } from "@/contexts/language-context"
 
 const SPECIALTIES = [
   "Corporate Law",
@@ -32,6 +33,7 @@ const SPECIALTIES = [
 
 export default function EditLawyerProfile() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -68,7 +70,7 @@ export default function EditLawyerProfile() {
       const lawyerDoc = await getDoc(doc(db, "lawyers", user.id))
       
       if (!lawyerDoc.exists()) {
-        toast.error("Lawyer profile not found")
+        toast.error(t("lawyer.edit.not.found"))
         router.push("/lawyer/dashboard")
         return
       }
@@ -90,7 +92,7 @@ export default function EditLawyerProfile() {
       setLanguages(data.languages || ["English", "French"])
     } catch (error) {
       console.error("Error loading profile:", error)
-      toast.error("Failed to load profile")
+      toast.error(t("lawyer.edit.load.error"))
     } finally {
       setLoading(false)
     }
@@ -101,32 +103,32 @@ export default function EditLawyerProfile() {
 
     // Validation
     if (!name.trim()) {
-      toast.error("Name is required")
+      toast.error(t("lawyer.edit.error.name"))
       return
     }
 
     if (!phone.trim()) {
-      toast.error("Phone is required")
+      toast.error(t("lawyer.edit.error.phone"))
       return
     }
 
     if (!bio.trim()) {
-      toast.error("Bio is required")
+      toast.error(t("lawyer.edit.error.bio"))
       return
     }
 
     if (specialties.length === 0) {
-      toast.error("Select at least one specialty")
+      toast.error(t("lawyer.edit.error.specialty"))
       return
     }
 
     if (!experience || parseInt(experience) < 0) {
-      toast.error("Valid experience is required")
+      toast.error(t("lawyer.edit.error.experience"))
       return
     }
 
     if (!hourlyRate || parseInt(hourlyRate) < 0) {
-      toast.error("Valid hourly rate is required")
+      toast.error(t("lawyer.edit.error.rate"))
       return
     }
 
@@ -148,11 +150,11 @@ export default function EditLawyerProfile() {
         updatedAt: new Date(),
       })
 
-      toast.success("Profile updated successfully!")
+      toast.success(t("lawyer.edit.success"))
       router.push("/lawyer/dashboard")
     } catch (error) {
       console.error("Error updating profile:", error)
-      toast.error("Failed to update profile")
+      toast.error(t("lawyer.edit.save.error"))
     } finally {
       setSaving(false)
     }
@@ -200,11 +202,11 @@ export default function EditLawyerProfile() {
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
+            {t("lawyer.edit.back")}
           </Button>
-          <h1 className="text-3xl font-bold mb-2">Edit Profile</h1>
+          <h1 className="text-3xl font-bold mb-2">{t("lawyer.edit.title")}</h1>
           <p className="text-muted-foreground">
-            Update your professional information
+            {t("lawyer.edit.subtitle")}
           </p>
         </div>
 
@@ -212,9 +214,9 @@ export default function EditLawyerProfile() {
           {/* Profile Picture */}
           <Card>
             <CardHeader>
-              <CardTitle>Profile Picture</CardTitle>
+              <CardTitle>{t("lawyer.edit.picture")}</CardTitle>
               <CardDescription>
-                Upload a professional photo (max 2MB)
+                {t("lawyer.edit.picture.desc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center">
@@ -232,12 +234,12 @@ export default function EditLawyerProfile() {
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle>{t("lawyer.edit.basic")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name *</Label>
+                  <Label htmlFor="name">{t("lawyer.edit.fullname")}</Label>
                   <Input
                     id="name"
                     value={name}
@@ -247,7 +249,7 @@ export default function EditLawyerProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">{t("lawyer.edit.email")}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -258,7 +260,7 @@ export default function EditLawyerProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="phone">{t("lawyer.edit.phone")}</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -269,7 +271,7 @@ export default function EditLawyerProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="barNumber">Bar Number</Label>
+                  <Label htmlFor="barNumber">{t("lawyer.edit.bar")}</Label>
                   <Input
                     id="barNumber"
                     value={barNumber}
@@ -280,12 +282,12 @@ export default function EditLawyerProfile() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="bio">Professional Bio *</Label>
+                <Label htmlFor="bio">{t("lawyer.edit.bio")}</Label>
                 <Textarea
                   id="bio"
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  placeholder="Tell potential clients about yourself..."
+                  placeholder={t("lawyer.edit.bio.placeholder")}
                   rows={4}
                 />
                 <p className="text-xs text-muted-foreground">
@@ -298,11 +300,11 @@ export default function EditLawyerProfile() {
           {/* Professional Details */}
           <Card>
             <CardHeader>
-              <CardTitle>Professional Details</CardTitle>
+              <CardTitle>{t("lawyer.edit.professional")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Specialties * (Select all that apply)</Label>
+                <Label>{t("lawyer.edit.specialties")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {SPECIALTIES.map((specialty) => (
                     <Badge
@@ -319,7 +321,7 @@ export default function EditLawyerProfile() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="experience">Years of Experience *</Label>
+                  <Label htmlFor="experience">{t("lawyer.edit.experience")}</Label>
                   <Input
                     id="experience"
                     type="number"
@@ -331,7 +333,7 @@ export default function EditLawyerProfile() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="hourlyRate">Hourly Rate (XAF) *</Label>
+                  <Label htmlFor="hourlyRate">{t("lawyer.edit.rate")}</Label>
                   <Input
                     id="hourlyRate"
                     type="number"
@@ -345,7 +347,7 @@ export default function EditLawyerProfile() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="education">Education</Label>
+                <Label htmlFor="education">{t("lawyer.edit.education")}</Label>
                 <Textarea
                   id="education"
                   value={education}
@@ -356,7 +358,7 @@ export default function EditLawyerProfile() {
               </div>
 
               <div className="space-y-2">
-                <Label>Languages</Label>
+                <Label>{t("lawyer.edit.languages")}</Label>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {languages.map((lang) => (
                     <Badge key={lang} variant="secondary" className="gap-1">
@@ -374,11 +376,11 @@ export default function EditLawyerProfile() {
                   <Input
                     value={newLanguage}
                     onChange={(e) => setNewLanguage(e.target.value)}
-                    placeholder="Add language"
+                    placeholder={t("lawyer.edit.add.language")}
                     onKeyPress={(e) => e.key === "Enter" && addLanguage()}
                   />
                   <Button onClick={addLanguage} variant="outline">
-                    Add
+                    {t("lawyer.edit.add")}
                   </Button>
                 </div>
               </div>
@@ -395,12 +397,12 @@ export default function EditLawyerProfile() {
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
+                  {t("lawyer.edit.saving")}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Save Changes
+                  {t("lawyer.edit.save")}
                 </>
               )}
             </Button>
@@ -409,7 +411,7 @@ export default function EditLawyerProfile() {
               onClick={() => router.push("/lawyer/dashboard")}
               disabled={saving}
             >
-              Cancel
+              {t("lawyer.edit.cancel")}
             </Button>
           </div>
         </div>

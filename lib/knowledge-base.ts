@@ -1,5 +1,4 @@
-import { db } from "@/lib/firebase"
-import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore"
+import { adminDb } from "@/lib/firebase-admin"
 import { logger } from "@/lib/logger"
 
 // ============================================================
@@ -726,7 +725,7 @@ export function getKnowledgeContext(
 }
 
 /**
- * Fetch user-uploaded knowledge base documents from Firestore
+ * Fetch user-uploaded knowledge base documents from Firestore (Admin SDK)
  */
 export async function fetchFirestoreKnowledge(
   searchQuery: string,
@@ -734,13 +733,18 @@ export async function fetchFirestoreKnowledge(
   maxResults: number = 3
 ): Promise<KnowledgeEntry[]> {
   try {
-    const kbRef = collection(db, "knowledge_base")
-    let q = category
-      ? query(kbRef, where("category", "==", category), orderBy("createdAt", "desc"), limit(maxResults))
-      : query(kbRef, orderBy("createdAt", "desc"), limit(maxResults * 2))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let q: any = adminDb.collection("knowledge_base")
+      .orderBy("createdAt", "desc")
 
-    const snapshot = await getDocs(q)
-    const entries: KnowledgeEntry[] = snapshot.docs.map(doc => ({
+    if (category) {
+      q = q.where("category", "==", category).limit(maxResults)
+    } else {
+      q = q.limit(maxResults * 2)
+    }
+
+    const snapshot = await q.get()
+    const entries: KnowledgeEntry[] = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     } as KnowledgeEntry))

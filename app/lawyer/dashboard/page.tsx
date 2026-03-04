@@ -202,7 +202,7 @@ export default function LawyerDashboardPage() {
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <Terminal className="h-12 w-12 text-primary animate-pulse" />
-            <p className="text-muted-foreground font-mono">Initializing dashboard...</p>
+            <p className="text-muted-foreground font-mono">{t("lawyer.dashboard.initializing")}</p>
           </div>
         </div>
       </MainLayout>
@@ -260,7 +260,7 @@ export default function LawyerDashboardPage() {
                 className="text-primary hover:text-primary/80 font-mono px-2 md:px-3"
               >
                 <Settings className="h-4 w-4 md:mr-1" />
-                <span className="hidden md:inline">EDIT PROFILE</span>
+                <span className="hidden md:inline">{t("lawyer.dashboard.edit.profile")}</span>
               </Button>
               <Button
                 variant="ghost"
@@ -269,7 +269,7 @@ export default function LawyerDashboardPage() {
                 className="text-muted-foreground hover:text-foreground font-mono px-2 md:px-3"
               >
                 <ChevronRight className="h-4 w-4 md:mr-1" />
-                <span className="hidden md:inline">CLIENT VIEW</span>
+                <span className="hidden md:inline">{t("lawyer.dashboard.client.view")}</span>
               </Button>
               <Button
                 variant="ghost"
@@ -278,7 +278,7 @@ export default function LawyerDashboardPage() {
                 className="text-red-400 hover:text-red-300 font-mono px-2 md:px-3"
               >
                 <LogOut className="h-4 w-4 md:mr-1" />
-                <span className="hidden md:inline">EXIT</span>
+                <span className="hidden md:inline">{t("lawyer.dashboard.exit")}</span>
               </Button>
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function LawyerDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
             icon={<Activity className="h-5 w-5" />}
-            label="PENDING"
+            label={t("lawyer.dashboard.label.pending")}
             value={pendingBookings.length}
             color="text-yellow-400"
             bgColor="bg-yellow-500/10"
@@ -298,7 +298,7 @@ export default function LawyerDashboardPage() {
           />
           <StatCard
             icon={<Zap className="h-5 w-5" />}
-            label="UPCOMING"
+            label={t("lawyer.dashboard.label.upcoming")}
             value={upcomingBookings.length}
             color="text-primary"
             bgColor="bg-primary/10"
@@ -306,7 +306,7 @@ export default function LawyerDashboardPage() {
           />
           <StatCard
             icon={<CheckCircle className="h-5 w-5" />}
-            label="COMPLETED"
+            label={t("lawyer.dashboard.label.completed")}
             value={completedBookings.length}
             color="text-blue-400"
             bgColor="bg-blue-500/10"
@@ -314,7 +314,7 @@ export default function LawyerDashboardPage() {
           />
           <StatCard
             icon={<DollarSign className="h-5 w-5" />}
-            label="EARNINGS"
+            label={t("lawyer.dashboard.label.earnings")}
             value={`${totalEarnings.toLocaleString()} XAF`}
             color="text-purple-400"
             bgColor="bg-purple-500/10"
@@ -331,7 +331,7 @@ export default function LawyerDashboardPage() {
                 className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
               >
                 <Terminal className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
-                <span>PENDING</span>
+                <span>{t("lawyer.dashboard.pending")}</span>
                 <span className="ml-1">({pendingBookings.length})</span>
               </TabsTrigger>
               <TabsTrigger
@@ -339,7 +339,7 @@ export default function LawyerDashboardPage() {
                 className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
               >
                 <Calendar className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
-                <span>UPCOMING</span>
+                <span>{t("lawyer.dashboard.upcoming")}</span>
                 <span className="ml-1">({upcomingBookings.length})</span>
               </TabsTrigger>
               <TabsTrigger
@@ -347,7 +347,7 @@ export default function LawyerDashboardPage() {
                 className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
               >
                 <BarChart3 className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
-                <span>HISTORY</span>
+                <span>{t("lawyer.dashboard.history")}</span>
                 <span className="ml-1">({completedBookings.length})</span>
               </TabsTrigger>
               <TabsTrigger
@@ -355,14 +355,14 @@ export default function LawyerDashboardPage() {
                 className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-mono text-xs md:text-sm"
               >
                 <Settings className="h-4 w-4 mr-1 md:mr-2 flex-shrink-0" />
-                CONFIG
+                {t("lawyer.dashboard.config")}
               </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value="pending" className="space-y-4">
             {pendingBookings.length === 0 ? (
-              <EmptyState message="No pending bookings" />
+              <EmptyState message={t("lawyer.dashboard.no.pending")} />
             ) : (
               pendingBookings.map(booking => (
                 <BookingCard
@@ -386,7 +386,7 @@ export default function LawyerDashboardPage() {
 
           <TabsContent value="upcoming" className="space-y-4">
             {upcomingBookings.length === 0 ? (
-              <EmptyState message="No upcoming bookings" />
+              <EmptyState message={t("lawyer.dashboard.no.upcoming")} />
             ) : (
               upcomingBookings.map(booking => (
                 <BookingCard
@@ -407,7 +407,7 @@ export default function LawyerDashboardPage() {
 
           <TabsContent value="completed" className="space-y-4">
             {completedBookings.length === 0 ? (
-              <EmptyState message="No completed bookings yet" />
+              <EmptyState message={t("lawyer.dashboard.no.completed")} />
             ) : (
               completedBookings.map(booking => (
                 <BookingCard
@@ -426,9 +426,9 @@ export default function LawyerDashboardPage() {
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground font-mono">AVAILABILITY CONFIG</h3>
+                  <h3 className="text-lg font-bold text-foreground font-mono">{t("lawyer.dashboard.availability")}</h3>
                   <p className="text-sm text-muted-foreground font-mono mt-1">
-                    Configure your weekly schedule
+                    {t("lawyer.dashboard.availability.desc")}
                   </p>
                 </div>
                 <Button
@@ -436,7 +436,7 @@ export default function LawyerDashboardPage() {
                   className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  EDIT
+                  {t("lawyer.dashboard.edit")}
                 </Button>
               </div>
               
@@ -449,8 +449,8 @@ export default function LawyerDashboardPage() {
                     </div>
                     <span className="text-sm font-mono text-muted-foreground">
                       {lawyer.availability[day].available 
-                        ? `${lawyer.availability[day].hours.length} slots` 
-                        : 'OFFLINE'
+                        ? `${lawyer.availability[day].hours.length} ${t("lawyer.dashboard.slots").replace("{count}", String(lawyer.availability[day].hours.length))}` 
+                        : t("lawyer.dashboard.offline")
                       }
                     </span>
                   </div>
@@ -461,9 +461,9 @@ export default function LawyerDashboardPage() {
             <div className="bg-card border border-border rounded-lg p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-bold text-foreground font-mono">PROFILE SETTINGS</h3>
+                  <h3 className="text-lg font-bold text-foreground font-mono">{t("lawyer.dashboard.profile.settings")}</h3>
                   <p className="text-sm text-muted-foreground font-mono mt-1">
-                    Manage your professional profile
+                    {t("lawyer.dashboard.profile.desc")}
                   </p>
                 </div>
                 <Button
@@ -471,29 +471,29 @@ export default function LawyerDashboardPage() {
                   className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 font-mono"
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  EDIT PROFILE
+                  {t("lawyer.dashboard.edit.profile")}
                 </Button>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <MetricItem label="RATING" value={`${lawyer.rating.toFixed(1)} ⭐`} />
-                <MetricItem label="REVIEWS" value={lawyer.totalReviews} />
-                <MetricItem label="HOURLY RATE" value={`${lawyer.hourlyRate} XAF`} />
-                <MetricItem label="STATUS" value={lawyer.status.toUpperCase()} />
-                <MetricItem label="SPECIALTIES" value={lawyer.specializations?.length || 0} />
-                <MetricItem label="EXPERIENCE" value={`${lawyer.experience} years`} />
+                <MetricItem label={t("lawyer.dashboard.label.rating")} value={`${lawyer.rating.toFixed(1)} ⭐`} />
+                <MetricItem label={t("lawyer.dashboard.label.reviews")} value={lawyer.totalReviews} />
+                <MetricItem label={t("lawyer.dashboard.label.rate")} value={`${lawyer.hourlyRate} XAF`} />
+                <MetricItem label={t("lawyer.dashboard.label.status")} value={lawyer.status.toUpperCase()} />
+                <MetricItem label={t("lawyer.dashboard.label.specialties")} value={lawyer.specializations?.length || 0} />
+                <MetricItem label={t("lawyer.dashboard.label.experience")} value={t("lawyer.dashboard.years").replace("{n}", String(lawyer.experience))} />
               </div>
             </div>
 
             <div className="bg-card border border-border rounded-lg p-6">
-              <h3 className="text-lg font-bold text-foreground font-mono mb-4">ACCOUNT</h3>
+              <h3 className="text-lg font-bold text-foreground font-mono mb-4">{t("lawyer.dashboard.account")}</h3>
               <Button
                 onClick={() => signOut()}
                 variant="outline"
                 className="w-full border-red-500/30 text-red-400 hover:bg-red-500/20 font-mono"
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                SIGN OUT
+                {t("lawyer.dashboard.sign.out")}
               </Button>
             </div>
           </TabsContent>
@@ -504,14 +504,14 @@ export default function LawyerDashboardPage() {
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="bg-background border-border">
           <DialogHeader>
-            <DialogTitle className="font-mono text-primary">CONFIRM BOOKING</DialogTitle>
+            <DialogTitle className="font-mono text-primary">{t("lawyer.dashboard.confirm.title")}</DialogTitle>
             <DialogDescription className="font-mono text-muted-foreground">
-              Approve this consultation request
+              {t("lawyer.dashboard.confirm.desc")}
             </DialogDescription>
           </DialogHeader>
           {selectedBooking?.type === 'video' && (
             <div className="space-y-2">
-              <Label className="font-mono text-foreground">Meeting Link</Label>
+              <Label className="font-mono text-foreground">{t("lawyer.dashboard.confirm.meeting")}</Label>
               <Input
                 placeholder="https://meet.google.com/xxx-yyyy-zzz"
                 value={meetingLink}
@@ -526,14 +526,14 @@ export default function LawyerDashboardPage() {
               onClick={() => setShowConfirmDialog(false)}
               className="font-mono"
             >
-              CANCEL
+              {t("lawyer.dashboard.cancel")}
             </Button>
             <Button
               onClick={handleConfirmBooking}
               disabled={actionLoading || (selectedBooking?.type === 'video' && !meetingLink)}
               className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
             >
-              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CONFIRM'}
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("lawyer.dashboard.confirm.btn")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -543,9 +543,9 @@ export default function LawyerDashboardPage() {
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="bg-background border-border">
           <DialogHeader>
-            <DialogTitle className="font-mono text-red-400">CANCEL BOOKING</DialogTitle>
+            <DialogTitle className="font-mono text-red-400">{t("lawyer.dashboard.cancel.title")}</DialogTitle>
             <DialogDescription className="font-mono text-muted-foreground">
-              This action cannot be undone
+              {t("lawyer.dashboard.cancel.desc")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -554,14 +554,14 @@ export default function LawyerDashboardPage() {
               onClick={() => setShowCancelDialog(false)}
               className="font-mono"
             >
-              ABORT
+              {t("lawyer.dashboard.abort")}
             </Button>
             <Button
               onClick={handleCancelBooking}
               disabled={actionLoading}
               className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 font-mono"
             >
-              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CANCEL BOOKING'}
+              {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("lawyer.dashboard.cancel.btn")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -571,9 +571,9 @@ export default function LawyerDashboardPage() {
       <Dialog open={showAvailabilityDialog} onOpenChange={setShowAvailabilityDialog}>
         <DialogContent className="bg-background border-border max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-mono text-primary">EDIT AVAILABILITY</DialogTitle>
+            <DialogTitle className="font-mono text-primary">{t("lawyer.dashboard.avail.title")}</DialogTitle>
             <DialogDescription className="font-mono text-muted-foreground">
-              Configure your weekly schedule
+              {t("lawyer.dashboard.avail.desc")}
             </DialogDescription>
           </DialogHeader>
           
@@ -628,14 +628,14 @@ export default function LawyerDashboardPage() {
               onClick={() => setShowAvailabilityDialog(false)}
               className="font-mono"
             >
-              CANCEL
+              {t("lawyer.dashboard.cancel")}
             </Button>
             <Button
               onClick={handleSaveAvailability}
               disabled={savingAvailability}
               className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
             >
-              {savingAvailability ? <Loader2 className="h-4 w-4 animate-spin" /> : 'SAVE'}
+              {savingAvailability ? <Loader2 className="h-4 w-4 animate-spin" /> : t("lawyer.dashboard.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -735,7 +735,7 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
                   className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
-                  CONFIRM
+                  {t("lawyer.dashboard.confirm.booking")}
                 </Button>
                 <Button
                   onClick={onCancel}
@@ -744,7 +744,7 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
                   className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-mono"
                 >
                   <X className="h-4 w-4 mr-1" />
-                  DECLINE
+                  {t("lawyer.dashboard.decline")}
                 </Button>
               </>
             )}
@@ -756,7 +756,7 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
                 className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-mono"
               >
                 <X className="h-4 w-4 mr-1" />
-                CANCEL
+                {t("lawyer.dashboard.cancel")}
               </Button>
             )}
             {isPast && onComplete && (
@@ -766,7 +766,7 @@ function BookingCard({ booking, onConfirm, onCancel, onComplete, getStatusColor,
                 className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 font-mono"
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
-                COMPLETE
+                {t("lawyer.dashboard.complete")}
               </Button>
             )}
           </div>
