@@ -169,6 +169,8 @@ export async function POST(req: NextRequest) {
       booking.meetingLink = meetingDetails.meetingLink;
       booking.meetingId = meetingDetails.meetingId;
       booking.meetingProvider = meetingDetails.provider;
+      booking.meetingPin = meetingDetails.pin ?? null;
+      booking.meetingDialInNumber = meetingDetails.dialInNumber ?? null;
     }
 
     await bookingDoc.set(booking);

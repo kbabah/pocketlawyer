@@ -87,6 +87,8 @@ export async function PATCH(
             updates.meetingLink = details.meetingLink;
             updates.meetingId = details.meetingId;
             updates.meetingProvider = details.provider;
+            updates.meetingPin = details.pin ?? null;
+            updates.meetingDialInNumber = details.dialInNumber ?? null;
           } catch (e) {
             console.error('Failed to auto-generate meeting link on confirm:', e);
             // Do not fail confirmation due to link generation issues

@@ -1,5 +1,6 @@
 // Meeting Service for PocketLawyer (Server-Only)
 // Generates video meeting links for consultations
+import crypto from 'crypto'
 
 export type MeetingProvider = 'jitsi' | 'zoom' | 'google-meet'
 
@@ -62,7 +63,6 @@ function generateJitsiMeeting(config: MeetingConfig): MeetingDetails {
     meetingLink,
     meetingId: roomName,
     provider: 'jitsi',
-    dialInNumber: '+1-512-402-2718', // Jitsi dial-in (US number)
     pin: password,
   }
 }
@@ -176,7 +176,7 @@ function sanitizeForRoomName(name: string): string {
 }
 
 function generateSecurePassword(): string {
-  return Math.random().toString(36).slice(2, 10).toUpperCase()
+  return crypto.randomBytes(6).toString('hex').toUpperCase()
 }
 
 async function getZoomAccessToken(): Promise<string> {

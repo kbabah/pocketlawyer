@@ -54,6 +54,14 @@ async function sendWithPostmark(options: EmailOptions, from: string): Promise<bo
 
     const to = Array.isArray(options.to) ? options.to.join(',') : options.to
 
+    // Guard against null/empty recipient — Postmark throws InactiveRecipientsError on empty string
+    if (!to || to.trim() === '') {
+      console.error('Postmark: recipient email is null or empty, skipping send. Subject:', options.subject)
+      return false
+    }
+
+    const messageStream = process.env.POSTMARK_MESSAGE_STREAM || 'outbound'
+
     await client.sendEmail({
       From: from,
       To: to,
@@ -61,12 +69,17 @@ async function sendWithPostmark(options: EmailOptions, from: string): Promise<bo
       HtmlBody: options.html,
       TextBody: options.text,
       ReplyTo: options.replyTo,
-      MessageStream: 'outbound',
+      MessageStream: messageStream,
     })
 
     return true
-  } catch (error) {
-    console.error('Postmark error:', error)
+  } catch (error: any) {
+    // Surface which recipients caused the failure for easier debugging
+    if (error?.recipients?.length) {
+      console.error('Postmark error — inactive/suppressed recipients:', error.recipients, '| Subject:', options.subject)
+    } else {
+      console.error('Postmark error:', error)
+    }
     return false
   }
 }

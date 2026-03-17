@@ -29,14 +29,9 @@ export async function POST(req: NextRequest) {
         )
     }
 
-    if (result) {
-      return NextResponse.json({ success: true })
-    } else {
-      return NextResponse.json(
-        { error: 'Failed to send email' },
-        { status: 500 }
-      )
-    }
+    // Email delivery failures are non-fatal — return 200 so clients don't treat
+    // recipient bounces / suppressions as server errors.
+    return NextResponse.json({ success: result })
   } catch (error: any) {
     console.error('Email API error:', error)
     return NextResponse.json(

@@ -250,7 +250,7 @@ export default function BookLawyerPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            template: 'booking-confirmation',
+            type: 'booking-confirmation',
             userEmail: user.email,
             userName: user.name || user.email,
             lawyerName: lawyer.name,
@@ -260,7 +260,6 @@ export default function BookLawyerPage() {
             consultationType: consultationType,
             amount: calculateTotal(),
             bookingId: createdBookingId,
-            meetingLink: consultationType === 'video' ? undefined : undefined, // TODO: Generate meeting link
           })
         })
 
@@ -269,7 +268,7 @@ export default function BookLawyerPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            template: 'lawyer-notification',
+            type: 'lawyer-notification',
             lawyerEmail: lawyer.email,
             lawyerName: lawyer.name,
             userName: user.name || user.email,

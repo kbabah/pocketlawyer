@@ -62,6 +62,10 @@ export interface Booking {
   paymentMethod?: string
   notes?: string
   meetingLink?: string
+  meetingId?: string
+  meetingProvider?: 'jitsi' | 'zoom' | 'google-meet'
+  meetingPin?: string
+  meetingDialInNumber?: string
   createdAt: Date
   updatedAt: Date
   cancelledBy?: 'user' | 'lawyer' | 'admin'

@@ -217,12 +217,16 @@ export async function updateBookingStatus(
   bookingId: string,
   status: Booking['status']
 ): Promise<void> {
-  const bookingRef = doc(db, 'bookings', bookingId)
-  
-  await updateDoc(bookingRef, {
-    status,
-    updatedAt: new Date(),
-  })
+  const actionMap: Partial<Record<Booking['status'], string>> = {
+    confirmed: 'confirm',
+    cancelled: 'cancel',
+    completed: 'complete',
+  }
+  const action = actionMap[status]
+  if (!action) {
+    throw new Error(`Cannot set booking status to '${status}' via this function`)
+  }
+  await callBookingAction(bookingId, { action })
 }
 
 /**
