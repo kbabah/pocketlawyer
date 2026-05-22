@@ -521,6 +521,7 @@ export default function ChatInterface() {
               <div className="rounded-2xl border border-border bg-background shadow-md flex flex-col">
                 <Textarea
                   ref={inputRef}
+                  data-testid="chat-input"
                   value={input}
                   onChange={handleInputChange}
                   placeholder={t("Type your legal question...")}
