@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
+import { requireAdmin } from '@/lib/api-auth';
 
 // GET - Fetch all email templates
-export async function GET() {
+export async function GET(request: Request) {
+  const authResult = await requireAdmin(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const templatesSnapshot = await adminDb
       .collection('email_templates')
@@ -29,6 +33,9 @@ export async function GET() {
 
 // POST - Create a new email template
 export async function POST(request: Request) {
+  const authResult = await requireAdmin(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await request.json();
     
@@ -70,6 +77,9 @@ export async function POST(request: Request) {
 
 // PUT - Update an existing template
 export async function PUT(request: Request) {
+  const authResult = await requireAdmin(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const body = await request.json();
     const { id, name, subject, htmlContent, textContent, category, isActive } = body;
@@ -109,6 +119,9 @@ export async function PUT(request: Request) {
 
 // DELETE - Delete a template
 export async function DELETE(request: Request) {
+  const authResult = await requireAdmin(request);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

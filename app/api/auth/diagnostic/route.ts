@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase-admin';
+import { devOnlyResponse, isProduction } from '@/lib/api-auth';
 
 export async function GET() {
+  if (isProduction()) {
+    return devOnlyResponse();
+  }
+
   try {
     // Test Firebase Admin SDK
     const testResult: any = {
