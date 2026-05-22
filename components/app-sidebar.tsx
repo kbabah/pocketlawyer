@@ -52,7 +52,9 @@ export function AppSidebar() {
   const { user, signOut, getTrialConversationsRemaining } = useAuth()
   const { t } = useLanguage()
   const router = useRouter()
-  const { chatHistory, loading, deleteChat, renameChat } = useChatHistory(user?.id)
+  const { chatHistory, loading, deleteChat, renameChat } = useChatHistory(
+    user && !user.isAnonymous ? user.id : undefined
+  )
   const { isAdmin, isApprovedLawyer } = useRoleCheck()
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const isMobile = useIsMobile()

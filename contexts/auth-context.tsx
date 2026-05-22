@@ -379,6 +379,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
           // Create a session cookie
           const response = await fetch('/api/auth/session', {
             method: 'POST',
+            credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
             },
@@ -410,7 +411,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
         setUser(anonymousUser);
         
         // Clear the session cookie without waiting
-        fetch('/api/auth/session', { method: 'DELETE' }).catch(console.error);
+        fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' }).catch(console.error);
       }
       setLoading(false);
     });
@@ -464,6 +465,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       // Set the session cookie
       await fetch('/api/auth/session', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
