@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { Message } from 'ai';
+import { chatManageFetch } from '@/lib/chat-api-client';
 
 export interface ChatSession {
   id: string;
@@ -12,6 +13,10 @@ export interface ChatHistory {
   [date: string]: ChatSession[];
 }
 
+/**
+ * Load and sync chat history for signed-in users only.
+ * Pass `undefined` for userId when the user is anonymous or not authenticated.
+ */
 export function useChatHistory(userId: string | undefined) {
   const [chatHistory, setChatHistory] = useState<ChatHistory>({});
   const [loading, setLoading] = useState(false);
@@ -25,19 +30,22 @@ export function useChatHistory(userId: string | undefined) {
     const loadChatHistory = async () => {
       setLoading(true);
       try {
-        console.log(`Fetching chat history for userId: ${userId}`);
-        const response = await fetch(`/api/chat/manage?userId=${encodeURIComponent(userId)}`, {
-          credentials: 'include',
-        });
-        
+        const response = await chatManageFetch(
+          `/api/chat/manage?userId=${encodeURIComponent(userId)}`
+        );
+
+        if (response.status === 401) {
+          setChatHistory({});
+          return;
+        }
+
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'No error details available');
           console.error(`Chat history fetch failed: ${response.status} ${response.statusText}`, errorText);
           throw new Error(`Failed to fetch chat history: ${response.status} ${response.statusText}`);
         }
-        
+
         const chats = await response.json();
-        console.log(`Successfully fetched ${chats.length} chats`);
         const history: ChatHistory = {};
 
         chats.forEach((chat: ChatSession & { userId: string }) => {
@@ -67,7 +75,6 @@ export function useChatHistory(userId: string | undefined) {
 
   const saveChat = async (messages: Message[]) => {
     if (!userId || messages.length === 0) {
-      console.warn("Cannot save chat: missing userId or no messages");
       return null;
     }
 
@@ -80,40 +87,34 @@ export function useChatHistory(userId: string | undefined) {
         timestamp: Date.now(),
       };
 
-      console.log("Attempting to save chat:", { userId, messageCount: messages.length });
-      const response = await fetch('/api/chat/manage', {
+      const response = await chatManageFetch('/api/chat/manage', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chatData),
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         console.error(`Failed to save chat: ${response.status}`, data);
         throw new Error(`Failed to save chat: ${data.error || response.statusText}`);
       }
-      
-      console.log(`Chat saved successfully with ID: ${data.id}`);
-      
-      // Update local state with the new chat
+
       const date = new Date().toISOString().split('T')[0];
       const updatedHistory = { ...chatHistory };
-      
+
       if (!updatedHistory[date]) {
         updatedHistory[date] = [];
       }
-      
+
       updatedHistory[date].unshift({
         id: data.id,
         title,
         messages,
         timestamp: Date.now(),
       });
-      
+
       setChatHistory(updatedHistory);
-      
+
       return data.id;
     } catch (error) {
       console.error('Error saving chat:', error);
@@ -126,11 +127,9 @@ export function useChatHistory(userId: string | undefined) {
 
     try {
       const title = messages[0].content.slice(0, 30) + (messages[0].content.length > 30 ? '...' : '');
-      
-      const response = await fetch('/api/chat/manage', {
+
+      const response = await chatManageFetch('/api/chat/manage', {
         method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chatId,
           messages,
@@ -141,10 +140,9 @@ export function useChatHistory(userId: string | undefined) {
 
       if (!response.ok) throw new Error('Failed to update chat');
 
-      // Update local state
       const date = new Date().toISOString().split('T')[0];
       const updatedHistory = { ...chatHistory };
-      
+
       Object.keys(updatedHistory).forEach((oldDate) => {
         updatedHistory[oldDate] = updatedHistory[oldDate].filter((chat) => chat.id !== chatId);
         if (updatedHistory[oldDate].length === 0) {
@@ -174,7 +172,6 @@ export function useChatHistory(userId: string | undefined) {
 
     const originalTitle = chatHistory[Object.keys(chatHistory).find(date => chatHistory[date].some(chat => chat.id === chatId)) || '']?.find(chat => chat.id === chatId)?.title;
 
-    // Optimistic UI update
     const updatedHistory = { ...chatHistory };
     let updated = false;
     Object.keys(updatedHistory).forEach((date) => {
@@ -189,19 +186,14 @@ export function useChatHistory(userId: string | undefined) {
     }
 
     try {
-      const response = await fetch('/api/chat/manage', {
+      const response = await chatManageFetch('/api/chat/manage', {
         method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId, title: newTitle.trim() }),
       });
 
       if (!response.ok) throw new Error('Failed to rename chat');
-      // No need to update state again if successful
-
     } catch (error) {
       console.error('Error renaming chat:', error);
-      // Revert optimistic update on error
       if (updated && originalTitle) {
         const revertedHistory = { ...chatHistory };
          Object.keys(revertedHistory).forEach((date) => {
@@ -212,8 +204,6 @@ export function useChatHistory(userId: string | undefined) {
         });
         setChatHistory(revertedHistory);
       }
-      // Optionally show an error toast
-      // toast.error("Failed to rename chat"); 
     }
   };
 
@@ -221,16 +211,13 @@ export function useChatHistory(userId: string | undefined) {
     if (!userId) return;
 
     try {
-      const response = await fetch('/api/chat/manage', {
+      const response = await chatManageFetch('/api/chat/manage', {
         method: 'DELETE',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId }),
       });
 
       if (!response.ok) throw new Error('Failed to delete chat');
-      
-      // Update local state
+
       const newHistory = { ...chatHistory };
       Object.keys(newHistory).forEach((date) => {
         newHistory[date] = newHistory[date].filter((chat) => chat.id !== chatId);
@@ -250,6 +237,6 @@ export function useChatHistory(userId: string | undefined) {
     saveChat,
     updateChat,
     deleteChat,
-    renameChat, // Export renameChat
+    renameChat,
   };
 }

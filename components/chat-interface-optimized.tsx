@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { useLanguage } from "@/contexts/language-context"
 import { useChatHistory } from "@/hooks/use-chat-history"
+import { chatManageFetch } from "@/lib/chat-api-client"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -79,7 +80,9 @@ export default function ChatInterface() {
     navigateSearchResults,
   } = useMessageSearch(messages)
 
-  const { saveChat, updateChat } = useChatHistory(user?.id)
+  const { saveChat, updateChat } = useChatHistory(
+    user && !user.isAnonymous ? user.id : undefined
+  )
 
   // Ref to track the chatId of the conversation currently being edited, which may
   // differ from the URL param before the first save creates a Firestore document.
@@ -228,9 +231,7 @@ export default function ChatInterface() {
       if (!chatId || !user?.id || initialLoadComplete) return
 
       try {
-        const response = await fetch(`/api/chat/manage?chatId=${chatId}`, {
-          credentials: 'include',
-        })
+        const response = await chatManageFetch(`/api/chat/manage?chatId=${chatId}`)
         if (response.status === 404) {
           toast.error("Chat not found")
           router.push("/")
