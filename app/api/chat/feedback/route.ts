@@ -1,32 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from "@/lib/logger";
-import { adminAuth, adminDb } from '@/lib/firebase-admin'
+import { adminDb } from '@/lib/firebase-admin'
 import type { Query, DocumentData } from 'firebase-admin/firestore'
-
-/**
- * Verify Firebase Bearer token from Authorization header.
- * Returns the decoded uid on success, or null on failure.
- */
-async function verifyToken(request: NextRequest): Promise<{ uid: string; isAdmin: boolean } | null> {
-  const authHeader = request.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  try {
-    const token = authHeader.split('Bearer ')[1]
-    const decoded = await adminAuth.verifyIdToken(token)
-    const isAdmin = decoded.admin === true
-    return { uid: decoded.uid, isAdmin }
-  } catch {
-    return null
-  }
-}
+import { getAuthenticatedUser } from '@/lib/api-auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await verifyToken(request)
+    const authUser = await getAuthenticatedUser(request)
 
-    if (!user) {
+    if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const user = { uid: authUser.uid, isAdmin: authUser.isAdmin }
 
     const body = await request.json()
     const { messageId, chatId, feedbackType, feedbackText } = body
@@ -127,11 +112,12 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyToken(request)
+    const authUser = await getAuthenticatedUser(request)
 
-    if (!user) {
+    if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    const user = { uid: authUser.uid, isAdmin: authUser.isAdmin }
 
     const { searchParams } = new URL(request.url)
     const messageId = searchParams.get('messageId')

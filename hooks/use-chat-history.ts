@@ -26,7 +26,9 @@ export function useChatHistory(userId: string | undefined) {
       setLoading(true);
       try {
         console.log(`Fetching chat history for userId: ${userId}`);
-        const response = await fetch(`/api/chat/manage?userId=${encodeURIComponent(userId)}`);
+        const response = await fetch(`/api/chat/manage?userId=${encodeURIComponent(userId)}`, {
+          credentials: 'include',
+        });
         
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'No error details available');
@@ -81,6 +83,7 @@ export function useChatHistory(userId: string | undefined) {
       console.log("Attempting to save chat:", { userId, messageCount: messages.length });
       const response = await fetch('/api/chat/manage', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(chatData),
       });
@@ -126,6 +129,7 @@ export function useChatHistory(userId: string | undefined) {
       
       const response = await fetch('/api/chat/manage', {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chatId,
@@ -187,6 +191,7 @@ export function useChatHistory(userId: string | undefined) {
     try {
       const response = await fetch('/api/chat/manage', {
         method: 'PUT',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId, title: newTitle.trim() }),
       });
@@ -218,6 +223,7 @@ export function useChatHistory(userId: string | undefined) {
     try {
       const response = await fetch('/api/chat/manage', {
         method: 'DELETE',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId }),
       });

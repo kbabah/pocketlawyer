@@ -5,19 +5,23 @@ import { logger } from "@/lib/logger"
 import { rateLimit, getIdentifier } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 import { getCombinedKnowledgeContext } from '@/lib/knowledge-base'
+import { getAuthenticatedUser, resolveRateLimitUserId } from "@/lib/api-auth"
 
 export const maxDuration = 30
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { userId, messages, caseDetails, language = "en", model = OPENAI_MODELS.GPT41 } = body
+    const { userId: clientUserId, messages, caseDetails, language = "en", model = OPENAI_MODELS.GPT41 } = body
 
-    const identifier = getIdentifier(req, userId)
-    const rateLimitConfig = userId
+    const authUser = await getAuthenticatedUser(req)
+    const verifiedUserId = resolveRateLimitUserId(clientUserId, authUser?.uid)
+
+    const identifier = getIdentifier(req, verifiedUserId)
+    const rateLimitConfig = verifiedUserId
       ? { maxRequests: 15, windowMs: 60000 }
       : { maxRequests: 3, windowMs: 60000 }
-    const rateLimitResult = rateLimit(identifier, rateLimitConfig)
+    const rateLimitResult = await rateLimit(identifier, rateLimitConfig)
 
     if (!rateLimitResult.success) {
       return NextResponse.json(

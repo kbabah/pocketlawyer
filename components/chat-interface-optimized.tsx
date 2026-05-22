@@ -462,7 +462,9 @@ export default function ChatInterface() {
       if (!chatId || !user?.id || initialLoadComplete) return
 
       try {
-        const response = await fetch(`/api/chat/manage?chatId=${chatId}`)
+        const response = await fetch(`/api/chat/manage?chatId=${chatId}`, {
+          credentials: 'include',
+        })
         if (response.status === 404) {
           toast.error("Chat not found")
           router.push("/")

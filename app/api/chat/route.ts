@@ -5,6 +5,10 @@ import { OPENAI_MODELS } from '@/lib/openai'
 import { rateLimit, getIdentifier } from '@/lib/rate-limit'
 import { NextResponse } from 'next/server'
 import { getCombinedKnowledgeContext } from '@/lib/knowledge-base'
+import {
+  getAuthenticatedUser,
+  resolveRateLimitUserId,
+} from '@/lib/api-auth'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
@@ -28,15 +32,17 @@ export async function POST(req: Request) {
   try {
     // Parse request body once
     const body = await req.json();
-    const { userId, messages, documentContent, language = "en", model = OPENAI_MODELS.GPT41 } = body;
-    
-    // Rate limiting: 30 requests per minute for authenticated users, 10 for anonymous
-    const identifier = getIdentifier(req, userId);
-    const rateLimitConfig = userId 
-      ? { maxRequests: 30, windowMs: 60000 }  // Authenticated: 30/min
-      : { maxRequests: 10, windowMs: 60000 };  // Anonymous: 10/min
-    
-    const rateLimitResult = rateLimit(identifier, rateLimitConfig);
+    const { userId: clientUserId, messages, documentContent, language = "en", model = OPENAI_MODELS.GPT41 } = body;
+
+    const authUser = await getAuthenticatedUser(req);
+    const verifiedUserId = resolveRateLimitUserId(clientUserId, authUser?.uid);
+
+    const identifier = getIdentifier(req, verifiedUserId);
+    const rateLimitConfig = verifiedUserId
+      ? { maxRequests: 30, windowMs: 60000 }
+      : { maxRequests: 10, windowMs: 60000 };
+
+    const rateLimitResult = await rateLimit(identifier, rateLimitConfig);
     
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -91,7 +97,7 @@ ${language === "fr" ?
 }`
 
     // Enhanced system prompt for authenticated users with language preference
-    let systemPrompt = userId
+    let systemPrompt = verifiedUserId
       ? `${basePrompt}\n\nFor authenticated users, provide detailed responses with specific legal references and citations from Cameroonian law. If you're unsure about any aspect of Cameroonian law, acknowledge your limitations and suggest consulting a qualified legal professional in Cameroon. Please respond in ${language === "fr" ? "French" : "English"}`
       : `${basePrompt}\n\nProvide helpful information strictly about Cameroonian law. If you're unsure about any aspect of Cameroonian law, acknowledge your limitations and suggest consulting a qualified legal professional in Cameroon. Please respond in ${language === "fr" ? "French" : "English"}`
 

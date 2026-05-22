@@ -1,46 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { adminDb } from "@/lib/firebase-admin";
-import { adminAuth } from "@/lib/firebase-admin";
-import { cookies } from "next/headers";
 import type { Query, DocumentData } from "firebase-admin/firestore";
-
-// Helper function to check admin permissions
-async function isAdmin(req: NextRequest) {
-  try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("firebase-session")?.value;
-    
-    if (!sessionCookie) {
-      logger.info("No session cookie");
-      return false;
-    }
-    
-    const decodedClaim = await adminAuth.verifySessionCookie(sessionCookie);
-    const userDoc = await adminDb.collection("users").doc(decodedClaim.uid).get();
-    
-    if (!userDoc.exists) {
-      logger.info("User document does not exist");
-      return false;
-    }
-    
-    const userData = userDoc.data();
-    return userData?.isAdmin === true || userData?.role === 'admin';
-    
-  } catch (error) {
-    logger.error("Error checking admin status:", error);
-    return false;
-  }
-}
+import { requireAdmin } from "@/lib/api-auth";
 
 // GET /api/admin/blog - Get all blog posts with optional filtering
 export async function GET(req: NextRequest) {
+  const authResult = await requireAdmin(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
-    // Check if user is admin
-    const admin = await isAdmin(req);
-    if (!admin) {
-      return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 403 });
-    }
     
     // Get query parameters for filtering
     const url = new URL(req.url);
@@ -78,13 +47,10 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/blog - Create a new blog post
 export async function POST(req: NextRequest) {
+  const authResult = await requireAdmin(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
-    // Check if user is admin
-    const admin = await isAdmin(req);
-    if (!admin) {
-      return NextResponse.json({ error: "Unauthorized. Admin access required." }, { status: 403 });
-    }
-    
     // Parse request body
     const body = await req.json();
     

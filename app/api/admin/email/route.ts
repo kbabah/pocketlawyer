@@ -1,50 +1,17 @@
 import { NextResponse } from 'next/server';
 import { logger } from "@/lib/logger";
 import { sendEmail, testEmailService } from '@/lib/email-service';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import { cookies } from 'next/headers';
+import { adminDb } from '@/lib/firebase-admin';
+import { requireAuth, requireAdmin } from '@/lib/api-auth';
 
 export const dynamic = "force-dynamic";
 
-// Function to verify if a user is an admin
-async function isAdmin(userId: string): Promise<boolean> {
-  try {
-    // Use your admin authentication check method here
-    const user = await adminAuth.getUser(userId);
-    return user.customClaims?.admin === true;
-  } catch (error) {
-    logger.error('Error checking admin status:', error);
-    return false;
-  }
-}
-
-// Get user ID from Firebase session cookie
-async function getUserIdFromSession(): Promise<string | null> {
-  try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('firebase-session');
-    
-    if (!sessionCookie?.value) {
-      return null;
-    }
-    
-    // Verify the session cookie
-    const decodedClaims = await adminAuth.verifySessionCookie(sessionCookie.value, true);
-    return decodedClaims.uid;
-  } catch (error) {
-    logger.error('Error verifying session:', error);
-    return null;
-  }
-}
-
 // Test the email configuration
 export async function GET(req: Request) {
+  const authResult = await requireAuth(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
-    const userId = await getUserIdFromSession();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     
     // Simple email test that doesn't require admin privileges
     const email = req.url.includes('email=') 
@@ -66,19 +33,10 @@ export async function GET(req: Request) {
 
 // Send bulk emails (admin only)
 export async function POST(req: Request) {
+  const authResult = await requireAdmin(req);
+  if (authResult instanceof NextResponse) return authResult;
+
   try {
-    const userId = await getUserIdFromSession();
-    
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Check if the user is an admin
-    const adminStatus = await isAdmin(userId);
-    if (!adminStatus) {
-      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
-    }
-    
     const body = await req.json();
     const { 
       template, 
