@@ -21,9 +21,13 @@ test.describe("PocketLawyer smoke", () => {
 
   test("chat page loads for guests", async ({ page }) => {
     await page.goto("/chat");
-    await expect(
-      page.getByPlaceholder(/Type your legal question|Posez votre question/i)
-    ).toBeVisible({ timeout: 15_000 });
+    await page.waitForLoadState("domcontentloaded");
+
+    const chatInput = page.getByTestId("chat-input");
+    await expect(chatInput.first()).toBeVisible({ timeout: 15_000 });
+
+    // Guard against duplicate ChatInterface mounts (e.g. during hydration)
+    await expect(chatInput).toHaveCount(1, { timeout: 5_000 });
   });
 
   test("removed duplicate routes return 404", async ({ request }) => {
