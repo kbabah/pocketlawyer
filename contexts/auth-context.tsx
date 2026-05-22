@@ -315,7 +315,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loading && user && !initialAuthChecked) {
       const currentPath = window.location.pathname;
-      const authPages = ["/sign-in", "/sign-up", "/sign-in-new", "/sign-up-new"];
+      const authPages = ["/sign-in", "/sign-up"];
       const publicPages = ["/welcome", "/terms", "/privacy", "/blog", "/contact"];
       const isAuthPage = authPages.includes(currentPath);
       const isPublicPage = publicPages.includes(currentPath);
@@ -426,7 +426,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       
       // Immediate redirect for auth pages
       const currentPath = window.location.pathname;
-      const authPages = ["/sign-in", "/sign-up", "/sign-in-new", "/sign-up-new"];
+      const authPages = ["/sign-in", "/sign-up"];
       if (authPages.includes(currentPath)) {
         logger.info('Sign in successful, redirecting from auth page');
         router.push("/");
@@ -561,7 +561,7 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
       
       // Immediate redirect for auth pages
       const currentPath = window.location.pathname;
-      const authPages = ["/sign-in", "/sign-up", "/sign-in-new", "/sign-up-new"];
+      const authPages = ["/sign-in", "/sign-up"];
       if (authPages.includes(currentPath)) {
         logger.info('Google sign in successful, redirecting from auth page');
         router.push("/");
