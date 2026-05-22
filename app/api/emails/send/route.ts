@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { 
   sendBookingConfirmation, 
   sendLawyerBookingNotification 
-} from '@/lib/services/email-service'
+} from '@/lib/email'
 
 export const dynamic = "force-dynamic";
 

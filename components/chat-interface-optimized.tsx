@@ -1,273 +1,29 @@
 "use client"
 
-import { useState, useEffect, memo, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useChat } from "@ai-sdk/react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar } from "@/components/ui/avatar"
-import { 
-  User, Search, Sparkles, Scale, FileText, Send, Loader2, AlertTriangle, 
-  MessageCircle, ChevronUp, ChevronDown, X, HelpCircle, 
-  BookOpen, Keyboard, Info, ArrowRight, Check, Copy, Share, ThumbsUp,
-  ThumbsDown, MoreHorizontal, ArrowDown, Paperclip, Lock
-} from "lucide-react"
+import { Search, Send, Loader2, ArrowDown, Paperclip } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { 
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger 
-} from "@/components/ui/tooltip"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { useLanguage } from "@/contexts/language-context"
 import { useChatHistory } from "@/hooks/use-chat-history"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useSearchParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
-import type { Message } from 'ai'
-import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu"
+import type { Message } from "ai"
 import { ChatErrorBoundary } from "@/components/error-boundaries"
-
-// ...react-window import removed (unused)
-
-// Import the fuzzy search library
-import Fuse from 'fuse.js'
-import { HighlightMatches } from '@/components/ui/highlight-matches'
-import { useChatFeedback } from '@/hooks/use-chat-feedback'
-
-// Define interface for ChatMessage props
-interface ChatMessageProps {
-  message: any;
-  isMobile: boolean;
-  t: (key: string, options?: any) => string;
-  highlight?: boolean;
-  searchTerms?: string[];
-  isLastInGroup?: boolean;
-  isFirstInGroup?: boolean;
-  onReaction?: (messageId: string, reaction: 'like' | 'dislike') => void;
-  chatId?: string;
-}
-
-// Enhanced memoized chat message component with better styling and grouping
-const ChatMessage = memo(({ 
-  message, 
-  isMobile, 
-  t, 
-  highlight = false, 
-  searchTerms = [],
-  isFirstInGroup = true,
-  isLastInGroup = true,
-  onReaction,
-  chatId
-}: ChatMessageProps) => {
-  // Improved content rendering with better highlighting
-  const content = searchTerms.length > 0 ? 
-    <HighlightMatches text={message.content} terms={searchTerms} /> : 
-    message.content;
-  
-  const [showActions, setShowActions] = useState(false);
-  const { submitFeedback, getFeedbackState } = useChatFeedback();
-  
-  // Get current feedback state for this message
-  const feedbackState = getFeedbackState(message.id);
-  
-  // Handle copy message content
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
-    toast.success(t("Message copied to clipboard"));
-  };
-
-  // Handle feedback submission
-  const handleFeedback = async (feedbackType: 'like' | 'dislike') => {
-    try {
-      await submitFeedback({
-        messageId: message.id,
-        chatId: chatId,
-        feedbackType,
-      });
-      
-      // Also call the original onReaction callback if provided
-      onReaction?.(message.id, feedbackType);
-    } catch (error) {
-      // Error is already handled in the hook
-      console.error('Failed to submit feedback:', error);
-    }
-  };
-  
-  return (
-    <div 
-      className={`message ${message.role} ${highlight ? 'search-highlight bg-yellow-100 dark:bg-yellow-800/20 rounded-md' : ''} 
-        ${isFirstInGroup ? 'mt-6' : 'mt-1'} ${isLastInGroup ? 'mb-2' : 'mb-0'}`}
-      role="listitem"
-      aria-label={`${message.role === 'user' ? 'You' : 'Assistant'}: ${message.content}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <div className="flex items-center justify-center">
-        <div 
-          className={`flex items-start gap-3 sm:gap-4 max-w-3xl w-full ${message.role === "user" ? "flex-row-reverse" : ""}`}
-          aria-label={message.role === 'user' ? 'User message' : 'Assistant message'}
-        >
-          {/* Only show avatar for first message in group */}
-          {isFirstInGroup && (
-            <Avatar 
-              className={`${isMobile ? "h-8 w-8" : "h-10 w-10"} 
-                ${message.role === "user" ? "bg-primary/10" : "bg-secondary/30"}
-                transition-all duration-200 ease-in-out
-                ${isFirstInGroup ? 'opacity-100' : 'opacity-0 h-0 w-0'}`}
-            >
-              {message.role === "user" ? <User className="p-1.5" /> : <Scale className="p-1.5" />}
-            </Avatar>
-          )}
-          
-          {/* Spacer when avatar is hidden */}
-          {!isFirstInGroup && (
-            <div className={`${isMobile ? "w-8" : "w-10"} ${message.role === "user" ? "order-last" : "order-first"}`}></div>
-          )}
-          
-          <div
-            className={`relative max-w-[85%] sm:max-w-[90%] transition-all duration-200
-              ${message.role === "user"
-                ? "rounded-2xl px-4 py-2.5 bg-primary text-primary-foreground dark:shadow-md ml-2 shadow-sm hover:shadow"
-                : "mr-2 py-1"
-              }`}
-          >
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
-            
-            {/* Message timestamp - visible on hover */}
-            <div className={`absolute ${message.role === "user" ? "right-2" : "left-2"} -bottom-5 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity`}>
-              {new Date(parseInt(message.id, 10)).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-            </div>
-            
-            {/* Message actions - visible on hover */}
-            {showActions && (
-              <div className={`absolute ${message.role === "user" ? "left-0" : "right-0"} -bottom-8 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full px-1 py-0.5 shadow-sm border border-border/50 transition-all duration-200`}>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
-                  <Copy className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className={`h-6 w-6 ${feedbackState.feedbackType === 'like' ? 'text-green-600 bg-green-100 dark:bg-green-900/30' : ''}`}
-                  onClick={() => handleFeedback('like')}
-                  disabled={feedbackState.isSubmitting}
-                >
-                  {feedbackState.isSubmitting && feedbackState.feedbackType === 'like' ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <ThumbsUp className="h-3 w-3" />
-                  )}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className={`h-6 w-6 ${feedbackState.feedbackType === 'dislike' ? 'text-red-600 bg-red-100 dark:bg-red-900/30' : ''}`}
-                  onClick={() => handleFeedback('dislike')}
-                  disabled={feedbackState.isSubmitting}
-                >
-                  {feedbackState.isSubmitting && feedbackState.feedbackType === 'dislike' ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <ThumbsDown className="h-3 w-3" />
-                  )}
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                      <MoreHorizontal className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleCopy}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      {t("Copy")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Share className="h-4 w-4 mr-2" />
-                      {t("Share")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-})
-ChatMessage.displayName = 'ChatMessage'
-
-// Sub-component: Message Search Panel
-const MessageSearchPanel = ({
-  messageSearchQuery,
-  setMessageSearchQuery,
-  handleMessageSearch,
-  navigateSearchResults,
-  searchResults,
-  currentSearchResultIndex,
-  messageSearchInputRef,
-  t,
-  setShowMessageSearch
-}: {
-  messageSearchQuery: string;
-  setMessageSearchQuery: (q: string) => void;
-  handleMessageSearch: () => void;
-  navigateSearchResults: (dir: 'previous' | 'next') => void;
-  searchResults: number[];
-  currentSearchResultIndex: number;
-  messageSearchInputRef: React.RefObject<HTMLInputElement | null>;
-  t: (key: string) => string;
-  setShowMessageSearch: (show: boolean) => void;
-}) => (
-  <div className="sticky top-[57px] z-10 flex items-center gap-2 p-2 bg-background/95 backdrop-blur border-b animate-slideDown">
-    <div className="relative flex-1">
-      <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        ref={messageSearchInputRef}
-        className="pl-8 pr-16"
-        placeholder={t("Search messages...")}
-        value={messageSearchQuery}
-        onChange={(e) => setMessageSearchQuery(e.target.value)}
-        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleMessageSearch(); } }}
-      />
-      {searchResults.length > 0 && (
-        <span className="absolute right-16 top-1/2 -translate-y-1/2 text-xs text-muted-foreground bg-background/90 px-2 py-0.5 rounded-md">
-          {currentSearchResultIndex + 1} / {searchResults.length}
-        </span>
-      )}
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={handleMessageSearch}
-        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground"
-      >
-        {t("Find")}
-      </Button>
-    </div>
-    <div className="flex gap-1">
-      <Button variant="ghost" size="icon" onClick={() => navigateSearchResults('previous')} disabled={searchResults.length === 0} className="h-8 w-8">
-        <ChevronUp className="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="icon" onClick={() => navigateSearchResults('next')} disabled={searchResults.length === 0} className="h-8 w-8">
-        <ChevronDown className="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="icon" onClick={() => { setShowMessageSearch(false); setMessageSearchQuery(''); }} className="h-8 w-8">
-        <X className="h-4 w-4" />
-      </Button>
-    </div>
-  </div>
-);
+import { useChatFeedback } from "@/hooks/use-chat-feedback"
+import { useMessageSearch } from "@/hooks/use-message-search"
+import { ChatMessage } from "@/components/chat/chat-message"
+import { MessageSearchPanel } from "@/components/chat/message-search-panel"
+import { TrialLimitAlert, TrialInfo } from "@/components/chat/trial-gating"
+import { TypingIndicator } from "@/components/chat/typing-indicator"
+import { WelcomeTutorial } from "@/components/chat/welcome-tutorial"
 
 export default function ChatInterface() {
   const [searchQuery, setSearchQuery] = useState<string>("")
-  const [messageSearchQuery, setMessageSearchQuery] = useState<string>("")
-  const [searchResults, setSearchResults] = useState<number[]>([])
-  const [currentSearchResultIndex, setCurrentSearchResultIndex] = useState<number>(-1)
-  const [highlightTerms, setHighlightTerms] = useState<string[]>([])
-  const [fuzzySearchInstance, setFuzzySearchInstance] = useState<Fuse<Message> | null>(null)
   const [error, setError] = useState<string | null>(null)
   const { user, incrementTrialConversations, isTrialLimitReached, getTrialConversationsRemaining } = useAuth()
   const { t, language } = useLanguage()
@@ -276,15 +32,14 @@ export default function ChatInterface() {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const router = useRouter()
   const isMobile = useIsMobile()
+
   const [hasStartedConversation, setHasStartedConversation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [announcement, setAnnouncement] = useState("")
-  const [focusedMessageIndex, setFocusedMessageIndex] = useState(-1)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [showMessageSearch, setShowMessageSearch] = useState(false)
   const messageSearchInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const [searchIsActive, setSearchIsActive] = useState(false)
   const [showWelcomeTutorial, setShowWelcomeTutorial] = useState(true)
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false)
   const [tutorialStep, setTutorialStep] = useState(0)
@@ -312,6 +67,17 @@ export default function ChatInterface() {
       setIsTyping(false)
     }
   })
+
+  const {
+    messageSearchQuery,
+    setMessageSearchQuery,
+    searchResults,
+    currentSearchResultIndex,
+    highlightTerms,
+    focusedMessageIndex,
+    handleMessageSearch,
+    navigateSearchResults,
+  } = useMessageSearch(messages)
 
   const { saveChat, updateChat } = useChatHistory(user?.id)
 
@@ -594,119 +360,25 @@ export default function ChatInterface() {
     }
   }
 
-  // Trial limit reached alert component
-  const TrialLimitAlert = () => {
-    if (!user?.isAnonymous || !isTrialLimitReached()) return null;
-    
-    return (
-      <div className="mb-4 p-5 border-2 border-amber-300 dark:border-amber-700 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 animate-in fade-in duration-300 shadow-sm">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full">
-              <Lock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-amber-900 dark:text-amber-300 mb-1">
-                {t("You've used all 10 free messages")}
-              </h3>
-              <p className="text-sm text-amber-800 dark:text-amber-300/80">
-                {t("Create a free account to get unlimited AI legal assistance and save your conversation history.")}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
-            <Button 
-              size="default"
-              onClick={() => router.push("/sign-up")} 
-              className="bg-amber-600 hover:bg-amber-700 w-full font-semibold transition-all duration-200"
-            >
-              {t("Create Free Account")}
-            </Button>
-            <Button 
-              size="default"
-              variant="outline" 
-              onClick={() => router.push("/sign-in")} 
-              className="border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-300 dark:hover:bg-amber-950/50 w-full transition-all duration-200"
-            >
-              {t("Sign In")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Trial information component with clearer messaging
-  const TrialInfo = () => {
-    if (!user?.isAnonymous || hasStartedConversation || messages.length > 0) return null;
-    
-    const remaining = getTrialConversationsRemaining();
-    
-    return (
-      <div className="mt-6 p-4 border border-blue-200 dark:border-blue-800 rounded-lg bg-blue-50 dark:bg-blue-950/30 animate-in fade-in duration-300">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-start gap-2">
-            <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-blue-700 dark:text-blue-300">
-                {t("Try Our Legal Assistant")}
-              </p>
-              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                {t(`You have ${remaining} free conversations available.`)}
-              </p>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                {t("Create an account for unlimited access and to save your conversation history.")}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
-            <Button 
-              size="sm" 
-              onClick={() => router.push("/sign-up")} 
-              className="w-full transition-all duration-200"
-            >
-              {t("Create Free Account")}
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => router.push("/sign-in")} 
-              className="w-full transition-all duration-200"
-            >
-              {t("Sign In")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Typing indicator component
-  const TypingIndicator = () => {
-    if (!isTyping) return null;
-    
-    return (
-      <div className="flex items-center gap-3 sm:gap-4 max-w-3xl w-full mb-4">
-        <Avatar className={`${isMobile ? "h-8 w-8" : "h-10 w-10"} bg-secondary/30`}>
-          <Scale className="p-1.5" />
-        </Avatar>
-        <div className="rounded-lg px-3.5 py-2.5 sm:px-4 sm:py-3 border border-border mr-2">
-          <div className="flex space-x-2">
-            <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '0ms' }}></div>
-            <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '150ms' }}></div>
-            <div className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: '300ms' }}></div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Use regular rendering for messages
   const renderMessages = () => {
     if (messages.length === 0 && !isLoading) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-center px-4 pt-10">
-          <WelcomeTutorial />
+          {showWelcomeTutorial && (
+            <WelcomeTutorial
+              t={t}
+              tutorialStep={tutorialStep}
+              setTutorialStep={setTutorialStep}
+              onDismiss={() => setShowWelcomeTutorial(false)}
+              onExampleClick={(query) => {
+                handleInputChange({ target: { value: query } } as React.ChangeEvent<HTMLInputElement>)
+                setTimeout(() => inputRef.current?.focus(), 100)
+              }}
+            />
+          )}
+          {user?.isAnonymous && !hasStartedConversation && (
+            <TrialInfo t={t} remaining={getTrialConversationsRemaining()} />
+          )}
         </div>
       )
     }
@@ -742,7 +414,7 @@ export default function ChatInterface() {
         ))}
         
         {/* Typing indicator */}
-        {isTyping && <TypingIndicator />}
+        {isTyping && <TypingIndicator isMobile={isMobile} />}
         
         {/* Loading indicator */}
         {isLoading && !isTyping && (
@@ -756,219 +428,6 @@ export default function ChatInterface() {
     )
   }
 
-  // Welcome Tutorial component
-  const WelcomeTutorial = () => {
-    // Don't show tutorial if user already has messages or it's been dismissed
-    if (messages.length > 0 || !showWelcomeTutorial) return null;
-
-    // Example queries for the chat
-    const exampleQueries = [
-      "What are my rights as a tenant?",
-      "How do I form an LLC?",
-      "Explain employment discrimination laws",
-      "What are the steps for filing a patent?"
-    ];
-
-    // Tutorial steps content
-    const tutorialSteps = [
-      {
-        icon: <MessageCircle className="h-5 w-5 text-blue-500" />,
-        title: t("Get Legal Assistance"),
-        description: t("Ask any legal question and get clear, informative responses from our AI legal assistant.")
-      },
-      {
-        icon: <Search className="h-5 w-5 text-blue-500" />,
-        title: t("Research Legal Topics"),
-        description: t("Search legal databases and trusted sources for detailed information.")
-      },
-      {
-        icon: <FileText className="h-5 w-5 text-blue-500" />,
-        title: t("Document Analysis"),
-        description: t("Upload legal documents for expert analysis and get detailed explanations.")
-      },
-      {
-        icon: <Keyboard className="h-5 w-5 text-blue-500" />,
-        title: t("Quick Access"),
-        description: t("Use keyboard shortcuts for faster navigation and improved workflow.")
-      }
-    ];
-
-    // Welcome section with proper translations
-    return (
-      <div className="space-y-6 animate-in fade-in duration-500">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-primary">{t("Your Legal Assistant")}</h2>
-          <p className="text-lg text-muted-foreground">
-            {t("Get expert legal guidance with our AI-powered assistant")}
-          </p>
-        </div>
-
-        {/* Tutorial steps */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {tutorialSteps.map((step, index) => (
-            <div 
-              key={index} 
-              className={`p-4 border rounded-lg transition-all duration-300 ${
-                tutorialStep === index ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-sm" : "border-border hover:border-blue-300 dark:hover:border-blue-700"
-              }`}
-              onClick={() => setTutorialStep(index)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="shrink-0 p-2 rounded-full bg-primary/10">
-                  {step.icon}
-                </div>
-                <div>
-                  <h3 className="font-medium">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">{step.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Example queries section */}
-        <div className="space-y-3 border-t pt-3">
-          <h3 className="font-medium text-center">{t("What would you like to know?")}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {exampleQueries.map((query, index) => (
-              <button
-                key={index}
-                className="p-2 text-left text-sm border rounded-md hover:bg-primary/5 hover:border-primary/30 transition-colors"
-                onClick={() => {
-                  handleInputChange({ target: { value: query } } as React.ChangeEvent<HTMLInputElement>)
-                  setTimeout(() => inputRef.current?.focus(), 100)
-                }}
-              >
-                <span className="flex items-center gap-2">
-                  <ArrowRight className="h-3 w-3 text-primary" />
-                  {query}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Keyboard shortcuts guide */}
-        {tutorialStep === 3 && (
-          <div className="border rounded-lg p-4 bg-secondary/10 space-y-3">
-            <h3 className="font-medium flex items-center gap-2">
-              <Keyboard className="h-4 w-4" />
-              {t("Keyboard Shortcuts")}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span>/ (Slash)</span>
-                <span className="text-muted-foreground">{t("Focus input")}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Ctrl+Enter / ⌘+Enter</span>
-                <span className="text-muted-foreground">{t("Send message")}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Ctrl+F / ⌘+F</span>
-                <span className="text-muted-foreground">{t("Search in chat")}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>F3</span>
-                <span className="text-muted-foreground">{t("Next result")}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Alt+N</span>
-                <span className="text-muted-foreground">{t("New message")}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Esc</span>
-                <span className="text-muted-foreground">{t("Close input")}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-center pt-2">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setShowWelcomeTutorial(false)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Check className="h-4 w-4 mr-1" />
-            {t("Got it, let's begin")}
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  // Initialize fuzzy search instance when messages change
-  useEffect(() => {
-    if (messages.length) {
-      setFuzzySearchInstance(new Fuse(messages, { keys: ['content'], threshold: 0.4 }));
-    }
-  }, [messages]);
-
-  // Message search handler
-  const handleMessageSearch = () => {
-    const query = messageSearchQuery.trim();
-    if (!query) {
-      setSearchResults([]);
-      setCurrentSearchResultIndex(-1);
-      setHighlightTerms([]);
-      setSearchIsActive(false);
-      return;
-    }
-    let results: number[];
-    if (fuzzySearchInstance) {
-      results = fuzzySearchInstance.search(query).map(res => res.refIndex);
-    } else {
-      const lower = query.toLowerCase();
-      results = messages.map((m, i) => m.content.toLowerCase().includes(lower) ? i : -1).filter(i => i >= 0);
-    }
-    setSearchResults(results);
-    setCurrentSearchResultIndex(results.length > 0 ? 0 : -1);
-    setHighlightTerms(query.split(/\s+/));
-    setSearchIsActive(true);
-    if (results.length) {
-      const elem = document.getElementById(`message-${results[0]}`);
-      if (elem) {
-        const scrollContainer = document.querySelector('.chat-messages-container')
-        if (scrollContainer) {
-          const containerRect = scrollContainer.getBoundingClientRect()
-          const messageRect = elem.getBoundingClientRect()
-          const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
-          scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
-        } else {
-          elem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-        }
-      }
-    }
-  };
-
-  // Navigate between search results
-  const navigateSearchResults = (direction: 'previous' | 'next') => {
-    if (!searchResults.length) return;
-    let idx = currentSearchResultIndex;
-    if (direction === 'previous') {
-      idx = idx <= 0 ? searchResults.length - 1 : idx - 1;
-    } else {
-      idx = idx >= searchResults.length - 1 ? 0 : idx + 1;
-    }
-    setCurrentSearchResultIndex(idx);
-    const resultIndex = searchResults[idx];
-    const elem = document.getElementById(`message-${resultIndex}`);
-    if (elem) {
-      const scrollContainer = document.querySelector('.chat-messages-container')
-      if (scrollContainer) {
-        const containerRect = scrollContainer.getBoundingClientRect()
-        const messageRect = elem.getBoundingClientRect()
-        const scrollTop = scrollContainer.scrollTop + messageRect.top - containerRect.top - 20
-        scrollContainer.scrollTo({ top: scrollTop, behavior: 'smooth' })
-      } else {
-        elem.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-      }
-    }
-  };
-
-  // Auto-scroll when typing indicator changes
   useEffect(() => {
     if (isTyping) {
       // Scroll to bottom when typing starts
@@ -1056,7 +515,7 @@ export default function ChatInterface() {
           {/* Input area - blocked for guests who hit the limit */}
           <div className="flex-shrink-0 px-4 py-3 bg-background border-t border-border">
             {user?.isAnonymous && isTrialLimitReached() ? (
-              <TrialLimitAlert />
+              <TrialLimitAlert t={t} />
             ) : (
             <form onSubmit={handleSubmit} className="max-w-3xl mx-auto w-full">
               <div className="rounded-2xl border border-border bg-background shadow-md flex flex-col">
