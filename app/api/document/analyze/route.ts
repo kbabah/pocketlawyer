@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { logger } from "@/lib/logger";
-import { openai, OPENAI_MODELS } from '@/lib/openai'
+import { getOpenAIClient, OPENAI_MODELS } from '@/lib/openai'
 import { adminAuth } from '@/lib/firebase-admin';
 
 /** Verify the request has a valid, non-anonymous Firebase session cookie */
@@ -81,6 +81,7 @@ Respond in the same language the user asks in (English or French).${truncated ? 
     const userPrompt = `Document:\n\n${text}\n\n---\n\nQuestion: ${question}`
 
     try {
+      const openai = getOpenAIClient();
       const completion = await openai.chat.completions.create({
         model,
         messages: [

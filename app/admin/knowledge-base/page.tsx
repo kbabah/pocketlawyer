@@ -331,7 +331,7 @@ export default function KnowledgeBasePage() {
                 </label>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <FileText className="h-3.5 w-3.5" />
-                  <span>{t("TXT files auto-populate the content field. For PDFs, paste text manually.")}</span>
+                  <span>{t("kb.admin.upload.hint")}</span>
                 </div>
               </div>
             </div>
@@ -422,7 +422,7 @@ export default function KnowledgeBasePage() {
           {loading ? (
             <div className="flex items-center gap-2 p-4">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading...</span>
+              <span>{t("common.loading")}</span>
             </div>
           ) : filteredEntries.length === 0 ? (
             <Card>

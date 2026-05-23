@@ -669,7 +669,18 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
-    <Suspense fallback={<div>Loading authentication...</div>}>
+    <Suspense
+      fallback={
+        <div
+          className="flex min-h-screen items-center justify-center bg-background"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="sr-only">Loading authentication</span>
+        </div>
+      }
+    >
       <AuthProviderContent>{children}</AuthProviderContent>
     </Suspense>
   );
