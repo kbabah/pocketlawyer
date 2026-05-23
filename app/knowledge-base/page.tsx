@@ -26,7 +26,7 @@ import {
   getBuiltInKnowledgeCatalog,
   KNOWLEDGE_CATEGORY_LABELS,
   type KnowledgeEntry,
-} from "@/lib/knowledge-base"
+} from "@/lib/knowledge-base-builtin"
 
 type CatalogItem = {
   id: string

@@ -3,7 +3,7 @@ import { adminDb } from "@/lib/firebase-admin";
 import {
   getBuiltInKnowledgeCatalog,
   KNOWLEDGE_CATEGORY_LABELS,
-} from "@/lib/knowledge-base";
+} from "@/lib/knowledge-base-builtin";
 
 export const dynamic = "force-dynamic";
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
-import { getBuiltInKnowledgeCatalog } from "@/lib/knowledge-base";
+import { getBuiltInKnowledgeCatalog } from "@/lib/knowledge-base-builtin";
 
 export async function GET(
   _req: NextRequest,
