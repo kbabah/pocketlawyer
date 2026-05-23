@@ -11,7 +11,7 @@ import { useLanguage } from "@/contexts/language-context"
 import { useChatHistory } from "@/hooks/use-chat-history"
 import { chatManageFetch } from "@/lib/chat-api-client"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { toast } from "sonner"
 import type { Message } from "ai"
 import { ChatErrorBoundary } from "@/components/error-boundaries"
@@ -29,6 +29,8 @@ export default function ChatInterface() {
   const { user, incrementTrialConversations, isTrialLimitReached, getTrialConversationsRemaining } = useAuth()
   const { t, language } = useLanguage()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const isDedicatedChatPage = pathname === "/chat"
   const chatId = searchParams.get('chatId') || undefined
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const router = useRouter()
@@ -453,12 +455,11 @@ export default function ChatInterface() {
       >
       <TooltipProvider>
         {/* Chat Interface - No Tabs */}
-        <div className="flex flex-col h-full overflow-hidden">
-          {/* Search toggle button - only show when messages exist */}
-          {messages.length > 0 && (
+        <div className="relative flex flex-col h-full min-h-0 overflow-hidden">
+          {messages.length > 0 && !(isDedicatedChatPage && isMobile) && (
             <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-              <div className="flex items-center justify-between px-4 py-2">
-                <h2 className="text-lg font-medium">{t("Legal Chat")}</h2>
+              <div className="flex items-center justify-between px-3 sm:px-4 py-2 gap-2">
+                <h2 className="text-base sm:text-lg font-medium truncate">{t("Legal Chat")}</h2>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -500,7 +501,7 @@ export default function ChatInterface() {
 
           {/* Scroll to bottom button */}
           {scrollToBottomVisible && (
-            <div className="absolute bottom-20 right-8 z-10">
+            <div className="absolute bottom-24 sm:bottom-20 right-4 sm:right-8 z-10">
               <Button
                 variant="outline"
                 size="icon"
@@ -514,7 +515,7 @@ export default function ChatInterface() {
           )}
 
           {/* Input area - blocked for guests who hit the limit */}
-          <div className="flex-shrink-0 px-4 py-3 bg-background border-t border-border">
+          <div className="flex-shrink-0 px-3 sm:px-4 py-2.5 sm:py-3 bg-background border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {user?.isAnonymous && isTrialLimitReached() ? (
               <TrialLimitAlert t={t} />
             ) : (
@@ -526,7 +527,7 @@ export default function ChatInterface() {
                   value={input}
                   onChange={handleInputChange}
                   placeholder={t("Type your legal question...")}
-                  className="border-0 focus-visible:ring-0 bg-transparent resize-none min-h-[52px] max-h-[200px] py-3.5 px-4 text-sm"
+                  className="border-0 focus-visible:ring-0 bg-transparent resize-none min-h-[52px] max-h-[200px] py-3.5 px-4 text-base sm:text-sm"
                   disabled={isSubmitting}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -540,7 +541,7 @@ export default function ChatInterface() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                    className="h-10 w-10 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground rounded-lg touch-manipulation"
                     onClick={() => {
                       toast.info("Document upload coming soon")
                     }}
@@ -550,7 +551,8 @@ export default function ChatInterface() {
                   <Button
                     type="submit"
                     disabled={isSubmitting || !input.trim()}
-                    className={`h-9 w-9 p-0 rounded-xl transition-all duration-200 ${
+                    size="icon"
+                    className={`h-10 w-10 sm:h-9 sm:w-9 p-0 rounded-xl touch-manipulation ${
                       isSubmitting ? 'bg-muted' : ''
                     }`}
                   >
@@ -563,7 +565,7 @@ export default function ChatInterface() {
                 </div>
               </div>
               {user?.isAnonymous && (
-                <div className="text-xs text-muted-foreground mt-2 flex items-center justify-between">
+                <div className="text-xs text-muted-foreground mt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-1 sm:gap-2">
                   <span className={getTrialConversationsRemaining() <= 3 ? 'text-amber-600 dark:text-amber-400 font-medium' : ''}>
                     {getTrialConversationsRemaining()} {t("free messages remaining")}
                   </span>

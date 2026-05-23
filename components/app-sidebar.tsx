@@ -118,22 +118,25 @@ export function AppSidebar() {
     setRefreshOffset(0)
   }, [isMobile, touchStart, touchEnd, openMobile, setOpenMobile, isPullToRefresh])
 
-  // Add touch event listeners for mobile swipe navigation
+  // Edge swipe to open sidebar (left 24px only — avoids fighting vertical scroll)
   useEffect(() => {
     if (!isMobile) return
 
-    const handleTouchStartPassive = (e: TouchEvent) => handleTouchStart(e)
-    const handleTouchMovePassive = (e: TouchEvent) => handleTouchMove(e)
-    const handleTouchEndPassive = () => handleTouchEnd()
+    const onTouchStart = (e: TouchEvent) => {
+      const x = e.targetTouches[0]?.clientX ?? 0
+      if (x <= 24) handleTouchStart(e)
+    }
+    const onTouchMove = (e: TouchEvent) => handleTouchMove(e)
+    const onTouchEnd = () => handleTouchEnd()
 
-    document.addEventListener('touchstart', handleTouchStartPassive, { passive: true })
-    document.addEventListener('touchmove', handleTouchMovePassive, { passive: true })
-    document.addEventListener('touchend', handleTouchEndPassive, { passive: true })
+    document.addEventListener("touchstart", onTouchStart, { passive: true })
+    document.addEventListener("touchmove", onTouchMove, { passive: true })
+    document.addEventListener("touchend", onTouchEnd, { passive: true })
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStartPassive)
-      document.removeEventListener('touchmove', handleTouchMovePassive)
-      document.removeEventListener('touchend', handleTouchEndPassive)
+      document.removeEventListener("touchstart", onTouchStart)
+      document.removeEventListener("touchmove", onTouchMove)
+      document.removeEventListener("touchend", onTouchEnd)
     }
   }, [isMobile, handleTouchStart, handleTouchMove, handleTouchEnd])
 
@@ -371,8 +374,8 @@ export function AppSidebar() {
         <SidebarHeader data-sidebar-header className="border-b border-border/60">
           <div className={`flex items-center justify-between ${isMobile ? 'px-4 py-4' : 'px-3 py-3'}`}>
             <div className="flex items-center gap-2 overflow-hidden">
-              <SidebarTrigger className={`text-primary flex-shrink-0 touch-manipulation ${isMobile ? 'h-6 w-6' : 'h-5 w-5'}`} />
-              <div className={`overflow-hidden ${isMobile ? 'max-w-[160px]' : 'max-w-[140px]'}`}>
+              <SidebarTrigger className="text-primary flex-shrink-0 touch-manipulation" />
+              <div className="overflow-hidden min-w-0 flex-1 max-w-[140px] sm:max-w-[160px]">
                 <ThemeLogo 
                   width={isMobile ? 160 : 250} 
                   height={100} 

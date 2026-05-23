@@ -53,9 +53,10 @@ export const ChatMessage = memo(function ChatMessage({
       message.content
     )
 
-  const [showActions, setShowActions] = useState(false)
+  const [showActionsHover, setShowActionsHover] = useState(false)
   const { submitFeedback, getFeedbackState } = useChatFeedback()
   const feedbackState = getFeedbackState(message.id)
+  const showActions = isMobile || showActionsHover
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content)
@@ -81,8 +82,8 @@ export const ChatMessage = memo(function ChatMessage({
         ${isFirstInGroup ? "mt-6" : "mt-1"} ${isLastInGroup ? "mb-2" : "mb-0"}`}
       role="listitem"
       aria-label={`${message.role === "user" ? "You" : "Assistant"}: ${message.content}`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={() => setShowActionsHover(true)}
+      onMouseLeave={() => setShowActionsHover(false)}
     >
       <div className="flex items-center justify-center">
         <div
@@ -119,15 +120,15 @@ export const ChatMessage = memo(function ChatMessage({
 
             {showActions && (
               <div
-                className={`absolute ${message.role === "user" ? "left-0" : "right-0"} -bottom-8 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-full px-1 py-0.5 shadow-sm border border-border/50`}
+                className={`absolute ${message.role === "user" ? "left-0" : "right-0"} -bottom-10 sm:-bottom-8 flex items-center gap-0.5 sm:gap-1 bg-background/90 backdrop-blur-sm rounded-full px-1 py-0.5 shadow-sm border border-border/50`}
               >
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
+                <Button variant="ghost" size="icon" className={isMobile ? "h-9 w-9" : "h-7 w-7"} onClick={handleCopy}>
                   <Copy className="h-3 w-3" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-6 w-6 ${feedbackState.feedbackType === "like" ? "text-green-600 bg-green-100 dark:bg-green-900/30" : ""}`}
+                  className={`${isMobile ? "h-9 w-9" : "h-7 w-7"} ${feedbackState.feedbackType === "like" ? "text-green-600 bg-green-100 dark:bg-green-900/30" : ""}`}
                   onClick={() => handleFeedback("like")}
                   disabled={feedbackState.isSubmitting}
                 >
@@ -140,7 +141,7 @@ export const ChatMessage = memo(function ChatMessage({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`h-6 w-6 ${feedbackState.feedbackType === "dislike" ? "text-red-600 bg-red-100 dark:bg-red-900/30" : ""}`}
+                  className={`${isMobile ? "h-9 w-9" : "h-7 w-7"} ${feedbackState.feedbackType === "dislike" ? "text-red-600 bg-red-100 dark:bg-red-900/30" : ""}`}
                   onClick={() => handleFeedback("dislike")}
                   disabled={feedbackState.isSubmitting}
                 >
@@ -152,7 +153,7 @@ export const ChatMessage = memo(function ChatMessage({
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Button variant="ghost" size="icon" className={isMobile ? "h-9 w-9" : "h-7 w-7"}>
                       <MoreHorizontal className="h-3 w-3" />
                     </Button>
                   </DropdownMenuTrigger>

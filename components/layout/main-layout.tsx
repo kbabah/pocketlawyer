@@ -50,12 +50,11 @@ export function MainLayout({
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Bar */}
-          <div className="h-14 border-b border-border bg-background/95 backdrop-blur-xl flex items-center justify-between px-4 md:px-6">
+          <div className="h-14 shrink-0 border-b border-border bg-background/95 backdrop-blur-xl flex items-center justify-between px-3 sm:px-4 md:px-6 pt-[env(safe-area-inset-top)]">
             {/* Left side with mobile menu */}
-            <div className="flex items-center gap-3">
-              {/* Mobile Menu Button - Only visible on small screens */}
-              <div className="lg:hidden">
-                <SidebarTrigger className="h-9 w-9" />
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="lg:hidden shrink-0">
+                <SidebarTrigger />
               </div>
               
               <div className="h-2 w-2 bg-primary rounded-full animate-pulse" />
@@ -69,9 +68,9 @@ export function MainLayout({
             </div>
             
             {/* Right side */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <LanguageSwitcher />
-              <div className="px-2 sm:px-3 py-1 bg-primary/10 border border-primary/30 rounded-full">
+              <div className="hidden sm:flex px-2 sm:px-3 py-1 bg-primary/10 border border-primary/30 rounded-full">
                 <span className="text-xs font-mono text-primary">ONLINE</span>
               </div>
             </div>

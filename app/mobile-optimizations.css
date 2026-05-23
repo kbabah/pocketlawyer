@@ -70,20 +70,24 @@ button, .btn {
 }
 
 /* Hide desktop-only elements on mobile */
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .desktop-only {
     display: none;
   }
 }
 
-/* Show mobile-only elements */
+/* Show mobile-only elements (use as block/flex via extra utility classes) */
 .mobile-only {
-  display: none;
+  display: none !important;
 }
 
-@media (max-width: 768px) {
-  .mobile-only {
-    display: block;
+@media (max-width: 1023px) {
+  .mobile-only.flex {
+    display: flex !important;
+  }
+
+  .mobile-only.block {
+    display: block !important;
   }
 }
 
@@ -96,7 +100,7 @@ button, .btn {
 }
 
 /* Improve sidebar on mobile */
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .sidebar-mobile {
     width: 280px;
     max-width: 85vw;
@@ -110,9 +114,9 @@ button, .btn {
   }
 }
 
-/* Prevent horizontal scroll */
-body {
-  overflow-x: hidden;
+/* Prevent accidental horizontal scroll on root without clipping modals */
+html {
+  overflow-x: clip;
 }
 
 /* Better image handling on mobile */

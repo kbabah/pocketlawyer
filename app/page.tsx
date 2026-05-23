@@ -194,7 +194,7 @@ export default function HomePage() {
       subtitle={user && !user.isAnonymous ? t('Your legal AI assistant hub') : undefined}
       className="min-h-screen"
     >
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 px-1 sm:px-0">
         {/* Hero section for non-authenticated users */}
         {showHero && (
           <Suspense fallback={<ContentSkeleton />}>

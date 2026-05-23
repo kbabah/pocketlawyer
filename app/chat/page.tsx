@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
-// Loading component for chat interface
 const ChatInterfaceSkeleton = () => (
   <div className="space-y-4 p-4">
     <Skeleton className="h-8 w-3/4" />
@@ -33,18 +32,18 @@ export default function ChatPage() {
       title={t('Legal Assistant')}
       subtitle={t('Ask any legal question and get instant AI-powered assistance')}
     >
-      <div className="flex flex-col h-full">
-        {/* Compact header */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-primary/10">
+      <div className="flex flex-col h-full min-h-0">
+        {/* Page header — hidden on mobile (main layout bar is enough) */}
+        <div className="hidden lg:flex items-center justify-between px-4 py-2.5 border-b border-border flex-shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-1.5 rounded-lg bg-primary/10 shrink-0">
               <MessageCircle className="h-5 w-5 text-primary" />
             </div>
-            <div>
-              <h2 className="text-base font-bold font-mono tracking-tight leading-tight">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold font-mono tracking-tight leading-tight truncate">
                 {t('LEGAL.AI')}
               </h2>
-              <p className="text-xs text-muted-foreground leading-tight">
+              <p className="text-xs text-muted-foreground leading-tight truncate">
                 {user?.isAnonymous
                   ? t('Trial Mode - Limited conversations remaining')
                   : t('Powered by advanced AI technology')
@@ -54,7 +53,7 @@ export default function ChatPage() {
           </div>
 
           {user?.isAnonymous && (
-            <Button asChild variant="default" size="sm">
+            <Button asChild variant="default" size="sm" className="shrink-0">
               <Link href="/sign-up">
                 <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                 {t('Upgrade')}
@@ -63,16 +62,27 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Chat fills remaining height */}
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col">
           <Suspense fallback={<ChatInterfaceSkeleton />}>
             <ChatInterface />
           </Suspense>
         </div>
 
-        {/* Info Section for Guest Users */}
+        {/* Compact mobile upsell for guests */}
         {user?.isAnonymous && (
-          <div className="flex-shrink-0 px-4 py-3 border-t border-border bg-gradient-to-br from-primary/5 to-blue-500/5">
+          <div className="lg:hidden flex-shrink-0 px-3 py-2 border-t border-border bg-muted/30 safe-area-bottom">
+            <Button asChild size="sm" className="w-full min-h-[44px]">
+              <Link href="/sign-up">
+                <Sparkles className="mr-2 h-4 w-4" />
+                {t('Create Free Account')}
+              </Link>
+            </Button>
+          </div>
+        )}
+
+        {/* Full guest upsell — desktop / tablet landscape */}
+        {user?.isAnonymous && (
+          <div className="hidden lg:block flex-shrink-0 px-4 py-3 border-t border-border bg-gradient-to-br from-primary/5 to-blue-500/5">
             <div className="max-w-3xl mx-auto">
               <h3 className="text-sm font-semibold mb-1.5 font-mono">
                 {t('Unlock Full Access')}
