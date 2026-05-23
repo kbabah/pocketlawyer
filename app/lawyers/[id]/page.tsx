@@ -54,6 +54,11 @@ export default function LawyerProfilePage() {
         router.push("/lawyers")
         return
       }
+      if (data.status !== "approved") {
+        toast.error(t("lawyer.not.available.consultations"))
+        router.push("/lawyers")
+        return
+      }
       setLawyer(data)
     } catch (error: any) {
       console.error("Error loading lawyer:", error)

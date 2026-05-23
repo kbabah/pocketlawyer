@@ -66,6 +66,11 @@ export default function BookLawyerPage() {
         router.push("/lawyers")
         return
       }
+      if (data.status !== "approved") {
+        toast.error(t("lawyer.not.available.bookings"))
+        router.push("/lawyers")
+        return
+      }
       setLawyer(data)
     } catch (error: any) {
       console.error("Error loading lawyer:", error)

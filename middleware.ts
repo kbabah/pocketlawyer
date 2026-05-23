@@ -39,7 +39,8 @@ export function middleware(request: NextRequest) {
   }
 
   if (
-    pathname.startsWith("/lawyer/dashboard") &&
+    (pathname.startsWith("/lawyer/dashboard") ||
+      pathname.startsWith("/lawyer/profile")) &&
     !request.cookies.get("firebase-session")?.value
   ) {
     const signIn = new URL("/sign-in", request.url);

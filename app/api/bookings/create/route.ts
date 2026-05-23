@@ -107,6 +107,18 @@ export async function POST(req: NextRequest) {
 
     const consultationDate = new Date(bookingData.date);
 
+    const lawyerSnap = await adminDb.collection('lawyers').doc(bookingData.lawyerId).get();
+    if (!lawyerSnap.exists) {
+      return NextResponse.json({ error: 'Lawyer not found' }, { status: 404 });
+    }
+    const lawyerRecord = lawyerSnap.data();
+    if (lawyerRecord?.status !== 'approved') {
+      return NextResponse.json(
+        { error: 'This lawyer is not available for bookings' },
+        { status: 403 }
+      );
+    }
+
     // Check availability server-side (bypasses Firestore read rules)
     const available = await isTimeSlotAvailableServer(
       bookingData.lawyerId,

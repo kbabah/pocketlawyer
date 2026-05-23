@@ -4,7 +4,7 @@ import { OPENAI_MODELS } from "@/lib/openai"
 import { logger } from "@/lib/logger"
 import { rateLimit, getIdentifier } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
-import { getKnowledgeContext } from "@/lib/knowledge-base"
+import { getCombinedKnowledgeContext } from "@/lib/knowledge-base"
 import { getAuthenticatedUser, resolveRateLimitUserId } from "@/lib/api-auth"
 
 export const maxDuration = 30
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     // Extract the user's latest query to search knowledge base
     const lastUserMessage = messages?.filter((m: any) => m.role === "user").pop()?.content || ""
-    const knowledgeContext = getKnowledgeContext(lastUserMessage, undefined)
+    const knowledgeContext = await getCombinedKnowledgeContext(lastUserMessage, undefined)
 
     const systemPrompt = `You are PocketLawyer Legal Research Assistant — a specialised tool for researching Cameroonian law.
 

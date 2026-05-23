@@ -13,10 +13,11 @@ import { Badge } from "@/components/ui/badge"
 import { AvatarUpload } from "@/components/avatar-upload"
 import { Loader2, Save, ArrowLeft, X } from "lucide-react"
 import { toast } from "sonner"
-import { doc, getDoc, updateDoc } from "firebase/firestore"
+import { doc, updateDoc } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import type { Lawyer } from "@/types/lawyer"
 import { useLanguage } from "@/contexts/language-context"
+import { getLawyerByUserId } from "@/lib/services/lawyer-service"
 
 const SPECIALTIES = [
   "Corporate Law",
@@ -66,17 +67,16 @@ export default function EditLawyerProfile() {
 
     try {
       setLoading(true)
-      // Find lawyer profile associated with this user
-      const lawyerDoc = await getDoc(doc(db, "lawyers", user.id))
-      
-      if (!lawyerDoc.exists()) {
+      const lawyerData = await getLawyerByUserId(user.id)
+
+      if (!lawyerData) {
         toast.error(t("lawyer.edit.not.found"))
         router.push("/lawyer/dashboard")
         return
       }
 
-      const data = lawyerDoc.data() as Lawyer
-      setLawyer({ ...data, id: lawyerDoc.id })
+      const data = lawyerData
+      setLawyer(data)
 
       // Populate form
       setName(data.name || "")
@@ -135,17 +135,22 @@ export default function EditLawyerProfile() {
     setSaving(true)
 
     try {
+      const educationEntries = education
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean)
+
       await updateDoc(doc(db, "lawyers", lawyer.id), {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim(),
         bio: bio.trim(),
-        specialties,
-        experience: parseInt(experience),
-        education: education.trim(),
+        specializations: specialties,
+        experience: parseInt(experience, 10),
+        education: educationEntries,
         barNumber: barNumber.trim(),
-        hourlyRate: parseInt(hourlyRate),
-        photoUrl,
+        hourlyRate: parseInt(hourlyRate, 10),
+        profileImage: photoUrl || null,
         languages,
         updatedAt: new Date(),
       })
