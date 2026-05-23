@@ -288,6 +288,10 @@ export async function createReview(reviewData: Omit<Review, 'id' | 'createdAt'>)
   }
 
   await setDoc(reviewRef, review)
+
+  const { updateLawyerRating } = await import('@/lib/services/lawyer-service')
+  await updateLawyerRating(reviewData.lawyerId, reviewData.rating)
+
   return reviewRef.id
 }
 

@@ -114,6 +114,13 @@ export async function PATCH(
           return NextResponse.json({ error: 'Booking is not confirmed' }, { status: 400 });
         }
         updates.status = 'completed';
+        await adminDb
+          .collection('lawyers')
+          .doc(booking.lawyerId)
+          .update({
+            totalConsultations: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
         break;
 
       default:

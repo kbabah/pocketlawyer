@@ -370,6 +370,7 @@ export default function LawyerDashboardPage() {
                   booking={booking}
                   onConfirm={() => {
                     setSelectedBooking(booking)
+                    setMeetingLink(booking.meetingLink || "")
                     setShowConfirmDialog(true)
                   }}
                   onCancel={() => {
@@ -518,6 +519,11 @@ export default function LawyerDashboardPage() {
                 onChange={(e) => setMeetingLink(e.target.value)}
                 className="font-mono"
               />
+              {selectedBooking.meetingLink && (
+                <p className="text-xs text-muted-foreground font-mono">
+                  {t("lawyer.dashboard.confirm.meeting.existing")}
+                </p>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -530,7 +536,12 @@ export default function LawyerDashboardPage() {
             </Button>
             <Button
               onClick={handleConfirmBooking}
-              disabled={actionLoading || (selectedBooking?.type === 'video' && !meetingLink)}
+              disabled={
+                actionLoading ||
+                (selectedBooking?.type === 'video' &&
+                  !meetingLink &&
+                  !selectedBooking?.meetingLink)
+              }
               className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 font-mono"
             >
               {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("lawyer.dashboard.confirm.btn")}
