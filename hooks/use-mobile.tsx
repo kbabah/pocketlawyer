@@ -1,25 +1,22 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { MOBILE_BREAKPOINT } from "@/lib/breakpoints"
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+    const query = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`
+    const mql = window.matchMedia(query)
+
+    const onChange = () => {
+      setIsMobile(mql.matches)
     }
 
-    // Initial check
-    checkIsMobile()
-
-    // Add event listener for window resize
-    window.addEventListener("resize", checkIsMobile)
-
-    // Clean up
-    return () => {
-      window.removeEventListener("resize", checkIsMobile)
-    }
+    onChange()
+    mql.addEventListener("change", onChange)
+    return () => mql.removeEventListener("change", onChange)
   }, [])
 
   return isMobile

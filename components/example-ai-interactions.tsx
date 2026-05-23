@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight, MessageSquare } from "lucide-react"
@@ -131,19 +132,21 @@ export function ExampleAIInteractions() {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between pt-2">
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrevious}>
+      <CardFooter className="flex flex-col sm:flex-row gap-3 pt-2">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-none min-h-[44px]" onClick={handlePrevious}>
             <ChevronLeft className="h-4 w-4 mr-1" />
             {currentLanguage === "en" ? "Previous" : "Précédent"}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleNext}>
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-none min-h-[44px]" onClick={handleNext}>
             {currentLanguage === "en" ? "Next" : "Suivant"}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
-        <Button variant="default" size="sm">
-          {currentLanguage === "en" ? "Try Your Own Question" : "Essayez Votre Propre Question"}
+        <Button variant="default" size="sm" className="w-full sm:w-auto min-h-[44px]" asChild>
+          <Link href="/chat">
+            {currentLanguage === "en" ? "Try Your Own Question" : "Essayez Votre Propre Question"}
+          </Link>
         </Button>
       </CardFooter>
     </Card>

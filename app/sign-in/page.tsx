@@ -41,17 +41,17 @@ function SignInContent() {
     >
       {/* Decorative background elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-orange-50/20 dark:from-primary/10 dark:via-background dark:to-orange-950/10 -z-10" />
-      <div className="absolute top-20 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-20 left-10 w-96 h-96 bg-orange-100/30 dark:bg-orange-900/10 rounded-full blur-3xl -z-10" />
+      <div className="absolute top-20 right-4 sm:right-10 w-48 sm:w-96 h-48 sm:h-96 bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none" />
+      <div className="absolute bottom-20 left-4 sm:left-10 w-48 sm:w-96 h-48 sm:h-96 bg-orange-100/30 dark:bg-orange-900/10 rounded-full blur-3xl -z-10 pointer-events-none" />
 
-      <div className="flex items-center justify-center min-h-[calc(100vh-120px)] p-4 py-8 sm:py-12">
+      <div className="flex items-center justify-center min-h-[calc(100dvh-8rem)] p-4 py-8 sm:py-12">
         <div className="w-full max-w-md space-y-6 animate-fade-in-up">
           {/* Header */}
           <div className="text-center space-y-3">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-lg">
               <Scale className="h-7 w-7 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
               {authMode === 'signin'
                 ? t('Welcome back to PocketLawyer')
                 : authMode === 'signup'

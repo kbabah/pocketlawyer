@@ -64,7 +64,7 @@ export function WelcomeTutorial({
   ]
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-500 px-1 sm:px-0 max-w-3xl mx-auto w-full">
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-bold text-primary">{t("Your Legal Assistant")}</h2>
         <p className="text-lg text-muted-foreground">

@@ -175,16 +175,15 @@
     }
   }
 
-  /* Improve touch targets */
-  @media (max-width: 768px) {
+  /* Improve touch targets — controls only (not inline links) */
+  @media (max-width: 1023px) {
 
-    button,
+    button:not([class*="link"]),
     [role="button"],
-    input,
+    input:not([type="hidden"]),
     select,
-    a {
+    textarea {
       min-height: 44px;
-      min-width: 44px;
     }
 
     /* Adjust spacing for mobile */
@@ -229,8 +228,8 @@
 
   /* Better focus states for touch */
   @media (hover: none) {
-    :focus {
-      outline: none !important;
+    :focus:not(:focus-visible) {
+      outline: none;
     }
 
     :active {
