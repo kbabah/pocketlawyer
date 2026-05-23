@@ -702,6 +702,23 @@ export function getContractTemplates(): KnowledgeEntry[] {
   return ALL_KNOWLEDGE.filter(e => e.category === "contract_template")
 }
 
+/** Full built-in catalog for public browse (read-only, no network) */
+export function getBuiltInKnowledgeCatalog(): KnowledgeEntry[] {
+  return [...ALL_KNOWLEDGE]
+}
+
+export const KNOWLEDGE_CATEGORY_LABELS: Record<
+  KnowledgeEntry["category"],
+  string
+> = {
+  statute: "Statute / Law",
+  case_law: "Case Law / Jurisprudence",
+  procedure: "Legal Procedure",
+  contract_template: "Contract Template",
+  legal_principle: "Legal Principle",
+  regulation: "Regulation / Decree",
+}
+
 /**
  * Get knowledge base context string for AI prompt injection
  */
