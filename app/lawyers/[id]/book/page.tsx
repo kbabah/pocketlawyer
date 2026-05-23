@@ -31,6 +31,20 @@ import { sendBookingEmails } from "@/lib/booking-emails"
 import type { Lawyer } from "@/types/lawyer"
 import { DURATION_OPTIONS, CONSULTATION_TYPES } from "@/types/lawyer"
 
+function durationLabel(value: number, t: (key: string) => string): string {
+  if (value === 30) return t("booking.duration.30")
+  if (value === 60) return t("booking.duration.60")
+  if (value === 90) return t("booking.duration.90")
+  return `${value} min`
+}
+
+function consultationTypeLabel(value: string, t: (key: string) => string): string {
+  if (value === "video") return t("booking.type.video")
+  if (value === "phone") return t("booking.type.phone")
+  if (value === "in-person") return t("booking.type.inperson")
+  return value
+}
+
 export default function BookLawyerPage() {
   const { user } = useAuth()
   const { t } = useLanguage()
@@ -468,7 +482,7 @@ export default function BookLawyerPage() {
                         <div key={option.value} className="flex items-center space-x-2">
                           <RadioGroupItem value={option.value.toString()} id={`duration-${option.value}`} />
                           <Label htmlFor={`duration-${option.value}`} className="cursor-pointer flex-1">
-                            {option.label}
+                            {durationLabel(option.value, t)}
                           </Label>
                           <span className="text-sm text-muted-foreground">
                             {((lawyer.hourlyRate * option.value) / 60).toLocaleString()} XAF
@@ -495,7 +509,7 @@ export default function BookLawyerPage() {
                             {type.icon === 'Video' && <Video className="h-4 w-4" />}
                             {type.icon === 'Phone' && <Phone className="h-4 w-4" />}
                             {type.icon === 'Users' && <Users className="h-4 w-4" />}
-                            {type.label}
+                            {consultationTypeLabel(type.value, t)}
                           </Label>
                         </div>
                       ))}

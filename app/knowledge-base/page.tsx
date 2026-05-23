@@ -143,8 +143,14 @@ export default function PublicKnowledgeBasePage() {
     }
   }
 
-  const categoryLabel = (cat: string) =>
-    KNOWLEDGE_CATEGORY_LABELS[cat as KnowledgeEntry["category"]] || cat
+  const categoryLabel = (cat: string) => {
+    const key = `kb.category.${cat}` as const
+    const translated = t(key)
+    if (translated !== key) return translated
+    return (
+      KNOWLEDGE_CATEGORY_LABELS[cat as KnowledgeEntry["category"]] || cat
+    )
+  }
 
   return (
     <MainLayout
@@ -152,24 +158,10 @@ export default function PublicKnowledgeBasePage() {
       subtitle={t("kb.public.subtitle")}
     >
       <div className="container max-w-5xl mx-auto px-4 py-6 md:py-8 space-y-6">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/")}>
+        <Button variant="ghost" size="sm" className="-ml-1" onClick={() => router.push("/")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           {t("Home")}
         </Button>
-
-        <div className="flex items-start gap-3">
-          <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
-            <BookOpen className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("kb.public.title")}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("kb.public.subtitle")}
-            </p>
-          </div>
-        </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
@@ -187,9 +179,9 @@ export default function PublicKnowledgeBasePage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("kb.public.all.categories")}</SelectItem>
-              {Object.entries(KNOWLEDGE_CATEGORY_LABELS).map(([value, label]) => (
+              {Object.keys(KNOWLEDGE_CATEGORY_LABELS).map((value) => (
                 <SelectItem key={value} value={value}>
-                  {label}
+                  {categoryLabel(value)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -212,8 +204,9 @@ export default function PublicKnowledgeBasePage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-12 gap-3" role="status">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+            <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
           </div>
         ) : filtered.length === 0 ? (
           <Card>
@@ -252,7 +245,7 @@ export default function PublicKnowledgeBasePage() {
       </div>
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[min(85vh,100dvh)] overflow-y-auto w-[calc(100vw-2rem)] sm:w-full">
           <DialogHeader>
             <DialogTitle>{detailTitle}</DialogTitle>
           </DialogHeader>

@@ -16,9 +16,8 @@ export const maxDuration = 30
 // Validate the requested model or fallback to default
 function validateModel(requestedModel: string): string {
   // Array of supported models
-  const supportedModels = Object.values(OPENAI_MODELS);
-  
-  // If the requested model is supported, use it
+  const supportedModels: readonly string[] = Object.values(OPENAI_MODELS);
+
   if (supportedModels.includes(requestedModel)) {
     return requestedModel;
   }

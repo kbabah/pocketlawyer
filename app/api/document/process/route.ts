@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { logger } from "@/lib/logger";
-import { openai } from '@/lib/openai';
+import { getOpenAIClient } from '@/lib/openai';
 import { adminAuth } from '@/lib/firebase-admin';
 
 /** Verify the request has a valid, non-anonymous Firebase session cookie */
@@ -66,6 +66,7 @@ function isReadableText(text: string): boolean {
  */
 async function ocrPDFWithVision(buffer: Buffer, filename: string): Promise<string> {
   // Upload the PDF to OpenAI temporarily (purpose: 'user_data' allows Chat Completions access)
+  const openai = getOpenAIClient();
   const uploadedFile = await openai.files.create({
     file: new File([buffer], filename || 'document.pdf', { type: 'application/pdf' }),
     purpose: 'user_data' as any,
