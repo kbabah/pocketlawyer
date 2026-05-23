@@ -26,6 +26,8 @@ import {
 } from "lucide-react"
 import { getLawyer } from "@/lib/services/lawyer-service"
 import { createBooking } from "@/lib/services/booking-service"
+import { fetchPaymentsConfig } from "@/lib/services/payment-service"
+import { sendBookingEmails } from "@/lib/booking-emails"
 import type { Lawyer } from "@/types/lawyer"
 import { DURATION_OPTIONS, CONSULTATION_TYPES } from "@/types/lawyer"
 
@@ -42,6 +44,8 @@ export default function BookLawyerPage() {
   const [lawyer, setLawyer] = useState<Lawyer | null>(null)
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+  const [paymentsEnabled, setPaymentsEnabled] = useState(false)
+  const [paymentsSandbox, setPaymentsSandbox] = useState(false)
   
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [selectedTime, setSelectedTime] = useState("")
@@ -51,10 +55,13 @@ export default function BookLawyerPage() {
   const [userPhone, setUserPhone] = useState("")
 
   useEffect(() => {
-    // Load lawyer data regardless of auth status
     if (lawyerId) {
       loadLawyer()
     }
+    fetchPaymentsConfig().then((cfg) => {
+      setPaymentsEnabled(cfg.enabled)
+      setPaymentsSandbox(cfg.sandbox)
+    })
   }, [lawyerId])
 
   const loadLawyer = async () => {
@@ -174,61 +181,41 @@ export default function BookLawyerPage() {
       const createdMeetingLink = createResult.meetingLink
       setCreatedBookingId(bookingId)
 
-      // PAYMENT DISABLED: Skip payment dialog and send emails directly
-      // setShowPaymentDialog(true)
-      // toast.success(t("Booking created! Please complete payment."))
-      
-      // Send confirmation emails immediately (payment disabled for now)
-      try {
-        const [hours, minutes] = selectedTime.split(':').map(Number)
-        const emailConsultationDate = new Date(selectedDate)
-        emailConsultationDate.setHours(hours, minutes, 0, 0)
+      const [hours, minutes] = selectedTime.split(':').map(Number)
+      const emailConsultationDate = new Date(selectedDate!)
+      emailConsultationDate.setHours(hours, minutes, 0, 0)
 
-        // Send confirmation email to user
-        await fetch('/api/emails/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'booking-confirmation',
-            userEmail: user.email,
-            userName: user.name || user.email,
-            lawyerName: lawyer.name,
-            bookingDate: emailConsultationDate.toISOString(),
-            bookingTime: selectedTime,
-            duration,
-            consultationType: consultationType,
-            amount: calculateTotal(),
-            bookingId: bookingId,
-            meetingLink: consultationType === 'video' ? createdMeetingLink : undefined,
-          })
-        })
-
-        // Send notification email to lawyer
-        await fetch('/api/emails/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'lawyer-notification',
+      if (paymentsEnabled) {
+        setShowPaymentDialog(true)
+        toast.success(
+          paymentsSandbox
+            ? t("booking.payment.sandbox")
+            : t("Booking created! Please complete payment.")
+        )
+      } else {
+        try {
+          await sendBookingEmails({
+            bookingId,
+            userEmail: user.email!,
+            userName: user.name || user.email!,
             lawyerEmail: lawyer.email,
             lawyerName: lawyer.name,
-            userName: user.name || user.email,
-            userPhone: userPhone || user.email,
-            bookingDate: emailConsultationDate.toISOString(),
+            userPhone: userPhone || user.email!,
+            bookingDateIso: emailConsultationDate.toISOString(),
             bookingTime: selectedTime,
             duration,
-            consultationType: consultationType,
+            consultationType,
             amount: calculateTotal(),
             notes,
-            bookingId: bookingId,
+            meetingLink:
+              consultationType === "video" ? createdMeetingLink : undefined,
           })
-        })
-      } catch (error) {
-        console.error("Error sending emails:", error)
-        // Don't fail the booking if email fails
+        } catch (error) {
+          console.error("Error sending emails:", error)
+        }
+        setSubmitted(true)
+        toast.success(t("Booking confirmed! Check your email for details."))
       }
-
-      setSubmitted(true)
-      toast.success(t("Booking confirmed! Check your email for details."))
     } catch (error: any) {
       console.error("Error creating booking:", error)
       // Show specific error message from server if available
@@ -243,58 +230,34 @@ export default function BookLawyerPage() {
   }
 
   const handlePaymentSuccess = async () => {
-    // Payment completed, send emails via API
     if (user && lawyer && selectedDate && createdBookingId) {
       try {
         const [hours, minutes] = selectedTime.split(':').map(Number)
         const consultationDate = new Date(selectedDate)
         consultationDate.setHours(hours, minutes, 0, 0)
 
-        // Send confirmation email to user
-        await fetch('/api/emails/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'booking-confirmation',
-            userEmail: user.email,
-            userName: user.name || user.email,
-            lawyerName: lawyer.name,
-            bookingDate: consultationDate.toISOString(),
-            bookingTime: selectedTime,
-            duration,
-            consultationType: consultationType,
-            amount: calculateTotal(),
-            bookingId: createdBookingId,
-          })
-        })
-
-        // Send notification email to lawyer
-        await fetch('/api/emails/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'lawyer-notification',
-            lawyerEmail: lawyer.email,
-            lawyerName: lawyer.name,
-            userName: user.name || user.email,
-            userPhone: userPhone || user.email,
-            bookingDate: consultationDate.toISOString(),
-            bookingTime: selectedTime,
-            duration,
-            consultationType: consultationType,
-            amount: calculateTotal(),
-            notes,
-            bookingId: createdBookingId,
-          })
+        await sendBookingEmails({
+          bookingId: createdBookingId,
+          userEmail: user.email!,
+          userName: user.name || user.email!,
+          lawyerEmail: lawyer.email,
+          lawyerName: lawyer.name,
+          userPhone: userPhone || user.email!,
+          bookingDateIso: consultationDate.toISOString(),
+          bookingTime: selectedTime,
+          duration,
+          consultationType,
+          amount: calculateTotal(),
+          notes,
         })
       } catch (error) {
         console.error("Error sending emails:", error)
-        // Don't fail the booking if email fails
       }
     }
 
     setSubmitted(true)
     setShowPaymentDialog(false)
+    toast.success(t("Booking confirmed! Check your email for details."))
   }
 
   if (loading) {
@@ -632,7 +595,9 @@ export default function BookLawyerPage() {
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    {t("Your booking will be confirmed immediately")}
+                    {paymentsEnabled
+                      ? t("booking.payment.required.hint")
+                      : t("Your booking will be confirmed immediately")}
                   </p>
                 </CardContent>
               </Card>

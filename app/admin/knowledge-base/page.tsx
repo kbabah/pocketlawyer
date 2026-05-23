@@ -15,10 +15,17 @@ import {
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { 
-  ArrowLeft, Database, Plus, Trash2, Save, Loader2, BookOpen, Search, FileText, Upload,
+  ArrowLeft, Database, Plus, Trash2, Save, Loader2, BookOpen, Search, FileText, Upload, Pencil,
 } from "lucide-react"
 import { toast } from "sonner"
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from "firebase/firestore"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp, query, orderBy } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { useRouter } from "next/navigation"
 
@@ -60,6 +67,8 @@ export default function KnowledgeBasePage() {
   const [tags, setTags] = useState("")
   const [jurisdiction, setJurisdiction] = useState("Cameroon - National")
   const [source, setSource] = useState("")
+  const [editingEntry, setEditingEntry] = useState<KBEntry | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   useEffect(() => {
     if (roleLoading) return
@@ -165,6 +174,51 @@ export default function KnowledgeBasePage() {
     } catch (error) {
       console.error("Error saving KB entry:", error)
       toast.error(t("Failed to save entry"))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openEdit = (entry: KBEntry) => {
+    setEditingEntry(entry)
+    setTitle(entry.title)
+    setCategory(entry.category)
+    setContent(entry.content)
+    setTags(entry.tags?.join(", ") || "")
+    setJurisdiction(entry.jurisdiction || "Cameroon - National")
+    setSource(entry.source || "")
+    setEditOpen(true)
+  }
+
+  const handleUpdate = async () => {
+    if (!editingEntry) return
+    if (!title || !category || !content) {
+      toast.error(t("Please fill in title, category, and content"))
+      return
+    }
+    setSaving(true)
+    try {
+      await updateDoc(doc(db, "knowledge_base", editingEntry.id), {
+        title,
+        category,
+        content,
+        tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+        jurisdiction,
+        source,
+        updatedAt: serverTimestamp(),
+      })
+      toast.success(t("kb.admin.updated"))
+      setEditOpen(false)
+      setEditingEntry(null)
+      setTitle("")
+      setCategory("")
+      setContent("")
+      setTags("")
+      setSource("")
+      fetchEntries()
+    } catch (error) {
+      console.error("Error updating KB entry:", error)
+      toast.error(t("kb.admin.update.failed"))
     } finally {
       setSaving(false)
     }
@@ -403,20 +457,97 @@ export default function KnowledgeBasePage() {
                         </div>
                       )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-500 hover:text-red-700 flex-shrink-0"
-                      onClick={() => handleDelete(entry.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(entry)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => handleDelete(entry.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
         </div>
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t("kb.admin.edit.title")}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("Title")} *</Label>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("Category")} *</Label>
+                  <Select value={category} onValueChange={setCategory}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          {c.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("Content")} *</Label>
+                <Textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  className="min-h-[200px]"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("Tags")}</Label>
+                  <Input value={tags} onChange={(e) => setTags(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("Jurisdiction")}</Label>
+                  <Input
+                    value={jurisdiction}
+                    onChange={(e) => setJurisdiction(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("Source")}</Label>
+                  <Input value={source} onChange={(e) => setSource(e.target.value)} />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>
+                {t("lawyer.edit.cancel")}
+              </Button>
+              <Button onClick={handleUpdate} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                {t("kb.admin.save.changes")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   )
